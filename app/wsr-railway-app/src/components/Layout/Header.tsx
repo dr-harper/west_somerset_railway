@@ -8,7 +8,7 @@ export const Header: React.FC = () => {
         <div className="container-narrow">
           <div className={styles.headerContent}>
             <div className={styles.logo}>
-              <img src="/west_somerset_railway.png" alt="WSR Logo" className={styles.logoImage} />
+              <img src="./west_somerset_railway.png" alt="WSR Logo" className={styles.logoImage} />
               <div>
                 <h1 className={styles.title}>West Somerset Railway Timetables</h1>
               </div>
