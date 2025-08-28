@@ -1,61 +1,100 @@
 .datePickerContainer {
+  width: 100%;
+  max-width: 400px;
   display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
+  flex-direction: column;
 }
 
 .label {
+  margin-bottom: var(--spacing-sm);
   font-family: var(--font-header);
   font-size: 1.1rem;
   font-weight: 600;
   color: var(--color-railway-black);
 }
 
-.dateControls {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
+.calendarWrapper {
   background: white;
   border: 1px solid #CCCCCC;
   border-radius: var(--radius-sm);
-  padding: var(--spacing-xs);
+  padding: var(--spacing-sm);
 }
 
-.dateButton {
+.calendarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-sm);
+}
+
+.navButton {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   background: var(--color-wsr-burgundy);
   color: white;
   border: none;
   border-radius: var(--radius-sm);
-  font-size: 1.2rem;
   cursor: pointer;
-  transition: all var(--transition-fast);
 }
 
-.dateButton:hover:not(:disabled) {
+.navButton:hover {
   background: var(--color-wsr-dark-burgundy);
 }
 
-.dateButton:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+.monthLabel {
+  font-family: var(--font-header);
+  font-size: 1rem;
+  font-weight: 600;
 }
 
-.dateDisplay {
-  padding: var(--spacing-sm) var(--spacing-lg);
-  font-family: var(--font-body);
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--color-railway-black);
-  min-width: 180px;
+.calendar {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.calendar th {
+  font-weight: 600;
   text-align: center;
+  padding: var(--spacing-xs);
+  font-size: 0.8rem;
+}
+
+.calendar td {
+  text-align: center;
+  padding: var(--spacing-xs);
+}
+
+.dayButton {
+  width: 100%;
+  height: 40px;
+  border: none;
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  color: var(--color-railway-black);
+}
+
+.dayButton.selected {
+  outline: 2px solid var(--color-wsr-burgundy);
+}
+
+.dayNumber {
+  font-size: 0.8rem;
+}
+
+.trainCount {
+  font-size: 0.7rem;
 }
 
 .todayButton {
+  margin-top: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-md);
   background: var(--color-wsr-burgundy);
   color: white;
@@ -73,3 +112,4 @@
 .todayButton:hover {
   background: var(--color-wsr-dark-burgundy);
 }
+
