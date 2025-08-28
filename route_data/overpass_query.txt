@@ -1,0 +1,21 @@
+/*
+  This is an example Overpass query.
+  Try it out by pressing the Run button above!
+  You can find more examples with the Load tool.
+*/
+
+[out:json][timeout:180];
+
+// Train lines (railway tracks) within bounding box
+(
+  way["railway"="rail"]({{bbox}});
+  
+  // Stations (nodes, ways, and relations) within bounding box
+  node["railway"="station"]({{bbox}});
+ 
+);
+
+// Output results
+out body;
+>;
+out skel qt;

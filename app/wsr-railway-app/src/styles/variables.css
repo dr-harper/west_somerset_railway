@@ -1,0 +1,59 @@
+:root {
+  /* WSR Brand Colors */
+  --color-wsr-burgundy: #7D2239;
+  --color-wsr-dark-burgundy: #5A1A2A;
+  --color-wsr-gold: #D4AF37;
+  --color-wsr-cream: #F5F5F0;
+  --color-wsr-light-gray: #F8F8F8;
+  --color-wsr-black: #1C1C1C;
+  --color-railway-amber: #FFBF00;
+  
+  /* Semantic Colors */
+  --color-primary: var(--color-wsr-burgundy);
+  --color-secondary: var(--color-wsr-dark-burgundy);
+  --color-accent: var(--color-wsr-gold);
+  --color-background: var(--color-wsr-light-gray);
+  --color-text: #333333;
+  --color-text-light: #666666;
+  
+  /* Status Colors */
+  --color-on-time: #22C55E;
+  --color-delayed: #EF4444;
+  --color-cancelled: #6B7280;
+  
+  /* Typography */
+  --font-header: 'Playfair Display', 'Georgia', serif;
+  --font-body: 'Inter', 'Segoe UI', 'Roboto', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+  
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(28, 28, 28, 0.1);
+  --shadow-md: 0 4px 6px rgba(28, 28, 28, 0.1);
+  --shadow-lg: 0 10px 15px rgba(28, 28, 28, 0.15);
+  --shadow-xl: 0 20px 25px rgba(28, 28, 28, 0.2);
+  
+  /* Z-index */
+  --z-dropdown: 100;
+  --z-header: 200;
+  --z-modal: 300;
+  --z-toast: 400;
+  
+  /* Transitions */
+  --transition-fast: 150ms ease-in-out;
+  --transition-normal: 300ms ease-in-out;
+  --transition-slow: 500ms ease-in-out;
+}

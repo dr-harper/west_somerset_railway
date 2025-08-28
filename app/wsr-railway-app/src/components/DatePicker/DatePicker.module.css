@@ -1,0 +1,75 @@
+.datePickerContainer {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.label {
+  font-family: var(--font-header);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-railway-black);
+}
+
+.dateControls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: white;
+  border: 1px solid #CCCCCC;
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xs);
+}
+
+.dateButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--color-wsr-burgundy);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.dateButton:hover:not(:disabled) {
+  background: var(--color-wsr-dark-burgundy);
+}
+
+.dateButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.dateDisplay {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-railway-black);
+  min-width: 180px;
+  text-align: center;
+}
+
+.todayButton {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-wsr-burgundy);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.todayButton:hover {
+  background: var(--color-wsr-dark-burgundy);
+}

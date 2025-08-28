@@ -1,0 +1,82 @@
+.selectorContainer {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+}
+
+.label {
+  display: block;
+  margin-bottom: var(--spacing-sm);
+  font-family: var(--font-header);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-railway-black);
+}
+
+.selectWrapper {
+  position: relative;
+  background: white;
+  border: 1px solid #CCCCCC;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  transition: all var(--transition-normal);
+}
+
+.selectWrapper:hover {
+  border-color: var(--color-wsr-burgundy);
+}
+
+.selectWrapper:focus-within {
+  border-color: var(--color-wsr-burgundy);
+  box-shadow: 0 0 0 2px rgba(125, 34, 57, 0.1);
+}
+
+.select {
+  width: 100%;
+  padding: var(--spacing-md) var(--spacing-lg);
+  padding-right: 3rem;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-railway-black);
+  background: transparent;
+  border: none;
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.selectIcon {
+  position: absolute;
+  right: var(--spacing-md);
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--color-text-light);
+  transition: color var(--transition-normal);
+}
+
+.selectWrapper:hover .selectIcon {
+  color: var(--color-wsr-burgundy);
+}
+
+.arrow {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid currentColor;
+}
+
+.requestStop {
+  display: inline-block;
+  margin-left: var(--spacing-sm);
+  padding: 2px var(--spacing-xs);
+  background: var(--color-railway-burgundy);
+  color: white;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}

@@ -1,0 +1,157 @@
+.departureBoard {
+  background: #2b2e32;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+  border: 2px solid var(--color-wsr-gold);
+  position: relative;
+  overflow: hidden;
+}
+
+.boardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-wsr-gold);
+}
+
+.stationName {
+  color: var(--color-railway-amber);
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px rgba(255, 191, 0, 0.5);
+}
+
+.currentTime {
+  color: var(--color-railway-amber);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.departureTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 4px;
+}
+
+.tableHeader {
+  background: rgba(184, 134, 11, 0.1);
+  border-bottom: 1px solid var(--color-railway-brass);
+}
+
+.tableHeader th {
+  padding: var(--spacing-sm) var(--spacing-md);
+  text-align: left;
+  color: var(--color-railway-amber);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+
+.departureRow {
+  background: rgba(0, 0, 0, 0.3);
+  transition: all var(--transition-fast);
+}
+
+.departureRow:hover {
+  background: rgba(184, 134, 11, 0.05);
+  transform: translateX(2px);
+}
+
+.departureRow td {
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: var(--color-railway-amber);
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  border-bottom: 1px solid rgba(184, 134, 11, 0.1);
+}
+
+.time {
+  font-size: 1.1rem;
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.destination {
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.serviceType {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.serviceType.diesel {
+  background: rgba(42, 77, 58, 0.3);
+  border: 1px solid var(--color-railway-green);
+  color: #4ADE80;
+}
+
+.serviceType.dmu {
+  background: rgba(107, 31, 46, 0.3);
+  border: 1px solid var(--color-railway-burgundy);
+  color: #b34f4f;
+}
+
+.serviceType.steam {
+  background: rgba(184, 134, 11, 0.2);
+  border: 1px solid var(--color-railway-brass);
+  color: var(--color-railway-amber);
+}
+
+
+.noDepartures {
+  text-align: center;
+  padding: var(--spacing-2xl);
+  color: var(--color-railway-amber);
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  opacity: 0.7;
+}
+
+@media (max-width: 768px) {
+  .departureBoard {
+    padding: var(--spacing-lg);
+  }
+
+  .stationName {
+    font-size: 1.4rem;
+  }
+
+  .currentTime {
+    font-size: 1rem;
+  }
+
+  .tableHeader th {
+    font-size: 0.8rem;
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .departureRow td {
+    padding: var(--spacing-sm);
+    font-size: 0.95rem;
+  }
+
+  .time {
+    font-size: 1.1rem;
+  }
+
+  .destination {
+    font-size: 1rem;
+  }
+}
