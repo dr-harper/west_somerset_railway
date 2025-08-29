@@ -16,6 +16,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
   );
   const [trainCounts, setTrainCounts] = useState<Record<string, number>>({});
+  const [showCalendar, setShowCalendar] = useState(false);
 
   useEffect(() => {
     const daysInMonth = new Date(
@@ -49,12 +50,38 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     );
   };
 
+  const handlePrevDay = () => {
+    onDateChange(
+      new Date(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth(),
+        selectedDate.getDate() - 1
+      )
+    );
+  };
+
+  const handleNextDay = () => {
+    onDateChange(
+      new Date(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth(),
+        selectedDate.getDate() + 1
+      )
+    );
+  };
+
   const handleToday = () => {
     onDateChange(new Date());
+    setShowCalendar(false);
   };
 
   const handleDateClick = (date: Date) => {
     onDateChange(date);
+    setShowCalendar(false);
+  };
+
+  const toggleCalendar = () => {
+    setShowCalendar(prev => !prev);
   };
 
   const formatMonthYear = (date: Date) =>
@@ -101,75 +128,104 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     return `hsl(${hue}, 70%, 85%)`;
   };
 
+  const selectedKey = dateKey(selectedDate);
+  const selectedCount = trainCounts[selectedKey] ?? 0;
+
   return (
     <div className={styles.datePickerContainer}>
       <span className={styles.label}>{label}:</span>
-      <div className={styles.calendarWrapper}>
-        <div className={styles.calendarHeader}>
-          <button
-            className={styles.navButton}
-            onClick={handlePrevMonth}
-            aria-label="Previous month"
-          >
-            ←
-          </button>
-          <div className={styles.monthLabel}>
-            {formatMonthYear(currentMonth)}
-          </div>
-          <button
-            className={styles.navButton}
-            onClick={handleNextMonth}
-            aria-label="Next month"
-          >
-            →
-          </button>
-        </div>
-        <table className={styles.calendar}>
-          <thead>
-            <tr>
-              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
-                <th key={day}>{day}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {weeks.map((week, i) => (
-              <tr key={i}>
-                {week.map((date, j) => {
-                  if (!date) {
-                    return <td key={j}></td>;
-                  }
-                  const key = dateKey(date);
-                  const count = trainCounts[key] ?? 0;
-                  const isSelected =
-                    date.toDateString() === selectedDate.toDateString();
-                  return (
-                    <td key={j}>
-                      <button
-                        className={`${styles.dayButton} ${
-                          isSelected ? styles.selected : ''
-                        }`}
-                        style={{ backgroundColor: getColor(count) }}
-                        onClick={() => handleDateClick(date)}
-                      >
-                        <span className={styles.dayNumber}>
-                          {date.getDate()}
-                        </span>
-                        <span className={styles.trainCount}>{count}</span>
-                      </button>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {!(selectedDate.toDateString() === new Date().toDateString()) && (
-          <button className={styles.todayButton} onClick={handleToday}>
-            Today
-          </button>
-        )}
+      <div className={styles.dateControls}>
+        <button
+          className={styles.navButton}
+          onClick={handlePrevDay}
+          aria-label="Previous day"
+        >
+          ←
+        </button>
+        <button
+          className={styles.selectedDateButton}
+          style={{ backgroundColor: getColor(selectedCount) }}
+          onClick={toggleCalendar}
+        >
+          {selectedDate.toLocaleDateString('en-GB')}
+          <span className={styles.trainCount}>{selectedCount}</span>
+        </button>
+        <button
+          className={styles.navButton}
+          onClick={handleNextDay}
+          aria-label="Next day"
+        >
+          →
+        </button>
       </div>
+      {showCalendar && (
+        <div className={styles.calendarWrapper}>
+          <div className={styles.calendarHeader}>
+            <button
+              className={styles.navButton}
+              onClick={handlePrevMonth}
+              aria-label="Previous month"
+            >
+              ←
+            </button>
+            <div className={styles.monthLabel}>
+              {formatMonthYear(currentMonth)}
+            </div>
+            <button
+              className={styles.navButton}
+              onClick={handleNextMonth}
+              aria-label="Next month"
+            >
+              →
+            </button>
+          </div>
+          <table className={styles.calendar}>
+            <thead>
+              <tr>
+                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+                  <th key={day}>{day}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {weeks.map((week, i) => (
+                <tr key={i}>
+                  {week.map((date, j) => {
+                    if (!date) {
+                      return <td key={j}></td>;
+                    }
+                    const key = dateKey(date);
+                    const count = trainCounts[key] ?? 0;
+                    const isSelected =
+                      date.toDateString() === selectedDate.toDateString();
+                    return (
+                      <td key={j}>
+                        <button
+                          className={`${styles.dayButton} ${
+                            isSelected ? styles.selected : ''
+                          }`}
+                          style={{ backgroundColor: getColor(count) }}
+                          onClick={() => handleDateClick(date)}
+                        >
+                          <span className={styles.dayNumber}>
+                            {date.getDate()}
+                          </span>
+                          <span className={styles.trainCount}>{count}</span>
+                        </button>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!(selectedDate.toDateString() === new Date().toDateString()) && (
+            <button className={styles.todayButton} onClick={handleToday}>
+              Today
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

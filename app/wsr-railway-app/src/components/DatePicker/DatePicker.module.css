@@ -13,6 +13,26 @@
   color: var(--color-railway-black);
 }
 
+.dateControls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.selectedDateButton {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: var(--color-railway-black);
+}
+
 .calendarWrapper {
   background: white;
   border: 1px solid #CCCCCC;
