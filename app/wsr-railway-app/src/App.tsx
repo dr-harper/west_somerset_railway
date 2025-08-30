@@ -7,8 +7,11 @@ import { Home } from './pages/Home/Home';
 import { LiveTrains } from './pages/LiveTrains/LiveTrains';
 
 function App() {
+  // Get the base path from Vite's configuration
+  const basename = import.meta.env.BASE_URL;
+  
   return (
-    <Router>
+    <Router basename={basename}>
       <div className="app">
         <Header />
         
