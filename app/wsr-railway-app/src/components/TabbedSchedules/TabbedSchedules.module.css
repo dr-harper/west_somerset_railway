@@ -1,0 +1,354 @@
+.tabbedSchedules {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-top: 20px;
+}
+
+.tabs {
+  display: flex;
+  background: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  overflow-x: auto;
+}
+
+.tab {
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #333;
+}
+
+.tab.active {
+  background: white;
+  color: #333;
+  font-weight: 600;
+}
+
+.tabIndicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.tabContent {
+  padding: 20px;
+  min-height: 300px;
+}
+
+/* Overview Tab Styles */
+.overviewContent {
+  padding: 10px;
+}
+
+.scheduleCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.scheduleCard {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.2s;
+  background: white;
+}
+
+.scheduleCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.colorIndicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.cardTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.cardSummary {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.cardActiveDays {
+  font-size: 0.85rem;
+  color: #888;
+  margin-bottom: 16px;
+  font-style: italic;
+}
+
+.viewButton {
+  background: none;
+  border: 1px solid #4A90E2;
+  color: #4A90E2;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.viewButton:hover {
+  background: #4A90E2;
+  color: white;
+}
+
+.noSchedules {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 1rem;
+}
+
+/* Timetable Tab Styles */
+.timetableContent {
+  padding: 10px;
+}
+
+.timetableHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.timetableIndicator {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+}
+
+.timetableTitle {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.timetablesGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-bottom: 20px;
+}
+
+.timetableSection {
+  min-width: 0;
+}
+
+.directionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 12px 0;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.timetableTable {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 400px;
+}
+
+.timetableTable th {
+  background: #f8f9fa;
+  padding: 10px 8px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid #dee2e6;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.stationHeader {
+  width: 150px;
+  position: sticky;
+  left: 0;
+  background: #f8f9fa;
+  z-index: 11;
+}
+
+.serviceHeader {
+  text-align: center !important;
+  min-width: 80px;
+}
+
+.serviceType {
+  font-size: 0.7rem;
+  background: #4A90E2;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-bottom: 2px;
+  display: inline-block;
+}
+
+.serviceId {
+  font-size: 0.7rem;
+  color: #666;
+}
+
+.timetableTable td {
+  padding: 8px;
+  border-bottom: 1px solid #e0e0e0;
+  vertical-align: middle;
+}
+
+.stationName {
+  font-weight: 500;
+  color: #333;
+  white-space: nowrap;
+  position: sticky;
+  left: 0;
+  background: white;
+  z-index: 5;
+}
+
+.timeCell {
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.emptyCell {
+  text-align: center;
+  color: #ccc;
+}
+
+.arrivalTime {
+  color: #666;
+}
+
+.departureTime {
+  color: #333;
+}
+
+.platformInfo {
+  font-size: 0.65rem;
+  color: #999;
+  margin-top: 2px;
+}
+
+.timetableLegend {
+  display: flex;
+  gap: 24px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Christmas Notice Styles */
+.christmasNotice {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 2px solid #27AE60;
+  border-radius: 12px;
+  padding: 30px;
+  margin: 20px auto;
+  max-width: 600px;
+  text-align: center;
+}
+
+.christmasNotice h4 {
+  color: #27AE60;
+  font-size: 1.4rem;
+  margin: 0 0 20px 0;
+  font-weight: 600;
+}
+
+.christmasNotice p {
+  color: #333;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.christmasDates {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.christmasDates strong {
+  color: #27AE60;
+  display: block;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 1200px) {
+  .timetablesGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .tabs {
+    overflow-x: scroll;
+  }
+  
+  .tab {
+    font-size: 0.85rem;
+    padding: 10px 16px;
+  }
+  
+  .scheduleCards {
+    grid-template-columns: 1fr;
+  }
+  
+  .timetableTable {
+    font-size: 0.8rem;
+  }
+  
+  .timetableLegend {
+    flex-direction: column;
+    gap: 8px;
+  }
+}

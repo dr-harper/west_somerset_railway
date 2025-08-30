@@ -1,5 +1,7 @@
 import React from 'react';
 import styles from './DatePicker.module.css';
+import { getTimetableType, timetableColors, timetableNames } from '../../services/calendarConfig';
+import type { TimetableType } from '../../services/calendarConfig';
 
 interface DatePickerProps {
   selectedDate: Date;
@@ -43,6 +45,17 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     return date.toDateString() === today.toDateString();
   };
 
+  const getTimetableInfo = (date: Date): { type: TimetableType; name: string; color: string } => {
+    const type = getTimetableType(date);
+    return {
+      type,
+      name: timetableNames[type],
+      color: timetableColors[type]
+    };
+  };
+
+  const timetableInfo = getTimetableInfo(selectedDate);
+
   return (
     <div className={styles.datePickerContainer}>
       <span className={styles.label}>{label}:</span>
@@ -55,7 +68,25 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           ←
         </button>
         <div className={styles.dateDisplay}>
-          {formatDate(selectedDate)}
+          <div>{formatDate(selectedDate)}</div>
+          <div style={{
+            fontSize: '11px',
+            color: timetableInfo.color,
+            fontWeight: '500',
+            marginTop: '2px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}>
+            <span style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: timetableInfo.color,
+              display: 'inline-block'
+            }}></span>
+            {timetableInfo.type === 'none' ? 'No Services' : timetableInfo.name}
+          </div>
         </div>
         <button
           className={styles.dateButton}

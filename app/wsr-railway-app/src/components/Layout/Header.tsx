@@ -4,7 +4,7 @@ import styles from './Header.module.css';
 
 export const Header: React.FC = () => {
   const location = useLocation();
-  
+
   return (
     <header className={styles.header}>
       <div className="container">
@@ -17,20 +17,24 @@ export const Header: React.FC = () => {
               </div>
             </div>
             <nav className={styles.nav}>
-              <Link 
-                to="/" 
+              <Link
+                to="/"
                 className={`${styles.navLink} ${location.pathname === '/' ? styles.active : ''}`}
               >
                 Departures
               </Link>
-              <Link 
-                to="/live-trains" 
+              <Link
+                to="/live-trains"
                 className={`${styles.navLink} ${location.pathname === '/live-trains' ? styles.active : ''}`}
               >
                 Live Trains
               </Link>
-              <a href="#journey" className={styles.navLink}>Journey Planner</a>
-              <a href="#about" className={styles.navLink}>About</a>
+              <Link
+                to="/journey-planner"
+                className={`${styles.navLink} ${location.pathname === '/journey-planner' ? styles.active : ''}`}
+              >
+                Journey Planner
+              </Link>
             </nav>
           </div>
         </div>
