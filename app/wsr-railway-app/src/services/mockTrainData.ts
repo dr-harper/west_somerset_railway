@@ -160,23 +160,6 @@ function getTodayScheduleDate(): Date {
   return date;
 }
 
-// Helper to adjust times for test train (30 minutes ago)
-function adjustTimeForTestTrain(timeStr: string | null): string | null {
-  if (!timeStr) return null;
-
-  const now = new Date();
-  const [hours, minutes] = timeStr.split(':').map(Number);
-
-  // Create a date object for today with the given time
-  const scheduleTime = new Date();
-  scheduleTime.setHours(hours, minutes, 0, 0);
-
-  // Subtract 30 minutes to make it start 30 minutes ago
-  scheduleTime.setMinutes(scheduleTime.getMinutes() - 30);
-
-  // Return in HH:MM format
-  return scheduleTime.toTimeString().slice(0, 5);
-}
 
 // Function to create test train if enabled
 function createTestTrain(): Train | null {
