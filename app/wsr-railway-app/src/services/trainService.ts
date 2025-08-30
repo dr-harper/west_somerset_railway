@@ -1,14 +1,17 @@
-import type { 
-  Train, 
-  Station, 
-  DepartureBoard, 
-  Departure, 
+import type {
+  Train,
+  Station,
+  DepartureBoard,
+  Departure,
   Arrival,
   StationCode,
   Journey,
   JourneySegment
 } from '../types/models';
-import { mockTrains, mockStations } from './mockTrainData';
+import { mockStations } from './mockTrainData';
+import { getTimetableType, getSpecialEvent, timetableColors, timetableNames, timetableSummaries } from './calendarConfig';
+import { getTrainsForDate } from './timetables';
+import type { TimetableType } from './calendarConfig';
 
 // Firebase-like interface for train service
 // When Firebase is added, this will use Firestore instead of mock data
@@ -17,18 +20,25 @@ export class TrainService {
   private stations: Map<StationCode, Station> = new Map();
   private updateInterval: NodeJS.Timeout | null = null;
   private listeners: Map<string, Set<(data: any) => void>> = new Map();
+  private currentDate: Date = new Date();
 
   constructor() {
     // Initialize with mock data (will be replaced with Firestore)
     this.loadMockData();
-    
+
+    // Immediately update train positions and status
+    this.updateTrainPositions();
+
     // Start real-time simulation (will be replaced with Firestore listeners)
     this.startRealTimeSimulation();
   }
 
   private loadMockData() {
-    // Load trains
-    mockTrains.forEach(train => {
+    // Load trains based on calendar
+    const todayTrains = getTrainsForDate(this.currentDate);
+    todayTrains.forEach(train => {
+      // Calculate initial location for each train
+      this.calculateCurrentLocation(train);
       this.trains.set(train.id, train);
     });
 
@@ -51,6 +61,27 @@ export class TrainService {
       return train.status.state === 'Running' || train.status.state === 'Scheduled';
     });
     return Promise.resolve(trains);
+  }
+
+  // Get current timetable information
+  async getTimetableInfo(): Promise<{ type: TimetableType; name: string; color: string; summary: string; specialEvent?: string }> {
+    const type = getTimetableType(this.currentDate);
+    return Promise.resolve({
+      type,
+      name: timetableNames[type],
+      color: timetableColors[type],
+      summary: timetableSummaries[type],
+      specialEvent: getSpecialEvent(this.currentDate)
+    });
+  }
+
+  // Set the date for the service (useful for testing different days)
+  setServiceDate(date: Date): void {
+    this.currentDate = date;
+    this.trains.clear();
+    this.loadMockData();
+    // Immediately update positions after loading new data
+    this.updateTrainPositions();
   }
 
   async getTrainsByDateRange(start: Date, end: Date): Promise<Train[]> {
@@ -76,20 +107,20 @@ export class TrainService {
     const now = new Date();
     let currentTime = now.toTimeString().slice(0, 5); // "HH:mm"
     const hour = parseInt(currentTime.split(':')[0]);
-    
+
     // If after 8pm or before 10am, show morning services starting from 10:00
     const showNextDay = hour >= 20 || hour < 10;
     if (showNextDay) {
       currentTime = "09:00"; // Show services from 10:00 onwards
     }
-    
+
     const departures: Departure[] = [];
     const arrivals: Arrival[] = [];
 
     // Generate departures from train data
     for (const train of this.trains.values()) {
       const stop = train.stops.find(s => s.stationCode === stationCode);
-      
+
       if (stop && stop.scheduledDeparture) {
         // Check if this is a future departure
         if (stop.scheduledDeparture >= currentTime) {
@@ -140,8 +171,8 @@ export class TrainService {
   // --- Journey Planning ---
 
   async findJourneys(
-    from: StationCode, 
-    to: StationCode, 
+    from: StationCode,
+    to: StationCode,
     departAfter?: string
   ): Promise<Journey[]> {
     const journeys: Journey[] = [];
@@ -157,11 +188,11 @@ export class TrainService {
         const toIndex = train.stops.indexOf(toStop);
 
         // Check if it's in the right direction and after desired time
-        if (fromIndex < toIndex && 
-            fromStop.scheduledDeparture && 
-            toStop.scheduledArrival &&
-            fromStop.scheduledDeparture >= currentTime) {
-          
+        if (fromIndex < toIndex &&
+          fromStop.scheduledDeparture &&
+          toStop.scheduledArrival &&
+          fromStop.scheduledDeparture >= currentTime) {
+
           const segment: JourneySegment = {
             trainId: train.id,
             serviceId: train.serviceId,
@@ -242,23 +273,8 @@ export class TrainService {
           train.status.state = 'Completed';
         } else {
           train.status.state = 'Running';
-          
-          // Find current position
-          for (let i = 0; i < train.stops.length - 1; i++) {
-            const currentStop = train.stops[i];
-            const nextStop = train.stops[i + 1];
-            
-            if (currentStop.scheduledDeparture && 
-                nextStop.scheduledArrival &&
-                currentTime >= currentStop.scheduledDeparture && 
-                currentTime < nextStop.scheduledArrival) {
-              train.currentLocation = {
-                between: [currentStop.stationCode, nextStop.stationCode],
-                lastUpdated: now
-              };
-              break;
-            }
-          }
+          // Use the centralized location calculation function
+          this.calculateCurrentLocation(train);
         }
 
         // Simulate random delays (5% chance)
@@ -290,6 +306,49 @@ export class TrainService {
 
   // --- Helper Methods ---
 
+  private calculateCurrentLocation(train: Train): void {
+    const now = new Date();
+    const currentTime = now.toTimeString().slice(0, 5);
+
+    // Find current position based on schedule
+    for (let i = 0; i < train.stops.length - 1; i++) {
+      const currentStop = train.stops[i];
+      const nextStop = train.stops[i + 1];
+
+      if (currentStop.scheduledDeparture &&
+        nextStop.scheduledArrival &&
+        currentTime >= currentStop.scheduledDeparture &&
+        currentTime < nextStop.scheduledArrival) {
+        train.currentLocation = {
+          between: [currentStop.stationCode, nextStop.stationCode],
+          lastUpdated: now
+        };
+        return;
+      }
+    }
+
+    // Check if train is at a station
+    for (const stop of train.stops) {
+      if (stop.scheduledArrival && stop.scheduledDeparture &&
+        currentTime >= stop.scheduledArrival &&
+        currentTime < stop.scheduledDeparture) {
+        train.currentLocation = {
+          at: stop.stationCode,
+          lastUpdated: now
+        };
+        return;
+      }
+    }
+
+    // If we can't determine location, set to origin
+    if (train.stops.length > 0) {
+      train.currentLocation = {
+        at: train.stops[0].stationCode,
+        lastUpdated: now
+      };
+    }
+  }
+
   private formatStatus(delayMinutes?: number): string {
     if (!delayMinutes || delayMinutes === 0) {
       return 'On Time';
@@ -303,10 +362,10 @@ export class TrainService {
   private calculateDuration(start: string, end: string): number {
     const [startHour, startMin] = start.split(':').map(Number);
     const [endHour, endMin] = end.split(':').map(Number);
-    
+
     const startMinutes = startHour * 60 + startMin;
     const endMinutes = endHour * 60 + endMin;
-    
+
     return endMinutes - startMinutes;
   }
 

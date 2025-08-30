@@ -1,6 +1,6 @@
 // Train-centric data models that mirror Firebase/Firestore structure
 
-export type StationCode = 'MIN' | 'DUN' | 'BA' | 'WAS' | 'WAT' | 'DON' | 'WIL' | 'STO' | 'CH' | 'BL';
+export type StationCode = 'MIN' | 'DUN' | 'BA' | 'WAS' | 'WAT' | 'DON' | 'WIL' | 'STO' | 'CH' | 'BL' | 'NF';
 export type ServiceType = 'Steam' | 'Diesel' | 'DMU';
 export type TrainState = 'Scheduled' | 'Running' | 'Completed' | 'Cancelled' | 'Terminated';
 export type StopStatus = 'Scheduled' | 'Arrived' | 'Departed' | 'Skipped' | 'Cancelled';

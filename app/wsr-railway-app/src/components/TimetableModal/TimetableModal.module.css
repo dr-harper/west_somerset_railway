@@ -1,0 +1,263 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  animation: fadeIn 0.2s;
+}
+
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 1001;
+  width: 90vw;
+  max-width: 1400px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.3s;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.timetableIndicator {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.2s;
+}
+
+.closeButton:hover {
+  color: #333;
+}
+
+.modalContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.timetablesContainer {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+.timetableSection {
+  flex: 1;
+  min-width: 0;
+}
+
+.directionTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 16px 0;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.timetableTable {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 400px;
+}
+
+.timetableTable th {
+  background: #f8f9fa;
+  padding: 12px 8px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid #dee2e6;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.serviceHeader {
+  text-align: center !important;
+  min-width: 80px;
+}
+
+.serviceType {
+  font-size: 0.75rem;
+  background: #4A90E2;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-bottom: 4px;
+  display: inline-block;
+}
+
+.serviceId {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.timetableTable td {
+  padding: 8px;
+  border-bottom: 1px solid #e0e0e0;
+  vertical-align: middle;
+}
+
+.stationName {
+  font-weight: 500;
+  color: #333;
+  white-space: nowrap;
+  position: sticky;
+  left: 0;
+  background: white;
+  z-index: 5;
+}
+
+.timeCell {
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.arrivalTime {
+  color: #666;
+}
+
+.departureTime {
+  color: #333;
+}
+
+.platformInfo {
+  font-size: 0.7rem;
+  color: #999;
+  margin-top: 2px;
+}
+
+.noTrains {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 1rem;
+}
+
+.modalFooter {
+  padding: 16px 20px;
+  border-top: 1px solid #e0e0e0;
+  background: #f8f9fa;
+}
+
+.legend {
+  display: flex;
+  gap: 24px;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translate(-50%, -48%);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, -50%);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 1200px) {
+  .timetablesContainer {
+    flex-direction: column;
+  }
+  
+  .timetableSection {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .modal {
+    max-width: 95vw;
+    max-height: 95vh;
+  }
+  
+  .modalTitle {
+    font-size: 1.2rem;
+  }
+  
+  .modalContent {
+    padding: 12px;
+  }
+  
+  .timetablesContainer {
+    flex-direction: column;
+    gap: 24px;
+  }
+  
+  .legend {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .timetableTable {
+    min-width: 350px;
+  }
+  
+  .serviceHeader {
+    min-width: 70px;
+  }
+  
+  .directionTitle {
+    font-size: 1rem;
+  }
+}

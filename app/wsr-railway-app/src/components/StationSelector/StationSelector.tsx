@@ -7,13 +7,15 @@ interface StationSelectorProps {
   selectedStation: Station | null;
   onStationChange: (station: Station | null) => void;
   label?: string;
+  placeholder?: string;
 }
 
 export const StationSelector: React.FC<StationSelectorProps> = ({
   stations,
   selectedStation,
   onStationChange,
-  label = 'Select Station'
+  label = 'Select Station',
+  placeholder = 'Choose a station...'
 }) => {
   const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const station = stations.find(s => s.code === event.target.value);
@@ -32,7 +34,7 @@ export const StationSelector: React.FC<StationSelectorProps> = ({
           value={selectedStation?.code || ''}
           onChange={handleChange}
         >
-          <option value="">Choose a station...</option>
+          <option value="">{placeholder}</option>
           {stations.map(station => (
             <option key={station.code} value={station.code}>
               {station.name}
