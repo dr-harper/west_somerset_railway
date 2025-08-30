@@ -1,35 +1,28 @@
 .departureBoard {
-  background: #2b2e32;
-  border-radius: var(--radius-md);
-  padding: var(--spacing-lg);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
-  border: 2px solid var(--color-wsr-gold);
-  position: relative;
-  overflow: hidden;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
 }
 
 .boardHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-lg);
-  padding-bottom: var(--spacing-md);
-  border-bottom: 1px solid var(--color-wsr-gold);
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e5e5;
 }
 
 .stationName {
-  color: var(--color-railway-amber);
-  font-family: var(--font-mono);
-  font-size: 1.4rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  text-shadow: 0 0 10px rgba(255, 191, 0, 0.5);
+  color: #333;
+  font-size: 1.5rem;
+  font-weight: 600;
 }
 
 .currentTime {
-  color: var(--color-railway-amber);
-  font-family: var(--font-mono);
+  color: #666;
   font-size: 1rem;
   font-weight: 400;
 }
@@ -37,121 +30,230 @@
 .departureTable {
   width: 100%;
   border-collapse: separate;
-  border-spacing: 0 4px;
+  border-spacing: 0;
 }
 
 .tableHeader {
-  background: rgba(184, 134, 11, 0.1);
-  border-bottom: 1px solid var(--color-railway-brass);
+  background: #f9fafb;
 }
 
 .tableHeader th {
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: 12px 16px;
   text-align: left;
-  color: var(--color-railway-amber);
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
+  color: #666;
+  font-size: 0.875rem;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   font-weight: 500;
+  border-bottom: 1px solid #e5e5e5;
 }
 
 .departureRow {
-  background: rgba(0, 0, 0, 0.3);
-  transition: all var(--transition-fast);
+  background: white;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .departureRow:hover {
-  background: rgba(184, 134, 11, 0.05);
-  transform: translateX(2px);
+  background: #f9fafb;
+}
+
+.departureRow.clickable {
+  cursor: pointer;
 }
 
 .departureRow td {
-  padding: var(--spacing-sm) var(--spacing-md);
-  color: var(--color-railway-amber);
-  font-family: var(--font-mono);
+  padding: 14px 16px;
+  color: #333;
   font-size: 0.95rem;
-  border-bottom: 1px solid rgba(184, 134, 11, 0.1);
 }
 
 .time {
   font-size: 1.1rem;
   font-weight: 500;
   min-width: 80px;
+  color: #333;
 }
 
 .destination {
   font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  color: #333;
+  font-weight: 500;
 }
 
 .serviceType {
   display: inline-block;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-sm);
-  font-size: 0.85rem;
-  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .serviceType.diesel {
-  background: rgba(42, 77, 58, 0.3);
-  border: 1px solid var(--color-railway-green);
-  color: #4ADE80;
+  background: #dcfce7;
+  color: #15803d;
 }
 
 .serviceType.dmu {
-  background: rgba(107, 31, 46, 0.3);
-  border: 1px solid var(--color-railway-burgundy);
-  color: #b34f4f;
+  background: #e0e7ff;
+  color: #3730a3;
 }
 
 .serviceType.steam {
-  background: rgba(184, 134, 11, 0.2);
-  border: 1px solid var(--color-railway-brass);
-  color: var(--color-railway-amber);
+  background: #fed7aa;
+  color: #9a3412;
 }
-
 
 .noDepartures {
   text-align: center;
-  padding: var(--spacing-2xl);
-  color: var(--color-railway-amber);
-  font-family: var(--font-mono);
+  padding: 60px 20px;
+  color: #666;
   font-size: 1.1rem;
-  opacity: 0.7;
+}
+
+.noDepartures p {
+  margin: 8px 0;
+}
+
+.noDepartures p:first-child {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.notice {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  border: 1px solid #fde68a;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.platform {
+  color: #666;
+  text-align: center;
+  font-weight: 500;
+}
+
+.status {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status.onTime {
+  color: #15803d;
+}
+
+.status.delayed {
+  color: #dc2626;
+}
+
+.status.cancelled {
+  color: #dc2626;
+  text-decoration: line-through;
+}
+
+.expandIcon {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 0.8rem;
+  opacity: 0.6;
+  transition: transform 0.2s ease;
+}
+
+.departureRow.expanded .expandIcon {
+  transform: rotate(90deg);
+}
+
+.expandedRow {
+  background: white !important;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.expandedRow:hover {
+  background: white !important;
+}
+
+.expandedContent {
+  padding: 0 !important;
+  background: transparent;
+  border: none;
+}
+
+.expandedContent > * {
+  margin: 16px;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 768px) {
   .departureBoard {
-    padding: var(--spacing-lg);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .boardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
   }
 
   .stationName {
-    font-size: 1.4rem;
+    font-size: 1.25rem;
   }
 
   .currentTime {
-    font-size: 1rem;
+    font-size: 0.875rem;
   }
 
   .tableHeader th {
-    font-size: 0.8rem;
-    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.75rem;
+    padding: 10px 12px;
+  }
+
+  .tableHeader th:nth-child(4),
+  .departureRow td:nth-child(4) {
+    display: none;
   }
 
   .departureRow td {
-    padding: var(--spacing-sm);
-    font-size: 0.95rem;
+    padding: 12px;
+    font-size: 0.875rem;
   }
 
   .time {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 
   .destination {
-    font-size: 1rem;
+    font-size: 0.875rem;
+  }
+
+  .serviceType {
+    font-size: 0.7rem;
+    padding: 3px 8px;
   }
 }
