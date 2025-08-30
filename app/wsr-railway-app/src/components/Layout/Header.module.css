@@ -78,6 +78,14 @@
   width: 100%;
 }
 
+.navLink.active {
+  color: var(--color-wsr-gold);
+}
+
+.navLink.active::after {
+  width: 100%;
+}
+
 @media (max-width: 768px) {
   .headerContent {
     flex-direction: column;

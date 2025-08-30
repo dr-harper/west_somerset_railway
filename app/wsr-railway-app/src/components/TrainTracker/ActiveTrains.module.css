@@ -1,0 +1,127 @@
+.activeTrains {
+  padding: 1.5rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a472a;
+  margin-bottom: 1.5rem;
+}
+
+.loading,
+.noTrains {
+  padding: 2rem;
+  text-align: center;
+  color: #666;
+  font-size: 1rem;
+}
+
+.trainList {
+  display: grid;
+  gap: 1rem;
+}
+
+.trainCard {
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fafafa;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.trainCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.trainHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.trainId {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #1a472a;
+}
+
+.serviceType {
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.serviceType.steam {
+  background: #8B4513;
+  color: white;
+}
+
+.serviceType.diesel {
+  background: #2c5530;
+  color: white;
+}
+
+.serviceType.dmu {
+  background: #4169E1;
+  color: white;
+}
+
+.trainRoute {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+}
+
+.origin,
+.destination {
+  font-weight: 600;
+  color: #333;
+}
+
+.arrow {
+  color: #666;
+}
+
+.trainStatus {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.location {
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+  color: #1a472a;
+}
+
+.nextStop {
+  margin-bottom: 0.25rem;
+  color: #555;
+}
+
+.delay {
+  color: #d32f2f;
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .trainList {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .trainList {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

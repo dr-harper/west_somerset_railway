@@ -1,0 +1,317 @@
+.timeline {
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e5e5;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.trainInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.trainId {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.serviceType {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.serviceType.steam {
+  background: #fed7aa;
+  color: #9a3412;
+}
+
+.serviceType.diesel {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.serviceType.dmu {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.notes {
+  color: #666;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.journeyInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.duration {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.delayBadge {
+  padding: 4px 10px;
+  background: #fee2e2;
+  border-radius: 6px;
+  color: #dc2626;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.stopsContainer {
+  position: relative;
+  padding-left: 32px;
+}
+
+.line {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  bottom: 12px;
+  width: 2px;
+  background: #d1d5db;
+}
+
+.stop {
+  position: relative;
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
+}
+
+.stop:last-child {
+  margin-bottom: 0;
+}
+
+.stop.passed {
+  opacity: 0.5;
+}
+
+.stop.current {
+  opacity: 1;
+}
+
+.stop.current .stopContent {
+  background: #ecfdf5;
+  border: 1px solid #86efac;
+  border-radius: 6px;
+  padding: 8px;
+  margin-left: -8px;
+  margin-right: -8px;
+}
+
+.stop.upcoming {
+  opacity: 0.9;
+}
+
+.stop.selected .stopLine {
+  background: #f0f9ff;
+  border-left: 3px solid #3b82f6;
+  padding-left: 5px;
+  margin-left: -3px;
+}
+
+.stopDot {
+  position: absolute;
+  left: -20px;
+  top: 50%;
+  transform: translateX(-50%) translateY(-50%);
+  width: 12px;
+  height: 12px;
+  background: white;
+  border: 2px solid #9ca3af;
+  border-radius: 50%;
+  z-index: 2;
+}
+
+.stop.passed .stopDot {
+  background: #9ca3af;
+  border-color: #9ca3af;
+}
+
+.stop.current .stopDot {
+  background: #10b981;
+  border-color: #10b981;
+}
+
+.stop.upcoming .stopDot {
+  background: white;
+  border-color: #9ca3af;
+}
+
+.stop.selected .stopDot {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.selectedRing {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  border: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: selectedPulse 2s infinite;
+}
+
+@keyframes selectedPulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 0.5;
+  }
+}
+
+.currentLocationPulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: trainPulse 2s infinite;
+}
+
+@keyframes trainPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
+  }
+}
+
+.trainBetweenStations {
+  position: absolute;
+  left: 12px;
+  transform: translateX(-50%);
+  z-index: 3;
+}
+
+.trainDot {
+  width: 16px;
+  height: 16px;
+  background: #10b981;
+  border: 3px solid white;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  position: relative;
+}
+
+.trainPulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: trainPulse 2s infinite;
+}
+
+.stopContent {
+  padding-left: 12px;
+}
+
+.stopLine {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stationName {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.requestStop {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  font-weight: 400;
+}
+
+.time {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.delay {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.currentStatus {
+  margin-top: 6px;
+  animation: fadeIn 0.5s ease;
+}
+
+.trainLocation {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #dcfce7;
+  border-radius: 4px;
+  color: #15803d;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .journeyInfo {
+    align-items: flex-start;
+  }
+  
+  .stationName {
+    font-size: 0.875rem;
+  }
+  
+  .time {
+    font-size: 0.8rem;
+  }
+}
