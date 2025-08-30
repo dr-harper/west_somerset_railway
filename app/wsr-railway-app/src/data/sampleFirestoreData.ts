@@ -146,6 +146,20 @@ export const FIRESTORE_STATIONS: Record<StationCode, Station> = {
     parking: true,
     stepFreeAccess: true,
     address: 'Bishops Lydeard, Taunton, Somerset TA4 3RU'
+  },
+  
+  NF: {
+    code: 'NF',
+    name: 'Norton Fitzwarren',
+    coordinates: { lat: 51.0245926, lng: -3.1570285 },
+    milepost: -2.5,
+    facilities: ['Platform'],
+    isRequestStop: true,
+    hasPlatform: true,
+    platforms: ['1'],
+    parking: false,
+    stepFreeAccess: false,
+    address: 'Norton Fitzwarren, Taunton, Somerset'
   }
 };
 

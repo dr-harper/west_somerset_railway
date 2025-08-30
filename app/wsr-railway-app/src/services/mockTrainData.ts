@@ -3,6 +3,7 @@ import type { Train, Station, StationCode, TrainStop } from '../types/models';
 // Configuration flag to enable/disable test train
 // Set to true to show a train that's always running for testing
 // Set to false to only show real scheduled trains
+// You can toggle this to test the "No Services Running" warning on the home page
 const ENABLE_TEST_TRAIN = true;
 
 // Station data with coordinates and facilities
@@ -10,7 +11,7 @@ export const mockStations: Station[] = [
   {
     code: 'MIN',
     name: 'Minehead',
-    coordinates: { lat: 51.206815, lng: -3.4711559 },
+    coordinates: { lat: 51.2062859, lng: -3.4678346 },
     milepost: 22.75,
     facilities: ['Parking', 'Toilets', 'Cafe', 'Shop', 'Museum'],
     isRequestStop: false,
@@ -22,7 +23,7 @@ export const mockStations: Station[] = [
   {
     code: 'DUN',
     name: 'Dunster',
-    coordinates: { lat: 51.1931315884899, lng: -3.4385530693148945 },
+    coordinates: { lat: 51.1931186, lng: -3.4384228 },
     milepost: 20.25,
     facilities: ['Parking', 'Toilets'],
     isRequestStop: false,
@@ -34,7 +35,7 @@ export const mockStations: Station[] = [
   {
     code: 'BA',
     name: 'Blue Anchor',
-    coordinates: { lat: 51.18177271081976, lng: -3.4012355263416287 },
+    coordinates: { lat: 51.1816647, lng: -3.4009333 },
     milepost: 17.5,
     facilities: ['Parking', 'Toilets', 'Cafe'],
     isRequestStop: false,
@@ -46,7 +47,7 @@ export const mockStations: Station[] = [
   {
     code: 'WAS',
     name: 'Washford',
-    coordinates: { lat: 51.16169572799292, lng: -3.368545896756289 },
+    coordinates: { lat: 51.1615078, lng: -3.3688908 },
     milepost: 15.5,
     facilities: ['Parking', 'Toilets', 'Museum'],
     isRequestStop: false,
@@ -58,7 +59,7 @@ export const mockStations: Station[] = [
   {
     code: 'WAT',
     name: 'Watchet',
-    coordinates: { lat: 51.18083509803016, lng: -3.329631778829393 },
+    coordinates: { lat: 51.180634, lng: -3.3297097 },
     milepost: 13.25,
     facilities: ['Parking', 'Toilets'],
     isRequestStop: false,
@@ -70,7 +71,7 @@ export const mockStations: Station[] = [
   {
     code: 'DON',
     name: 'Doniford Halt',
-    coordinates: { lat: 51.17841737732154, lng: -3.3113258133497485 },
+    coordinates: { lat: 51.1783525, lng: -3.3115629 },
     milepost: 11.75,
     facilities: [],
     isRequestStop: true,
@@ -82,7 +83,7 @@ export const mockStations: Station[] = [
   {
     code: 'WIL',
     name: 'Williton',
-    coordinates: { lat: 51.166215218812056, lng: -3.309489866648678 },
+    coordinates: { lat: 51.1664654, lng: -3.3094908 },
     milepost: 9.25,
     facilities: ['Parking', 'Toilets', 'Cafe'],
     isRequestStop: false,
@@ -94,7 +95,7 @@ export const mockStations: Station[] = [
   {
     code: 'STO',
     name: 'Stogumber',
-    coordinates: { lat: 51.12791469181247, lng: -3.2733470229230224 },
+    coordinates: { lat: 51.1277404, lng: -3.27338 },
     milepost: 6.0,
     facilities: ['Parking'],
     isRequestStop: false,
@@ -106,7 +107,7 @@ export const mockStations: Station[] = [
   {
     code: 'CH',
     name: 'Crowcombe Heathfield',
-    coordinates: { lat: 51.102683806851786, lng: -3.2338928074524973 },
+    coordinates: { lat: 51.1007791, lng: -3.2333506 },
     milepost: 3.25,
     facilities: [],
     isRequestStop: false,
@@ -118,7 +119,7 @@ export const mockStations: Station[] = [
   {
     code: 'BL',
     name: 'Bishops Lydeard',
-    coordinates: { lat: 51.05526555357071, lng: -3.1939831447400424 },
+    coordinates: { lat: 51.0541419, lng: -3.1941161 },
     milepost: 0,
     facilities: ['Parking', 'Toilets', 'Cafe', 'Shop', 'Museum'],
     isRequestStop: false,

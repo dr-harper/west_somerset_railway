@@ -1,0 +1,284 @@
+.calendar {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.calendarHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.monthTitle {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.monthButton {
+  background: #f0f0f0;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.monthButton:hover {
+  background: #e0e0e0;
+}
+
+.monthButtonPlaceholder {
+  width: 40px;
+  height: 32px;
+}
+
+.expandButton {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 12px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #495057;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.expandButton:hover {
+  background: #e9ecef;
+}
+
+.multiMonthGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+.monthContainer {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fafafa;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.monthName {
+  margin: 0 0 8px 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+}
+
+.weekDaysCompact {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+  margin-bottom: 4px;
+  font-weight: 600;
+  font-size: 0.65rem;
+  color: #666;
+  text-align: center;
+}
+
+.weekDays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: #666;
+  text-align: center;
+}
+
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+  width: 100%;
+}
+
+.calendarDay {
+  aspect-ratio: 1;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.2s;
+  min-height: 30px;
+  min-width: 0;
+  font-size: 0.75rem;
+}
+
+.calendarDay.hasService {
+  cursor: pointer;
+}
+
+.calendarDay.hasService:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.calendarDay.selected {
+  border-style: solid !important;
+}
+
+.calendarDay.today {
+  font-weight: bold;
+}
+
+.dayNumber {
+  font-size: 0.75rem;
+  color: #333;
+}
+
+.emptyDay {
+  aspect-ratio: 1;
+}
+
+.serviceIndicator {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.specialEventIndicator {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  font-size: 8px;
+}
+
+/* Schedule Footer Styles */
+.scheduleFooter {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.footerTitle {
+  margin: 0 0 15px 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+}
+
+.scheduleCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.scheduleCard {
+  background: #f8f9fa;
+  border: 1px solid;
+  border-radius: 8px;
+  padding: 12px;
+  transition: all 0.2s;
+}
+
+.scheduleCard:hover {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.colorDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.scheduleName {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.scheduleSummary {
+  font-size: 0.75rem;
+  color: #666;
+  margin: 0 0 10px 0;
+  line-height: 1.4;
+}
+
+.viewTimetableBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.viewTimetableBtn:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 1200px) {
+  .multiMonthGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .calendar {
+    padding: 12px;
+  }
+  
+  .multiMonthGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .calendarGrid {
+    gap: 4px;
+  }
+  
+  .weekDays {
+    gap: 4px;
+    font-size: 0.75rem;
+  }
+  
+  .dayNumber {
+    font-size: 0.8rem;
+  }
+  
+  .legend {
+    gap: 8px;
+  }
+  
+  .legendItem {
+    font-size: 0.75rem;
+  }
+}

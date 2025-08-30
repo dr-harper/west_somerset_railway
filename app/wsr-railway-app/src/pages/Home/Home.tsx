@@ -5,6 +5,7 @@ import { DatePicker } from '../../components/DatePicker/DatePicker';
 import { LiveJourneyTracker } from '../../components/LiveJourneyTracker/LiveJourneyTracker';
 import type { Station, StationCode } from '../../types/models';
 import { trainService } from '../../services/trainService';
+import type { TimetableType } from '../../services/calendarConfig';
 
 export const Home: React.FC = () => {
   const [selectedStationCode, setSelectedStationCode] = useState<StationCode | null>(null);
@@ -12,9 +13,18 @@ export const Home: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [stations, setStations] = useState<Station[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasServicesToday, setHasServicesToday] = useState(true);
+  const [timetableInfo, setTimetableInfo] = useState<{
+    type: TimetableType;
+    name: string;
+    color: string;
+    summary: string;
+    specialEvent?: string;
+  } | null>(null);
 
   useEffect(() => {
     loadStations();
+    checkActiveServices();
   }, []);
 
   useEffect(() => {
@@ -35,9 +45,105 @@ export const Home: React.FC = () => {
     }
   };
 
+  const checkActiveServices = async () => {
+    try {
+      const trains = await trainService.getActiveTrains();
+      
+      // Get timetable information
+      const info = await trainService.getTimetableInfo();
+      setTimetableInfo(info);
+      
+      // Check if there are any services today
+      const now = new Date();
+      const currentTime = now.toTimeString().slice(0, 5);
+      const hour = parseInt(currentTime.split(':')[0]);
+      
+      // Check if we have any scheduled or running trains
+      const hasActiveServices = trains.some(train => 
+        train.status.state === 'Running' || train.status.state === 'Scheduled'
+      );
+      
+      // If timetable type is 'none' or it's late in the day with no services
+      const isEndOfDay = hour >= 18;
+      setHasServicesToday(info.type !== 'none' && (hasActiveServices || !isEndOfDay));
+      
+    } catch (error) {
+      console.error('Failed to check active services:', error);
+    }
+  };
+
+  const handleDateSelection = (date: Date) => {
+    setSelectedDate(date);
+    trainService.setServiceDate(date);
+    checkActiveServices();
+  };
+
   return (
     <div className="container">
       <div className="contentWrapper">
+        {timetableInfo && timetableInfo.type !== 'none' && (
+          <div style={{
+            backgroundColor: timetableInfo.color + '20',
+            border: `2px solid ${timetableInfo.color}`,
+            borderRadius: '8px',
+            padding: '12px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                width: '12px',
+                height: '12px',
+                borderRadius: '50%',
+                backgroundColor: timetableInfo.color
+              }} />
+              <div>
+                <strong style={{ color: timetableInfo.color }}>
+                  {timetableInfo.name}
+                </strong>
+                <p style={{ margin: '2px 0 0 0', fontSize: '13px', color: '#555' }}>
+                  {timetableInfo.summary}
+                </p>
+                {timetableInfo.specialEvent && (
+                  <p style={{ margin: '2px 0 0 0', fontSize: '13px', fontStyle: 'italic', color: '#666' }}>
+                    {timetableInfo.specialEvent}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div style={{ fontSize: '14px', color: '#666' }}>
+              {new Date().toLocaleDateString('en-GB', { 
+                weekday: 'long', 
+                day: 'numeric', 
+                month: 'long' 
+              })}
+            </div>
+          </div>
+        )}
+        {!hasServicesToday && (
+          <div style={{
+            backgroundColor: '#fff3cd',
+            border: '1px solid #ffc107',
+            borderRadius: '8px',
+            padding: '16px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}>
+            <span style={{ fontSize: '24px' }}>⚠️</span>
+            <div>
+              <strong style={{ color: '#856404' }}>No Services Running Today</strong>
+              <p style={{ margin: '4px 0 0 0', color: '#856404' }}>
+                There are no trains scheduled for the remainder of today. 
+                Please check tomorrow's timetable for upcoming services.
+              </p>
+            </div>
+          </div>
+        )}
+        
         <LiveJourneyTracker />
         <div className="controls">
           <StationSelector
@@ -50,7 +156,7 @@ export const Home: React.FC = () => {
           />
           <DatePicker
             selectedDate={selectedDate}
-            onDateChange={setSelectedDate}
+            onDateChange={handleDateSelection}
           />
         </div>
 
