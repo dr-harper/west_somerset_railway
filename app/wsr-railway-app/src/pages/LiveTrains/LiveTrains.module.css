@@ -1,0 +1,240 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--spacing-lg);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.header h1 {
+  color: var(--color-primary);
+  font-size: 2rem;
+  margin: 0;
+}
+
+.backLink {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: opacity var(--transition-fast);
+}
+
+.backLink:hover {
+  opacity: 0.7;
+}
+
+.updateTime {
+  color: #666;
+  font-size: 0.85rem;
+  font-family: var(--font-mono);
+}
+
+.loading {
+  text-align: center;
+  padding: var(--spacing-2xl);
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.trainLists {
+  margin-top: var(--spacing-xl);
+}
+
+.section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.sectionTitle {
+  color: var(--color-primary);
+  font-size: 1.3rem;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 2px solid var(--color-primary);
+}
+
+.trainGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.trainCard {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.trainCard:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  border-color: var(--color-primary);
+}
+
+.trainCard.selected {
+  border-color: var(--color-wsr-gold);
+  box-shadow: 0 0 0 2px rgba(184, 134, 11, 0.2);
+}
+
+.trainHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.trainId {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--color-primary);
+}
+
+.serviceType {
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: white;
+}
+
+.serviceType.steam {
+  background: #8B4513;
+}
+
+.serviceType.diesel {
+  background: #2c5530;
+}
+
+.serviceType.dmu {
+  background: #4169E1;
+}
+
+.trainRoute {
+  font-size: 0.95rem;
+  color: #333;
+  margin-bottom: var(--spacing-sm);
+  font-weight: 500;
+}
+
+.trainLocation {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: #2c5530;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-xs);
+}
+
+.locationIcon {
+  font-size: 1rem;
+}
+
+.trainNext {
+  color: #666;
+  font-size: 0.85rem;
+  margin-bottom: var(--spacing-xs);
+}
+
+.delay {
+  margin-top: var(--spacing-xs);
+  padding: 4px 8px;
+  background: #ffebee;
+  border: 1px solid #ffcdd2;
+  border-radius: 4px;
+  color: #c62828;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.upcomingGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: var(--spacing-sm);
+}
+
+.upcomingCard {
+  background: #f8f8f8;
+  border: 1px solid #e0e0e0;
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm);
+  transition: all var(--transition-fast);
+}
+
+.upcomingCard:hover {
+  background: white;
+  border-color: #ccc;
+}
+
+.upcomingHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xs);
+}
+
+.upcomingRoute {
+  font-size: 0.85rem;
+  color: #555;
+  margin-bottom: var(--spacing-xs);
+}
+
+.upcomingTime {
+  font-size: 0.9rem;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.noTrains {
+  text-align: center;
+  padding: var(--spacing-2xl);
+  background: #f8f8f8;
+  border-radius: var(--radius-md);
+  color: #666;
+}
+
+.noTrainsIcon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: var(--spacing-md);
+}
+
+.noTrains p {
+  margin: var(--spacing-xs) 0;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: var(--spacing-md);
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .trainGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .upcomingGrid {
+    grid-template-columns: 1fr;
+  }
+}

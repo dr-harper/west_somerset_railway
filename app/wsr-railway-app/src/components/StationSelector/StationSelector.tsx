@@ -1,11 +1,11 @@
 import React from 'react';
-import type { Station } from '../../types/station';
+import type { Station } from '../../types/models';
 import styles from './StationSelector.module.css';
 
 interface StationSelectorProps {
   stations: Station[];
   selectedStation: Station | null;
-  onStationChange: (station: Station) => void;
+  onStationChange: (station: Station | null) => void;
   label?: string;
 }
 
@@ -16,10 +16,8 @@ export const StationSelector: React.FC<StationSelectorProps> = ({
   label = 'Select Station'
 }) => {
   const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const station = stations.find(s => s.id === event.target.value);
-    if (station) {
-      onStationChange(station);
-    }
+    const station = stations.find(s => s.code === event.target.value);
+    onStationChange(station || null);
   };
 
   return (
@@ -31,12 +29,12 @@ export const StationSelector: React.FC<StationSelectorProps> = ({
         <select
           id="station-select"
           className={styles.select}
-          value={selectedStation?.id || ''}
+          value={selectedStation?.code || ''}
           onChange={handleChange}
         >
           <option value="">Choose a station...</option>
           {stations.map(station => (
-            <option key={station.id} value={station.id}>
+            <option key={station.code} value={station.code}>
               {station.name}
               {station.isRequestStop && ' (R)'}
             </option>
