@@ -46,6 +46,13 @@ SAMPLES = 64          # resolution of the derived centreline
 # timetabled movements; stock on the others is stabled or being shunted.
 RUNNING_KINDS = {'running', 'loop', 'platform'}
 
+# Below this the two rails are too close to measure against: a few pixels
+# of tracing error becomes a large fraction of the gauge, so the implied
+# scale swings wildly. Rails traced right up to their vanishing point hit
+# this, and any scale derived there is meaningless rather than merely
+# imprecise — so it is withheld instead of reported.
+MIN_RELIABLE_GAUGE_PX = 14.0
+
 
 def load_tracks() -> dict:
     if not TRACKS_PATH.exists():
@@ -178,13 +185,16 @@ def project_onto(camera: str, name: str, point) -> dict | None:
             span = math.dist(a, b)
             tangent = ((b[0] - a[0]) / span, (b[1] - a[1]) / span) if span else (0.0, 0.0)
             gauge = samples[i]['gauge_px'] + t * (samples[i + 1]['gauge_px'] - samples[i]['gauge_px'])
+            reliable = gauge >= MIN_RELIABLE_GAUGE_PX
             best = {
                 'track': name,
                 'offset_px': distance,
                 'arc_px': lengths[i] + t * span,
                 'tangent_to_minehead': tangent,
                 'gauge_px': gauge,
-                'metres_per_px': STANDARD_GAUGE_M / gauge if gauge else None,
+                # withheld where the rails are too close to measure against
+                'metres_per_px': (STANDARD_GAUGE_M / gauge) if reliable else None,
+                'scale_reliable': reliable,
                 'sample_index': i,
             }
     if best:
@@ -251,11 +261,14 @@ def speed_mph(camera: str, path, track: str | None = None) -> float | None:
 
     Each step is converted through the metres-per-pixel where that step
     happened, so a train accelerating away from the camera is not read as
-    slowing down.
+    slowing down. Steps in the far distance, where the rails are too close
+    together to give a trustworthy scale, are skipped — and if that leaves
+    nothing measurable, no speed is reported rather than a wrong one.
     """
     if not path or len(path) < 2:
         return None
     metres = 0.0
+    measured = 0.0
     for (t0, x0, y0), (t1, x1, y1) in zip(path, path[1:]):
         midpoint = ((x0 + x1) / 2, (y0 + y1) / 2)
         placed = (project_onto(camera, track, midpoint) if track
@@ -263,10 +276,10 @@ def speed_mph(camera: str, path, track: str | None = None) -> float | None:
         if not placed or not placed['metres_per_px']:
             continue
         metres += math.dist((x0, y0), (x1, y1)) * placed['metres_per_px']
-    seconds = path[-1][0] - path[0][0]
-    if seconds <= 0:
+        measured += t1 - t0
+    if measured <= 0:
         return None
-    return metres / seconds * 2.23694
+    return metres / measured * 2.23694
 
 
 def vanishing_point(camera: str, name: str | None = None):
@@ -299,10 +312,22 @@ def describe(camera: str) -> str:
         gauges = [s['gauge_px'] for s in samples]
         near, far = max(gauges), min(gauges)
         length = _cumulative([s['point'] for s in samples])[-1]
-        lines.append(
-            f"    {track['name']} [{track['kind']}]: {length:.0f}px, "
-            f'gauge {far:.0f}-{near:.0f}px '
-            f'({STANDARD_GAUGE_M / near:.3f}-{STANDARD_GAUGE_M / far:.3f} m/px)')
+        usable = [s for s in samples if s['gauge_px'] >= MIN_RELIABLE_GAUGE_PX]
+        share = len(usable) / len(samples)
+        line = (f"    {track['name']} [{track['kind']}]: {length:.0f}px, "
+                f'gauge {far:.0f}-{near:.0f}px')
+        if usable:
+            best = max(s['gauge_px'] for s in usable)
+            worst = min(s['gauge_px'] for s in usable)
+            line += (f' ({STANDARD_GAUGE_M / best:.3f}-'
+                     f'{STANDARD_GAUGE_M / worst:.3f} m/px over '
+                     f'{share:.0%} of its length)')
+        if share < 0.95:
+            line += (f'\n        WARNING: rails converge below '
+                     f'{MIN_RELIABLE_GAUGE_PX:.0f}px over the far '
+                     f'{1 - share:.0%} — trim the trace short of the '
+                     f'vanishing point')
+        lines.append(line)
     return '\n'.join(lines)
 
 

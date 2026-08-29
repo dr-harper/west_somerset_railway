@@ -183,3 +183,34 @@ class TestMultipleTracks:
     def test_speed_can_be_pinned_to_one_road(self):
         path = [[0.0, 300, 250], [2.0, 400, 250]]
         assert tg.speed_mph('yard', path, track='platform road') is not None
+
+
+class TestUnreliableScale:
+    """Rails traced to their vanishing point cannot give a scale."""
+
+    def test_scale_is_withheld_where_rails_nearly_meet(self):
+        tg.TRACKS['converged'] = {'rails': {
+            'a': [[100, 200], [600, 248]],
+            'b': [[100, 300], [600, 252]],
+        }}
+        tg._CENTRELINE_CACHE.clear()
+        near = tg.project('converged', (150, 250))
+        far = tg.project('converged', (590, 250))
+        assert near['scale_reliable'] and near['metres_per_px'] is not None
+        assert not far['scale_reliable'] and far['metres_per_px'] is None
+        tg.TRACKS.pop('converged')
+        tg._CENTRELINE_CACHE.clear()
+
+    def test_speed_ignores_the_unmeasurable_stretch(self):
+        tg.TRACKS['converged'] = {'rails': {
+            'a': [[100, 200], [600, 248]],
+            'b': [[100, 300], [600, 252]],
+        }}
+        tg._CENTRELINE_CACHE.clear()
+        # a step in the usable near section still yields a speed
+        assert tg.speed_mph('converged', [[0.0, 150, 250], [2.0, 250, 250]]) is not None
+        # a step entirely in the converged section yields nothing, rather
+        # than a wildly inflated figure
+        assert tg.speed_mph('converged', [[0.0, 570, 250], [2.0, 595, 250]]) is None
+        tg.TRACKS.pop('converged')
+        tg._CENTRELINE_CACHE.clear()

@@ -1,0 +1,60 @@
+{
+ "bishops_lydeard": {
+  "tracks": [
+   {
+    "name": "running line",
+    "kind": "running",
+    "rails": {
+     "a": [
+      [
+       7,
+       451
+      ],
+      [
+       553,
+       28
+      ]
+     ],
+     "b": [
+      [
+       71,
+       480
+      ],
+      [
+       553,
+       32
+      ]
+     ]
+    }
+   },
+   {
+    "name": "Line 2",
+    "kind": "running",
+    "rails": {
+     "a": [
+      [
+       200,
+       480
+      ],
+      [
+       595,
+       0
+      ]
+     ],
+     "b": [
+      [
+       310,
+       480
+      ],
+      [
+       593,
+       0
+      ]
+     ]
+    }
+   }
+  ],
+  "anchors": []
+ },
+ "_note": "Track centrelines in 854x480 image space, ordered from the Bishops Lydeard end towards Minehead. Traced with track_annotator.html."
+}

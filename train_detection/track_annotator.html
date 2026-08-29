@@ -57,6 +57,7 @@
     border-radius: 3px; background: var(--paper-raised); color: var(--ink);
   }
   .status { font-size: .9rem; color: var(--brunswick); }
+  .status.warn { color: var(--signal-red); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -122,6 +123,8 @@ const loupe = document.getElementById('loupe');
 const loupeCanvas = document.getElementById('loupeCanvas');
 const loupeCtx = loupeCanvas.getContext('2d');
 const LOUPE_ZOOM = 4;
+// matches MIN_RELIABLE_GAUGE_PX in track_geometry.py
+const MIN_GAUGE = 14;
 
 function showLoupe(position) {
   const size = loupeCanvas.width / LOUPE_ZOOM;
@@ -294,13 +297,18 @@ function draw() {
     });
   });
 
-  // sleepers between the rails: shows the pairing the geometry will use
+  // Sleepers between the rails show the pairing the geometry will use.
+  // Where the pair closes below the usable gauge the sleeper turns red:
+  // scale cannot be measured there, so the trace should stop before it.
+  let tooNarrow = 0;
   if (rails.a.length > 1 && rails.b.length > 1) {
-    ctx.strokeStyle = 'rgba(250,244,230,.35)';
     ctx.lineWidth = 1;
-    for (let i = 0; i <= 10; i++) {
-      const pa = pointAtFraction(rails.a, i / 10);
-      const pb = pointAtFraction(rails.b, i / 10);
+    for (let i = 0; i <= 20; i++) {
+      const pa = pointAtFraction(rails.a, i / 20);
+      const pb = pointAtFraction(rails.b, i / 20);
+      const gauge = Math.hypot(pa[0] - pb[0], pa[1] - pb[1]);
+      if (gauge < MIN_GAUGE) tooNarrow++;
+      ctx.strokeStyle = gauge < MIN_GAUGE ? 'rgba(220,60,60,.9)' : 'rgba(250,244,230,.35)';
       ctx.beginPath(); ctx.moveTo(pa[0], pa[1]); ctx.lineTo(pb[0], pb[1]); ctx.stroke();
     }
   }
@@ -344,8 +352,17 @@ function draw() {
   const ready = rails.a.length > 1 && (rails.b || []).length > 1;
   const done = camera().tracks.filter(t => (t.rails?.a || []).length > 1
                                         && (t.rails?.b || []).length > 1).length;
+  const notes = [];
+  if (ready && tooNarrow > 1) {
+    notes.push('rails converge — stop the trace before they meet');
+  }
+  if (ready && (rails.a.length < 3 || rails.b.length < 3)) {
+    notes.push('add more points so curves are followed');
+  }
   status.textContent = (ready ? `${counts} — pair complete` : `${counts} — need both rails`)
-    + ` · ${done}/${camera().tracks.length} tracks done`;
+    + ` · ${done}/${camera().tracks.length} tracks done`
+    + (notes.length ? ` · ${notes.join('; ')}` : '');
+  status.classList.toggle('warn', notes.length > 0);
   output.value = JSON.stringify(tracks, null, 1);
 }
 
