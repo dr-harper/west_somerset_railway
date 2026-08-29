@@ -74,7 +74,7 @@ NORTHBOUND_VECTORS = {
     'minehead_station': (0.0, 1.0),            # arriving = towards camera
     'minehead_seaward_crossing': (-0.95, 0.3), # sign-checked v the 08:10 ex-Minehead 29/8: departing (SB) drifts right
     'blue_anchor': (0.0, -1.0),                # away, towards Dunster
-    'watchet_visitor_centre': (-0.7, -0.7),    # away, towards Washford
+    'watchet_visitor_centre': (-0.2, 0.9),     # sign-checked v the 08:59 NB call 29/8: towards Minehead = down the frame
     'crowcombe_heathfield': (-0.9, -0.45),     # away, towards Stogumber
     'bishops_lydeard': (0.4, -0.9),            # departing, towards the yard
 }

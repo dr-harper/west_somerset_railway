@@ -8,6 +8,8 @@ import json
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from gala_watcher import NORTHBOUND_VECTORS
+
 HERE = Path(__file__).parent
 EPISODES_PATH = HERE / 'episodes.jsonl'
 TIMETABLE_PATH = HERE / '../app/wsr-railway-app/src/data/timetable2026.json'
@@ -56,24 +58,49 @@ def _scheduled_calls(date_key: str, station: str) -> list[dict]:
     return sorted(calls, key=lambda c: c['time'])
 
 
+def _direction_from_drift(episode: dict) -> str:
+    """Recompute direction from stored drift so vector corrections apply
+    retrospectively to already-logged episodes."""
+    drift = episode.get('drift_px')
+    if not drift:
+        return episode.get('direction', 'unclear')
+    magnitude = (drift[0] ** 2 + drift[1] ** 2) ** 0.5
+    if magnitude < 30:
+        return 'unclear'
+    nx, ny = NORTHBOUND_VECTORS[episode['camera']]
+    return 'northbound' if drift[0] * nx + drift[1] * ny > 0 else 'southbound'
+
+
 def match_episode(episode: dict) -> dict:
-    """Return the episode annotated with its best timetable match (or None)."""
+    """Return the episode annotated with its best timetable match (or None).
+
+    A call matches if it falls within the episode's occupancy span (plus
+    tolerance either side) — long platform dwells cover their departures.
+    """
     station = CAMERA_STATIONS[episode['camera']]
     entered = datetime.fromisoformat(episode['t_enter'])
+    exited = datetime.fromisoformat(episode.get('t_exit', episode['t_enter']))
+    direction = _direction_from_drift(episode)
     calls = _scheduled_calls(entered.strftime('%Y-%m-%d'), station)
 
     best, best_gap = None, timedelta(minutes=MATCH_TOLERANCE_MIN)
     for call in calls:
         hh, mm = map(int, call['time'].split(':'))
         scheduled = entered.replace(hour=hh, minute=mm, second=0)
-        gap = abs(scheduled - entered)
-        direction_ok = (episode.get('direction') in (None, 'unclear')
-                        or episode['direction'] == call['direction'])
+        if scheduled < entered:
+            gap = entered - scheduled
+        elif scheduled > exited:
+            gap = scheduled - exited
+        else:
+            gap = timedelta(0)  # call falls inside the occupancy span
+        direction_ok = (direction in (None, 'unclear')
+                        or direction == call['direction'])
         if gap <= best_gap and direction_ok:
             best, best_gap = call, gap
     return {
         **episode,
         'station': station,
+        'direction': direction,
         'match': best,
         'match_gap_min': round(best_gap.total_seconds() / 60, 1) if best else None,
         'is_special': best is None,
