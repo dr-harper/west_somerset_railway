@@ -16,11 +16,7 @@ export const JourneyPlanner: React.FC = () => {
   const [searching, setSearching] = useState(false);
   const [currentViewMonth, setCurrentViewMonth] = useState<Date>(new Date());
 
-  useEffect(() => {
-    loadStations();
-  }, []);
-
-  const loadStations = async () => {
+  async function loadStations() {
     try {
       const allStations = await trainService.getAllStations();
       setStations(allStations);
@@ -29,7 +25,11 @@ export const JourneyPlanner: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    loadStations();
+  }, []);
 
   const handleDateSelection = (date: Date) => {
     setSelectedDate(date);

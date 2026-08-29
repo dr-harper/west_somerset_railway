@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import styles from './ServiceCalendar.module.css';
-import { calendar2025, getTimetableType, timetableColors, specialEvents, timetableNames, timetableSummaries } from '../../services/calendarConfig';
+import { serviceCalendar, toDateKey, getTimetableType, timetableColors, specialEvents, timetableNames, timetableSummaries } from '../../services/calendarConfig';
 import type { TimetableType } from '../../services/calendarConfig';
+import type { Train } from '../../types/models';
 import { TimetableModal } from '../TimetableModal/TimetableModal';
-import { blueTimetableTrains, redTimetableTrains, purpleTimetableTrains } from '../../services/timetables';
+import { getTrainsForTimetable } from '../../services/timetables';
 
 interface ServiceCalendarProps {
   onDateSelect?: (date: Date) => void;
@@ -28,7 +29,7 @@ export const ServiceCalendar: React.FC<ServiceCalendarProps> = ({
 
   const [selectedTimetable, setSelectedTimetable] = useState<{
     type: TimetableType;
-    trains: any[];
+    trains: Train[];
   } | null>(null);
 
   React.useEffect(() => {
@@ -48,8 +49,7 @@ export const ServiceCalendar: React.FC<ServiceCalendarProps> = ({
       
       for (let day = 1; day <= lastDay.getDate(); day++) {
         const date = new Date(checkMonth.getFullYear(), checkMonth.getMonth(), day);
-        const dateStr = date.toISOString().split('T')[0];
-        const timetableType = calendar2025[dateStr];
+        const timetableType = serviceCalendar[toDateKey(date)];
         if (timetableType && timetableType !== 'none') {
           timetableTypesInView.add(timetableType);
         }
@@ -59,13 +59,8 @@ export const ServiceCalendar: React.FC<ServiceCalendarProps> = ({
     return Array.from(timetableTypesInView);
   }, [currentMonth]);
 
-  const scheduleData = {
-    blue: blueTimetableTrains,
-    red: redTimetableTrains,
-    purple: purpleTimetableTrains,
-    green: [],
-    none: []
-  };
+  const scheduleData = (type: TimetableType) =>
+    type === 'green' || type === 'none' ? [] : getTrainsForTimetable(type);
 
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -276,7 +271,7 @@ export const ServiceCalendar: React.FC<ServiceCalendarProps> = ({
                   className={styles.viewTimetableBtn}
                   onClick={() => setSelectedTimetable({
                     type,
-                    trains: scheduleData[type]
+                    trains: scheduleData(type)
                   })}
                   style={{ color: timetableColors[type] }}
                 >

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import styles from './TabbedSchedules.module.css';
-import { timetableColors, timetableNames, timetableSummaries, calendar2025 } from '../../services/calendarConfig';
-import { blueTimetableTrains, redTimetableTrains, purpleTimetableTrains } from '../../services/timetables';
+import { serviceCalendar, toDateKey } from '../../services/calendarConfig';
+import { getFamilySchedules } from '../../services/timetables';
 import { mockStations } from '../../services/mockTrainData';
 import type { TimetableType } from '../../services/calendarConfig';
 import type { Train } from '../../types/models';
@@ -25,50 +25,16 @@ export const TabbedSchedules: React.FC<TabbedSchedulesProps> = ({ selectedDate =
     // Check each day in the month
     for (let day = firstDay.getDate(); day <= lastDay.getDate(); day++) {
       const date = new Date(year, month, day);
-      const dateStr = date.toISOString().split('T')[0];
-      const timetableType = calendar2025[dateStr];
+      const timetableType = serviceCalendar[toDateKey(date)];
       if (timetableType && timetableType !== 'none') {
         timetableTypesInMonth.add(timetableType);
       }
     }
-    
+
     return Array.from(timetableTypesInMonth);
   }, [selectedDate]);
 
-  const allSchedules = [
-    {
-      type: 'blue' as TimetableType,
-      name: timetableNames.blue,
-      summary: timetableSummaries.blue,
-      color: timetableColors.blue,
-      trains: blueTimetableTrains,
-      activeDays: 'Most weekdays and weekends'
-    },
-    {
-      type: 'red' as TimetableType,
-      name: timetableNames.red,
-      summary: timetableSummaries.red,
-      color: timetableColors.red,
-      trains: redTimetableTrains,
-      activeDays: 'Peak periods and holidays'
-    },
-    {
-      type: 'purple' as TimetableType,
-      name: timetableNames.purple,
-      summary: timetableSummaries.purple,
-      color: timetableColors.purple,
-      trains: purpleTimetableTrains,
-      activeDays: 'Special event days'
-    },
-    {
-      type: 'green' as TimetableType,
-      name: timetableNames.green,
-      summary: timetableSummaries.green,
-      color: timetableColors.green,
-      trains: [], // No trains defined yet for Christmas
-      activeDays: 'Festive period'
-    }
-  ];
+  const allSchedules = useMemo(() => getFamilySchedules(), []);
 
   const schedules = allSchedules.filter(schedule => 
     availableTimetables.includes(schedule.type)
@@ -82,9 +48,13 @@ export const TabbedSchedules: React.FC<TabbedSchedulesProps> = ({ selectedDate =
   }, [activeTab, schedules]);
 
   const renderTimetable = (trains: Train[], direction: string) => {
-    const directionTrains = direction === 'northbound' 
-      ? trains.filter(train => train.origin === 'BL' && train.destination === 'MIN')
-      : trains.filter(train => train.origin === 'MIN' && train.destination === 'BL');
+    // Line order from the Bishops Lydeard end; northbound = towards Minehead
+    const lineOrder = ['NF', 'BL', 'CH', 'STO', 'WIL', 'DON', 'WAT', 'WAS', 'BA', 'DUN', 'MIN'];
+    const isNorthbound = (train: Train) =>
+      lineOrder.indexOf(train.destination) > lineOrder.indexOf(train.origin);
+    const directionTrains = trains.filter(train =>
+      direction === 'northbound' ? isNorthbound(train) : !isNorthbound(train)
+    );
 
     if (directionTrains.length === 0) return null;
 
@@ -155,8 +125,9 @@ export const TabbedSchedules: React.FC<TabbedSchedulesProps> = ({ selectedDate =
             </p>
             <p className={styles.christmasDates}>
               <strong>Planned service dates:</strong><br/>
-              November: 29th, 30th<br/>
-              December: 6th, 7th, 13th, 14th, 19th-21st, 23rd, 24th, 27th-29th, 31st
+              November: 27th–29th<br/>
+              December: 5th, 6th, 9th, 12th, 13th, 19th, 20th, 23rd, 24th, 27th, 28th<br/>
+              January: 1st, 2nd
             </p>
           </div>
         </div>

@@ -9,17 +9,17 @@ import type {
   JourneySegment
 } from '../types/models';
 import { mockStations } from './mockTrainData';
-import { getTimetableType, getSpecialEvent, timetableColors, timetableNames, timetableSummaries } from './calendarConfig';
+import { getDayInfo, getSpecialEvent, timetableColors, timetableNames, timetableSummaries } from './calendarConfig';
 import { getTrainsForDate } from './timetables';
-import type { TimetableType } from './calendarConfig';
+import type { DayKind, TimetableType } from './calendarConfig';
 
 // Firebase-like interface for train service
 // When Firebase is added, this will use Firestore instead of mock data
 export class TrainService {
   private trains: Map<string, Train> = new Map();
   private stations: Map<StationCode, Station> = new Map();
-  private updateInterval: NodeJS.Timeout | null = null;
-  private listeners: Map<string, Set<(data: any) => void>> = new Map();
+  private updateInterval: ReturnType<typeof setInterval> | null = null;
+  private listeners: Map<string, Set<(data: unknown) => void>> = new Map();
   private currentDate: Date = new Date();
 
   constructor() {
@@ -64,11 +64,13 @@ export class TrainService {
   }
 
   // Get current timetable information
-  async getTimetableInfo(): Promise<{ type: TimetableType; name: string; color: string; summary: string; specialEvent?: string }> {
-    const type = getTimetableType(this.currentDate);
+  async getTimetableInfo(): Promise<{ type: TimetableType; kind: DayKind; name: string; color: string; summary: string; specialEvent?: string }> {
+    const info = getDayInfo(this.currentDate);
+    const type = info.kind === 'service' || info.kind === 'event' ? info.family : 'none';
     return Promise.resolve({
       type,
-      name: timetableNames[type],
+      kind: info.kind,
+      name: info.patternTitle ?? timetableNames[type],
       color: timetableColors[type],
       summary: timetableSummaries[type],
       specialEvent: getSpecialEvent(this.currentDate)
@@ -227,11 +229,11 @@ export class TrainService {
     if (!this.listeners.has(key)) {
       this.listeners.set(key, new Set());
     }
-    this.listeners.get(key)!.add(callback);
+    this.listeners.get(key)!.add(callback as (data: unknown) => void);
 
     // Return unsubscribe function
     return () => {
-      this.listeners.get(key)?.delete(callback);
+      this.listeners.get(key)?.delete(callback as (data: unknown) => void);
     };
   }
 
@@ -240,11 +242,11 @@ export class TrainService {
     if (!this.listeners.has(key)) {
       this.listeners.set(key, new Set());
     }
-    this.listeners.get(key)!.add(callback);
+    this.listeners.get(key)!.add(callback as (data: unknown) => void);
 
     // Return unsubscribe function
     return () => {
-      this.listeners.get(key)?.delete(callback);
+      this.listeners.get(key)?.delete(callback as (data: unknown) => void);
     };
   }
 
@@ -297,7 +299,7 @@ export class TrainService {
     }
   }
 
-  private notifyListeners(key: string, data: any) {
+  private notifyListeners(key: string, data: unknown) {
     const listeners = this.listeners.get(key);
     if (listeners) {
       listeners.forEach(callback => callback(data));

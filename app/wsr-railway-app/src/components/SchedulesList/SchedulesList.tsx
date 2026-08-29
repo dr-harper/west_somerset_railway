@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import styles from './SchedulesList.module.css';
-import { timetableColors, timetableNames, timetableSummaries, calendar2025 } from '../../services/calendarConfig';
-import { blueTimetableTrains, redTimetableTrains, purpleTimetableTrains } from '../../services/timetables';
+import { serviceCalendar, toDateKey, timetableColors, timetableNames } from '../../services/calendarConfig';
+import { getFamilySchedules } from '../../services/timetables';
 import { TimetableModal } from '../TimetableModal/TimetableModal';
 import type { TimetableType } from '../../services/calendarConfig';
+import type { Train } from '../../types/models';
 
 interface SchedulesListProps {
   selectedDate?: Date;
@@ -18,7 +19,7 @@ export const SchedulesList: React.FC<SchedulesListProps> = ({
 }) => {
   const [selectedTimetable, setSelectedTimetable] = useState<{
     type: TimetableType;
-    trains: any[];
+    trains: Train[];
   } | null>(null);
 
   // Get available timetable types for the selected month
@@ -33,8 +34,7 @@ export const SchedulesList: React.FC<SchedulesListProps> = ({
     // Check each day in the month
     for (let day = firstDay.getDate(); day <= lastDay.getDate(); day++) {
       const date = new Date(year, month, day);
-      const dateStr = date.toISOString().split('T')[0];
-      const timetableType = calendar2025[dateStr];
+      const timetableType = serviceCalendar[toDateKey(date)];
       if (timetableType && timetableType !== 'none') {
         timetableTypesInMonth.add(timetableType);
       }
@@ -43,32 +43,7 @@ export const SchedulesList: React.FC<SchedulesListProps> = ({
     return Array.from(timetableTypesInMonth);
   }, [selectedDate]);
 
-  const allSchedules = [
-    {
-      type: 'blue' as TimetableType,
-      name: timetableNames.blue,
-      summary: timetableSummaries.blue,
-      color: timetableColors.blue,
-      trains: blueTimetableTrains,
-      activeDays: 'Most weekdays and weekends'
-    },
-    {
-      type: 'red' as TimetableType,
-      name: timetableNames.red,
-      summary: timetableSummaries.red,
-      color: timetableColors.red,
-      trains: redTimetableTrains,
-      activeDays: 'Peak periods and holidays'
-    },
-    {
-      type: 'purple' as TimetableType,
-      name: timetableNames.purple,
-      summary: timetableSummaries.purple,
-      color: timetableColors.purple,
-      trains: purpleTimetableTrains,
-      activeDays: 'Special event days'
-    }
-  ];
+  const allSchedules = useMemo(() => getFamilySchedules(), []);
 
   // Filter schedules to only show those available in the selected month
   const schedules = allSchedules.filter(schedule => 

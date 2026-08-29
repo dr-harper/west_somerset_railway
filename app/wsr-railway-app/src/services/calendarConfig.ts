@@ -1,149 +1,207 @@
-// West Somerset Railway Calendar Configuration
-// Based on the 2025 operating calendar
+// West Somerset Railway calendar configuration
+// Driven by real data scraped from the official WSR calendar
+// (see route_data/timetable_2026/build_app_data.py)
 
-export type TimetableType = 'blue' | 'red' | 'purple' | 'green' | 'none';
+import timetableData from '../data/timetable2026.json';
 
-export interface CalendarDay {
-  date: string; // YYYY-MM-DD format
-  timetableType: TimetableType;
-  specialEvent?: string;
+export type TimetableType =
+  | 'red' | 'blue' | 'orange' | 'yellow' | 'brown'
+  | 'purple' | 'green' | 'none';
+
+export type DayKind = 'service' | 'event' | 'closed' | 'unknown';
+
+export interface DayInfo {
+  kind: DayKind;
+  family: TimetableType;
+  patternId?: string;
+  patternTitle?: string;
+  events?: string[];
+  pdf?: string;
 }
 
-// Calendar configuration for 2025
-// Based on the images provided
-export const calendar2025: Record<string, TimetableType> = {
-  // For testing - current date
-  '2025-08-30': 'blue',  // Today - Blue timetable for testing
-  
-  // August 2025
-  '2025-08-31': 'blue',
-  
-  // September 2025
-  '2025-09-02': 'blue',
-  '2025-09-03': 'blue',
-  '2025-09-04': 'blue',
-  '2025-09-06': 'blue',
-  '2025-09-07': 'blue',
-  '2025-09-09': 'blue',
-  '2025-09-10': 'blue',
-  '2025-09-11': 'blue',
-  '2025-09-13': 'blue',
-  '2025-09-14': 'blue',
-  '2025-09-16': 'blue',
-  '2025-09-17': 'blue',
-  '2025-09-18': 'blue',
-  '2025-09-20': 'purple', // Special event
-  '2025-09-21': 'purple', // Special event
-  '2025-09-23': 'blue',
-  '2025-09-24': 'blue',
-  '2025-09-25': 'blue',
-  '2025-09-27': 'blue',
-  '2025-09-28': 'blue',
-  '2025-09-30': 'red',
-  
-  // October 2025
-  '2025-10-01': 'red',
-  '2025-10-04': 'red',
-  '2025-10-05': 'red',
-  '2025-10-07': 'red',
-  '2025-10-08': 'red',
-  '2025-10-11': 'red',
-  '2025-10-12': 'red',
-  '2025-10-14': 'red',
-  '2025-10-15': 'red',
-  '2025-10-17': 'purple', // Special event
-  '2025-10-18': 'purple', // Special event
-  '2025-10-19': 'purple', // Special event
-  '2025-10-21': 'red',
-  '2025-10-22': 'red',
-  '2025-10-25': 'red',
-  '2025-10-26': 'red',
-  '2025-10-28': 'blue',
-  '2025-10-29': 'blue',
-  '2025-10-30': 'blue',
-  
-  // November 2025
-  '2025-11-01': 'blue',
-  '2025-11-02': 'blue',
-  '2025-11-29': 'green', // Christmas services start
-  '2025-11-30': 'green',
-  
-  // December 2025 - Christmas Services
-  '2025-12-06': 'green',
-  '2025-12-07': 'green',
-  '2025-12-13': 'green',
-  '2025-12-14': 'green',
-  '2025-12-19': 'green',
-  '2025-12-20': 'green',
-  '2025-12-21': 'green',
-  '2025-12-23': 'green',
-  '2025-12-24': 'green',
-  '2025-12-27': 'green',
-  '2025-12-28': 'green',
-  '2025-12-29': 'green',
-  '2025-12-31': 'green',
-};
+interface RawStop {
+  c: string;
+  a: string | null;
+  d: string | null;
+  x?: boolean;
+  p?: string;
+}
 
-// Special events configuration
-export const specialEvents: Record<string, string> = {
-  '2025-09-20': 'Autumn Steam Gala',
-  '2025-09-21': 'Autumn Steam Gala',
-  '2025-10-17': 'Halloween Special',
-  '2025-10-18': 'Halloween Special',
-  '2025-10-19': 'Halloween Special',
-  '2025-12-06': 'Christmas Services',
-  '2025-12-24': 'Christmas Eve Special',
-  '2025-12-31': 'New Year\'s Eve Special',
-};
+export interface RawService {
+  direction: 'NB' | 'SB';
+  serviceType: 'Steam' | 'Diesel' | 'DMU';
+  loco: string | null;
+  stops: RawStop[];
+}
 
-// Helper function to get timetable type for a given date
+interface RawPattern {
+  family: string;
+  title: string;
+  services: RawService[];
+}
+
+interface RawDay {
+  kind: string;
+  pattern?: string;
+  family?: string;
+  events?: string[];
+  pdf?: string;
+}
+
+const patterns = timetableData.patterns as unknown as Record<string, RawPattern>;
+const rawDays = timetableData.days as unknown as Record<string, RawDay>;
+
+// Format a date as YYYY-MM-DD in local time (toISOString would shift the
+// day at BST midnight)
+export function toDateKey(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+export function getDayInfo(date: Date): DayInfo {
+  const raw = rawDays[toDateKey(date)];
+  if (!raw) {
+    return { kind: 'unknown', family: 'none' };
+  }
+  if (raw.kind === 'service' && raw.pattern) {
+    const pattern = patterns[raw.pattern];
+    return {
+      kind: 'service',
+      family: (pattern.family as TimetableType) ?? 'none',
+      patternId: raw.pattern,
+      patternTitle: pattern.title,
+      pdf: raw.pdf
+    };
+  }
+  if (raw.kind === 'event') {
+    return {
+      kind: 'event',
+      family: (raw.family as TimetableType) ?? 'green',
+      events: raw.events ?? []
+    };
+  }
+  return { kind: 'closed', family: 'none' };
+}
+
+// Date -> timetable family, for calendar colouring
+export const serviceCalendar: Record<string, TimetableType> = Object.fromEntries(
+  Object.entries(rawDays).map(([date, raw]) => {
+    if (raw.kind === 'service' && raw.pattern) {
+      return [date, patterns[raw.pattern].family as TimetableType];
+    }
+    if (raw.kind === 'event') {
+      return [date, (raw.family as TimetableType) ?? 'green'];
+    }
+    return [date, 'none'];
+  })
+);
+
+// Date -> special event / named timetable, for calendar labels
+export const specialEvents: Record<string, string> = Object.fromEntries(
+  Object.entries(rawDays).flatMap(([date, raw]) => {
+    if (raw.kind === 'service' && raw.pattern) {
+      const pattern = patterns[raw.pattern];
+      if (pattern.family === 'purple') {
+        return [[date, pattern.title]];
+      }
+      return [];
+    }
+    if (raw.kind === 'event' && raw.events && raw.events.length > 0) {
+      return [[date, raw.events.join(' • ')]];
+    }
+    return [];
+  })
+);
+
 export function getTimetableType(date: Date): TimetableType {
-  const dateStr = date.toISOString().split('T')[0];
-  return calendar2025[dateStr] || 'none';
+  return serviceCalendar[toDateKey(date)] ?? 'none';
 }
 
-// Helper function to check if a date has services
 export function hasServices(date: Date): boolean {
-  const timetableType = getTimetableType(date);
-  return timetableType !== 'none';
+  return getDayInfo(date).kind === 'service';
 }
 
-// Helper function to get special event name if applicable
 export function getSpecialEvent(date: Date): string | undefined {
-  const dateStr = date.toISOString().split('T')[0];
-  return specialEvents[dateStr];
+  return specialEvents[toDateKey(date)];
 }
 
-// Get all dates with a specific timetable type
 export function getDatesWithTimetable(timetableType: TimetableType): string[] {
-  return Object.entries(calendar2025)
-    .filter(([_, type]) => type === timetableType)
+  return Object.entries(serviceCalendar)
+    .filter(([, type]) => type === timetableType)
     .map(([date]) => date);
 }
 
-// Timetable colors for UI
+// The most-used pattern of each family, for schedule previews
+export function getRepresentativePattern(family: TimetableType): { id: string; pattern: RawPattern } | null {
+  const usage: Record<string, number> = {};
+  for (const raw of Object.values(rawDays)) {
+    if (raw.kind === 'service' && raw.pattern) {
+      usage[raw.pattern] = (usage[raw.pattern] ?? 0) + 1;
+    }
+  }
+  const candidates = Object.entries(patterns)
+    .filter(([, p]) => p.family === family)
+    .sort(([a], [b]) => (usage[b] ?? 0) - (usage[a] ?? 0));
+  if (candidates.length === 0) return null;
+  const [id, pattern] = candidates[0];
+  return { id, pattern };
+}
+
+// Colours matching the official WSR calendar
 export const timetableColors: Record<TimetableType, string> = {
-  blue: '#4A90E2',
-  red: '#B32D2E',
-  purple: '#8B008B',
-  green: '#27AE60',
-  none: '#E0E0E0'
+  red: '#B92E2A',
+  blue: '#3D75ED',
+  orange: '#F07D0A',
+  yellow: '#E0CF3C',
+  brown: '#895129',
+  purple: '#9A06F9',
+  green: '#48731D',
+  none: '#DEDBDB'
 };
 
-// Timetable display names
 export const timetableNames: Record<TimetableType, string> = {
+  red: 'Red Timetable',
   blue: 'Blue Timetable',
-  red: 'Red Timetable (Enhanced Service)',
-  purple: 'Special Event Service',
+  orange: 'Orange Timetable',
+  yellow: 'Yellow Timetable',
+  brown: 'Brown Timetable',
+  purple: 'Special Event',
   green: 'Christmas Services',
   none: 'No Services'
 };
 
-// Timetable service summaries
+function describePattern(pattern: RawPattern): string {
+  const nb = pattern.services.filter(s => s.direction === 'NB');
+  const counts: Record<string, number> = {};
+  for (const s of nb) {
+    counts[s.serviceType] = (counts[s.serviceType] ?? 0) + 1;
+  }
+  const mix = ['Steam', 'Diesel', 'DMU']
+    .filter(t => counts[t])
+    .map(t => `${counts[t]} ${t}`)
+    .join(', ');
+  const first = nb
+    .map(s => s.stops[0]?.d)
+    .filter(Boolean)
+    .sort()[0];
+  const parts = [`${nb.length} trains each way`, mix];
+  if (first) parts.push(`first departure ${first}`);
+  return parts.join(' • ');
+}
+
+// Summaries computed from the real timetable data
 export const timetableSummaries: Record<TimetableType, string> = {
-  blue: '4 trains each way • Steam & Diesel • 10:15 first from Bishops Lydeard',
-  red: '3 trains each way • Enhanced Steam Service • 10:15 first departure',
-  purple: 'Special event trains • Extended stops • Photo opportunities',
-  green: 'Festive services • Schedule to be confirmed',
+  red: '', blue: '', orange: '', yellow: '', brown: '',
+  purple: 'Special event timetable • Intensive service • Check the day for details',
+  green: 'Festive services • Pre-booked events such as the Santa Express',
   none: 'No scheduled services'
 };
+
+for (const family of ['red', 'blue', 'orange', 'yellow', 'brown'] as const) {
+  const rep = getRepresentativePattern(family);
+  timetableSummaries[family] = rep
+    ? describePattern(rep.pattern)
+    : 'No scheduled services';
+}
