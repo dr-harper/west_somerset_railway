@@ -69,6 +69,11 @@ MOTION_FRACTION = 0.02         # fraction of zone mask that must change
 MOTION_CONSECUTIVE = 3         # samples needed to open the gate
 GLOBAL_JUMP_FRACTION = 0.35    # whole-frame change => exposure/camera jump
 CANDIDATE_TIMEOUT_S = 6        # YOLO tries before a gate is called false
+# Motion is logged as a coarse grid of cells rather than a single number,
+# so a run's false gates can afterwards be turned into an exclusion map:
+# cells that move often but never yield a train are what to mask.
+MOTION_GRID_W, MOTION_GRID_H = 16, 9
+
 CHALLENGE_BACKOFF_S = 900      # wait this long after a bot challenge
 BACKFILL_STEP_S = 1.0          # how coarsely to rewind through the buffer
 BACKFILL_CONF = 0.35           # a train entering frame scores lower than one
@@ -151,6 +156,7 @@ class CameraWorker(threading.Thread):
         self.episode = None
         self.frame_buffer = []         # (t, frame) rolling ~30s at 2 Hz
         self.heartbeat = time.time()
+        self.last_motion_cells: list[int] = []
         self.stats = {'gates': 0, 'false_gates': 0, 'episodes': 0,
                       'reconnects': 0, 'jumps': 0, 'challenges': 0}
 
@@ -203,11 +209,31 @@ class CameraWorker(threading.Thread):
         changed = (diff > MOTION_THRESHOLD).astype(np.uint8)
         global_frac = float(changed.mean())
         zone_frac = float(changed[self.mask > 0].mean()) if self.mask.any() else 0.0
+        self.last_motion_cells = self._motion_cells(changed)
         # adapt the background only while idle so a dwelling train
         # is not absorbed mid-episode
         if self.state == 'IDLE':
             cv2.accumulateWeighted(grey, self.background, BACKGROUND_ALPHA)
         return zone_frac, global_frac
+
+    def _motion_cells(self, changed) -> list[int]:
+        """Which cells of a coarse grid moved, as flat indices.
+
+        Compact enough to log on every gate, specific enough to build a
+        heat map from afterwards.
+        """
+        cell_h = changed.shape[0] // MOTION_GRID_H
+        cell_w = changed.shape[1] // MOTION_GRID_W
+        if cell_h == 0 or cell_w == 0:
+            return []
+        cells = []
+        for row in range(MOTION_GRID_H):
+            for col in range(MOTION_GRID_W):
+                block = changed[row * cell_h:(row + 1) * cell_h,
+                                col * cell_w:(col + 1) * cell_w]
+                if block.mean() > 0.05:
+                    cells.append(row * MOTION_GRID_W + col)
+        return cells
 
     # --- tier 2: episodes ------------------------------------------------
 
@@ -334,6 +360,7 @@ class CameraWorker(threading.Thread):
         backoff = 2
         last_motion_check = 0.0
         last_yolo = 0.0
+        gate_cells: list[int] = []
         while True:
             try:
                 if self.cap is None or time.time() - self.url_time > URL_REFRESH_S:
@@ -370,10 +397,12 @@ class CameraWorker(threading.Thread):
                         self.stats['gates'] += 1
                         self.log_queue.put(('gate', {
                             'ts': now_iso(), 'camera': self.camera,
-                            'zone_fraction': round(zone_frac, 4)}))
+                            'zone_fraction': round(zone_frac, 4),
+                            'cells': self.last_motion_cells}))
                         if self.dry_run:
                             self.consecutive_motion = 0
                         else:
+                            gate_cells = list(self.last_motion_cells)
                             self.state, self.state_since = 'CANDIDATE', t
                 elif self.state == 'CANDIDATE':
                     if t - last_yolo >= YOLO_SAMPLE_S:
@@ -385,6 +414,9 @@ class CameraWorker(threading.Thread):
                             self._start_episode(t, detections, frame)
                         elif t - self.state_since > CANDIDATE_TIMEOUT_S:
                             self.stats['false_gates'] += 1
+                            self.log_queue.put(('false_gate', {
+                                'ts': now_iso(), 'camera': self.camera,
+                                'cells': gate_cells}))
                             self.state = 'IDLE'
                 elif self.state == 'ACTIVE':
                     if t - last_yolo >= YOLO_SAMPLE_S:
@@ -458,7 +490,7 @@ def main() -> None:
                   f"{payload['t_exit']} {payload.get('direction')} "
                   f"zones={payload['zones']} peak={payload['peak_conf']}",
                   flush=True)
-        elif kind in ('gate', 'error'):
+        elif kind in ('gate', 'false_gate', 'error', 'info'):
             with GATE_LOG_PATH.open('a') as fh:
                 fh.write(json.dumps({'kind': kind, **payload}) + '\n')
         if time.time() - last_report > 600:
