@@ -66,8 +66,16 @@ train_detection/          live webcam detection system (YOLO11 + zones)
   loop, backed by Firestore.
 - `classify_trains.py`: per-episode Gemini classification (structured
   output). Needs a fresh key.
-- `track_geometry.py` + `track_annotator.html`: per-camera track geometry,
-  traced as a PAIR of multi-point rails rather than one line. Two rails
+- `track_geometry.py` + `track_annotator.html`: per-camera track geometry.
+  A camera usually sees SEVERAL roads (Blue Anchor is a passing loop,
+  Minehead has shed roads and sidings, the Seaward Crossing has a goods
+  siding), so each is traced separately with its own name and kind
+  (running / loop / siding / shed). `project()` attributes a detection to
+  the road it stands on, comparing offsets in gauges rather than pixels so
+  a distant siding is not unfairly favoured, and flags the attribution
+  ambiguous when two roads fit almost equally. Only running lines and
+  loops carry timetabled movements; stock on the rest is stabled.
+  Each road is a PAIR of multi-point rails rather than one line. Two rails
   are what make perspective recoverable: their real separation is a known
   1.435 m, so the pixel gap between them gives metres-per-pixel at every
   depth. From that comes direction (local tangent), position along the
@@ -77,8 +85,9 @@ train_detection/          live webcam detection system (YOLO11 + zones)
   magnifier under the finger for precision). Do rail A and rail B for
   each camera; traces live in
   `camera_tracks.json` (854x480 image space, each rail ordered from the
-  Bishops Lydeard end towards Minehead). Bishops Lydeard is traced; the
-  other five are not yet.
+  Bishops Lydeard end towards Minehead). NOTHING IS TRACED YET — tracing
+  accurately needs a finger on the photograph; doing it by computed
+  coordinates put the lines on the platform instead of the rails.
 
 ### Findings from the 29th August gala (the only full day of real data)
 

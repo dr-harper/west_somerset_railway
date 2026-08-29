@@ -18,6 +18,14 @@ gives, per camera and without any second sighting:
   depth       the gauge shrinks with distance, so it doubles as a
               monotonic depth cue along the track.
 
+A camera usually sees MORE THAN ONE track: Blue Anchor is a passing loop
+with two platform roads, Minehead has platform roads plus shed roads and
+sidings, the Seaward Crossing has the running line alongside a goods
+siding. Each is traced separately with its own rail pair, name and kind,
+so a detection can be attributed to the track it is actually standing on
+— which is what separates a movement from stabled stock, and tells you
+which platform road a train at a loop has taken.
+
 Rails are multi-point polylines — the track curves, so two-point straight
 lines will not do — ordered from the Bishops Lydeard end towards Minehead
 and stored in camera_tracks.json in 854x480 image space. Trace them with
@@ -33,6 +41,10 @@ TRACKS_PATH = HERE / 'camera_tracks.json'
 
 STANDARD_GAUGE_M = 1.435
 SAMPLES = 64          # resolution of the derived centreline
+
+# Kinds a traced track can be. Only running lines and loops carry
+# timetabled movements; stock on the others is stabled or being shunted.
+RUNNING_KINDS = {'running', 'loop', 'platform'}
 
 
 def load_tracks() -> dict:
@@ -85,25 +97,47 @@ def _project_to_segment(point, a, b):
 # The rail pair
 # --------------------------------------------------------------------------
 
-def rails_of(camera: str):
-    """Both rails as point lists, or None if the camera lacks a pair."""
-    track = TRACKS.get(camera)
-    if not track:
-        return None
-    rails = track.get('rails')
-    if not rails or len(rails.get('a', [])) < 2 or len(rails.get('b', [])) < 2:
-        return None
-    return [tuple(p) for p in rails['a']], [tuple(p) for p in rails['b']]
+def tracks_of(camera: str) -> list[dict]:
+    """Every traced track at a camera, newest format or legacy single pair."""
+    entry = TRACKS.get(camera)
+    if not entry:
+        return []
+    if 'tracks' in entry:
+        candidates = entry['tracks']
+    elif 'rails' in entry:      # legacy: one unnamed running line
+        candidates = [{'name': 'running line', 'kind': 'running',
+                       'rails': entry['rails']}]
+    else:
+        return []
+    out = []
+    for track in candidates:
+        rails = track.get('rails') or {}
+        if len(rails.get('a', [])) >= 2 and len(rails.get('b', [])) >= 2:
+            out.append({
+                'name': track.get('name', 'track'),
+                'kind': track.get('kind', 'running'),
+                'rails': ([tuple(p) for p in rails['a']],
+                          [tuple(p) for p in rails['b']]),
+            })
+    return out
 
 
-def centreline(camera: str):
-    """Midpoint curve between the rails, with the local gauge at each sample.
+def rails_of(camera: str, name: str | None = None):
+    """One track's rail pair; the first traced track if none is named."""
+    for track in tracks_of(camera):
+        if name is None or track['name'] == name:
+            return track['rails']
+    return None
+
+
+def centreline(camera: str, name: str | None = None):
+    """Midpoint curve between a track's rails, with local gauge per sample.
 
     Rails are paired by fraction of their own arc length, which keeps the
     pairing sensible even when one rail is traced with more points than
     the other or they start slightly out of step.
     """
-    pair = rails_of(camera)
+    pair = rails_of(camera, name)
     if not pair:
         return None
     rail_a, rail_b = pair
@@ -119,23 +153,19 @@ def centreline(camera: str):
     return samples
 
 
-_CENTRELINE_CACHE: dict[str, list | None] = {}
+_CENTRELINE_CACHE: dict[tuple[str, str | None], list | None] = {}
 
 
-def _cached_centreline(camera: str):
-    if camera not in _CENTRELINE_CACHE:
-        _CENTRELINE_CACHE[camera] = centreline(camera)
-    return _CENTRELINE_CACHE[camera]
+def _cached_centreline(camera: str, name: str | None = None):
+    key = (camera, name)
+    if key not in _CENTRELINE_CACHE:
+        _CENTRELINE_CACHE[key] = centreline(camera, name)
+    return _CENTRELINE_CACHE[key]
 
 
-def project(camera: str, point) -> dict | None:
-    """Where a point sits on the track, with the local scale there.
-
-    Returns arc length along the centreline, the local tangent pointing
-    towards Minehead, the gauge in pixels at that depth, and the metres
-    per pixel it implies.
-    """
-    samples = _cached_centreline(camera)
+def project_onto(camera: str, name: str, point) -> dict | None:
+    """Where a point sits on one named track."""
+    samples = _cached_centreline(camera, name)
     if not samples:
         return None
     curve = [s['point'] for s in samples]
@@ -149,6 +179,7 @@ def project(camera: str, point) -> dict | None:
             tangent = ((b[0] - a[0]) / span, (b[1] - a[1]) / span) if span else (0.0, 0.0)
             gauge = samples[i]['gauge_px'] + t * (samples[i + 1]['gauge_px'] - samples[i]['gauge_px'])
             best = {
+                'track': name,
                 'offset_px': distance,
                 'arc_px': lengths[i] + t * span,
                 'tangent_to_minehead': tangent,
@@ -160,11 +191,43 @@ def project(camera: str, point) -> dict | None:
         total = lengths[-1]
         best['arc_normalised'] = best['arc_px'] / total if total else 0.0
         best['track_length_px'] = total
-        # Tolerance scales with depth, and is generous vertically because a
-        # detection box's centre sits above the rails by roughly half the
-        # train's height — it is a filter for things beside the line, not a
-        # precise fit.
-        best['on_track'] = best['offset_px'] <= max(2.0 * best['gauge_px'], 20)
+        # Offset in gauges, not pixels: a siding in the distance sits far
+        # fewer pixels from its neighbour than one in the foreground, so
+        # comparing raw pixels would always favour whatever is nearest.
+        best['offset_gauges'] = best['offset_px'] / best['gauge_px'] if best['gauge_px'] else 999
+        # Generous vertically, because a detection box's centre sits above
+        # the rails by roughly half the train's height.
+        best['on_track'] = best['offset_gauges'] <= 2.0
+    return best
+
+
+def project(camera: str, point) -> dict | None:
+    """Attribute a point to the most likely track at this camera.
+
+    Returns that track's geometry with its name and kind, plus whether it
+    is a running line — the distinction between a movement and stabled
+    stock — and how clearly it beat the runner-up.
+    """
+    candidates = []
+    for track in tracks_of(camera):
+        placed = project_onto(camera, track['name'], point)
+        if placed:
+            placed['kind'] = track['kind']
+            placed['is_running_line'] = track['kind'] in RUNNING_KINDS
+            candidates.append(placed)
+    if not candidates:
+        return None
+    candidates.sort(key=lambda c: c['offset_gauges'])
+    best = candidates[0]
+    runner_up = candidates[1] if len(candidates) > 1 else None
+    best['alternatives'] = [
+        {'track': c['track'], 'offset_gauges': round(c['offset_gauges'], 2)}
+        for c in candidates[1:]
+    ]
+    # If two tracks fit almost equally the attribution is a guess, and a
+    # caller deciding "movement or stabled" should know that.
+    best['ambiguous'] = bool(
+        runner_up and runner_up['offset_gauges'] - best['offset_gauges'] < 0.5)
     return best
 
 
@@ -183,7 +246,7 @@ def direction_of_motion(camera: str, point, drift) -> str:
     return 'northbound' if along > 0 else 'southbound'
 
 
-def speed_mph(camera: str, path) -> float | None:
+def speed_mph(camera: str, path, track: str | None = None) -> float | None:
     """Speed from a centroid path of [seconds, x, y], using local scale.
 
     Each step is converted through the metres-per-pixel where that step
@@ -194,7 +257,9 @@ def speed_mph(camera: str, path) -> float | None:
         return None
     metres = 0.0
     for (t0, x0, y0), (t1, x1, y1) in zip(path, path[1:]):
-        placed = project(camera, ((x0 + x1) / 2, (y0 + y1) / 2))
+        midpoint = ((x0 + x1) / 2, (y0 + y1) / 2)
+        placed = (project_onto(camera, track, midpoint) if track
+                  else project(camera, midpoint))
         if not placed or not placed['metres_per_px']:
             continue
         metres += math.dist((x0, y0), (x1, y1)) * placed['metres_per_px']
@@ -204,14 +269,14 @@ def speed_mph(camera: str, path) -> float | None:
     return metres / seconds * 2.23694
 
 
-def vanishing_point(camera: str):
+def vanishing_point(camera: str, name: str | None = None):
     """Where the two rails would converge, from their far-end segments.
 
     Only meaningful for the straight part of a view, so it is a diagnostic
     for how oblique the lens angle is rather than something the pipeline
     depends on — the gauge-based scale works on curves too.
     """
-    pair = rails_of(camera)
+    pair = rails_of(camera, name)
     if not pair:
         return None
     (a1, a2), (b1, b2) = pair[0][-2:], pair[1][-2:]
@@ -225,16 +290,20 @@ def vanishing_point(camera: str):
 
 
 def describe(camera: str) -> str:
-    samples = _cached_centreline(camera)
-    if not samples:
-        return f'{camera}: no rail pair traced'
-    gauges = [s['gauge_px'] for s in samples]
-    near, far = max(gauges), min(gauges)
-    length = _cumulative([s['point'] for s in samples])[-1]
-    vp = vanishing_point(camera)
-    return (f'{camera}: {length:.0f}px of track, gauge {far:.0f}-{near:.0f}px '
-            f'({STANDARD_GAUGE_M / near:.3f}-{STANDARD_GAUGE_M / far:.3f} m/px), '
-            f'vanishing point {"(%.0f, %.0f)" % vp if vp else "n/a"}')
+    tracks = tracks_of(camera)
+    if not tracks:
+        return f'{camera}: no track traced'
+    lines = [f'{camera}: {len(tracks)} track(s)']
+    for track in tracks:
+        samples = _cached_centreline(camera, track['name'])
+        gauges = [s['gauge_px'] for s in samples]
+        near, far = max(gauges), min(gauges)
+        length = _cumulative([s['point'] for s in samples])[-1]
+        lines.append(
+            f"    {track['name']} [{track['kind']}]: {length:.0f}px, "
+            f'gauge {far:.0f}-{near:.0f}px '
+            f'({STANDARD_GAUGE_M / near:.3f}-{STANDARD_GAUGE_M / far:.3f} m/px)')
+    return '\n'.join(lines)
 
 
 if __name__ == '__main__':

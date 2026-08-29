@@ -67,9 +67,17 @@
 <main>
   <div class="row">
     <select id="camera"></select>
+    <select id="trackSelect"></select>
+    <button id="addTrack">+ Track</button>
     <select id="rail">
-      <option value="a">Rail A (nearer camera)</option>
-      <option value="b">Rail B (farther)</option>
+      <option value="a">Rail A</option>
+      <option value="b">Rail B</option>
+    </select>
+    <select id="kind">
+      <option value="running">Running line</option>
+      <option value="loop">Loop / other platform road</option>
+      <option value="siding">Siding</option>
+      <option value="shed">Shed road</option>
     </select>
     <button id="undo">Undo point</button>
     <button id="clear" class="danger">Clear</button>
@@ -78,11 +86,13 @@
   </div>
 
   <p class="hint">
-    Trace <strong>both rails of one track</strong>, each with several points
-    so curves are followed properly. Start each rail from whichever end is
-    nearer Bishops Lydeard. Their real separation is a known 1.435&nbsp;m, so
-    the gap between them tells the pipeline the scale at every depth — that
-    is what makes speed measurable. Drag a point to nudge it.
+    Trace <strong>both rails of every track in view</strong>, each with
+    several points so curves are followed properly, starting from whichever
+    end is nearer Bishops Lydeard. Add a track for each running line, loop,
+    siding and shed road — that is how a detection gets attributed to the
+    road it is standing on, which separates a movement from stabled stock.
+    The rails' real separation is a known 1.435&nbsp;m, so the gap between
+    them gives the scale at every depth. Drag a point to nudge it.
   </p>
 
   <div class="canvasWrap">
@@ -154,12 +164,32 @@ async function loadExisting() {
 }
 
 const railSelect = document.getElementById('rail');
+const trackSelect = document.getElementById('trackSelect');
+const kindSelect = document.getElementById('kind');
+const DEFAULT_NAMES = ['running line', 'loop', 'siding', 'shed road', 'track 5'];
+
+function camera() {
+  const name = select.value;
+  if (!tracks[name]) tracks[name] = { tracks: [], anchors: [] };
+  const entry = tracks[name];
+  // migrate a legacy single-pair trace into the list form
+  if (entry.rails && !entry.tracks) {
+    entry.tracks = [{ name: 'running line', kind: 'running', rails: entry.rails }];
+    delete entry.rails;
+  }
+  if (!entry.tracks) entry.tracks = [];
+  if (!entry.tracks.length) {
+    entry.tracks.push({ name: DEFAULT_NAMES[0], kind: 'running', rails: { a: [], b: [] } });
+  }
+  return entry;
+}
 
 function track() {
-  const name = select.value;
-  if (!tracks[name]) tracks[name] = { rails: { a: [], b: [] }, anchors: [] };
-  if (!tracks[name].rails) tracks[name].rails = { a: [], b: [] };
-  return tracks[name];
+  const list = camera().tracks;
+  const index = Math.min(Number(trackSelect.value) || 0, list.length - 1);
+  const chosen = list[index];
+  if (!chosen.rails) chosen.rails = { a: [], b: [] };
+  return chosen;
 }
 
 function current() {
@@ -167,6 +197,22 @@ function current() {
   const key = railSelect.value;
   if (!rails[key]) rails[key] = [];
   return { points: rails[key] };
+}
+
+function refreshTrackList() {
+  const list = camera().tracks;
+  const chosen = Math.min(Number(trackSelect.value) || 0, list.length - 1);
+  trackSelect.innerHTML = '';
+  list.forEach((entry, index) => {
+    const option = document.createElement('option');
+    option.value = index;
+    const rails = entry.rails || { a: [], b: [] };
+    const done = (rails.a || []).length > 1 && (rails.b || []).length > 1;
+    option.textContent = `${index + 1}. ${entry.name}${done ? ' ✓' : ''}`;
+    trackSelect.appendChild(option);
+  });
+  trackSelect.value = String(Math.max(0, chosen));
+  kindSelect.value = list[Math.max(0, chosen)].kind || 'running';
 }
 
 function loadImage() {
@@ -178,9 +224,12 @@ function loadImage() {
 
 function toCanvas(event) {
   const rect = canvas.getBoundingClientRect();
+  // clamp: a drag that leaves the canvas should stop at the edge rather
+  // than record a point outside the image
+  const clamp = (value, max) => Math.max(0, Math.min(max, Math.round(value)));
   return [
-    Math.round((event.clientX - rect.left) * canvas.width / rect.width),
-    Math.round((event.clientY - rect.top) * canvas.height / rect.height),
+    clamp((event.clientX - rect.left) * canvas.width / rect.width, canvas.width),
+    clamp((event.clientY - rect.top) * canvas.height / rect.height, canvas.height),
   ];
 }
 
@@ -226,9 +275,24 @@ function draw() {
   } else {
     ctx.fillStyle = '#222'; ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
-  const rails = track().rails;
+  const activeTrack = track();
+  const rails = activeTrack.rails;
   const active = railSelect.value;
   const COLOURS = { a: 'rgba(255,180,58,.95)', b: 'rgba(127,201,127,.95)' };
+
+  // other tracks at this camera, drawn faintly for context
+  camera().tracks.forEach(entry => {
+    if (entry === activeTrack) return;
+    ['a', 'b'].forEach(key => {
+      const points = (entry.rails || {})[key] || [];
+      if (points.length < 2) return;
+      ctx.strokeStyle = 'rgba(250,244,230,.45)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      points.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+      ctx.stroke();
+    });
+  });
 
   // sleepers between the rails: shows the pairing the geometry will use
   if (rails.a.length > 1 && rails.b.length > 1) {
@@ -278,7 +342,10 @@ function draw() {
   });
   const counts = `A:${rails.a.length} B:${(rails.b || []).length}`;
   const ready = rails.a.length > 1 && (rails.b || []).length > 1;
-  status.textContent = ready ? `${counts} — pair complete` : `${counts} — need both rails`;
+  const done = camera().tracks.filter(t => (t.rails?.a || []).length > 1
+                                        && (t.rails?.b || []).length > 1).length;
+  status.textContent = (ready ? `${counts} — pair complete` : `${counts} — need both rails`)
+    + ` · ${done}/${camera().tracks.length} tracks done`;
   output.value = JSON.stringify(tracks, null, 1);
 }
 
@@ -303,8 +370,22 @@ canvas.addEventListener('pointermove', event => {
 window.addEventListener('pointerup', () => { dragging = null; hideLoupe(); });
 window.addEventListener('pointercancel', () => { dragging = null; hideLoupe(); });
 
-document.getElementById('undo').onclick = () => { track().rails[railSelect.value].pop(); draw(); };
-document.getElementById('clear').onclick = () => { track().rails[railSelect.value] = []; draw(); };
+document.getElementById('undo').onclick = () => { track().rails[railSelect.value].pop(); refreshTrackList(); draw(); };
+document.getElementById('clear').onclick = () => { track().rails[railSelect.value] = []; refreshTrackList(); draw(); };
+document.getElementById('addTrack').onclick = () => {
+  const list = camera().tracks;
+  const name = prompt('Name this track',
+    DEFAULT_NAMES[list.length] || `track ${list.length + 1}`);
+  if (!name) return;
+  list.push({ name, kind: 'siding', rails: { a: [], b: [] } });
+  refreshTrackList();
+  trackSelect.value = String(list.length - 1);
+  kindSelect.value = 'siding';
+  railSelect.value = 'a';
+  draw();
+};
+trackSelect.onchange = () => { kindSelect.value = track().kind || 'running'; draw(); };
+kindSelect.onchange = () => { track().kind = kindSelect.value; refreshTrackList(); draw(); };
 document.getElementById('save').onclick = async () => {
   const response = await fetch('/save-tracks', {
     method: 'POST',
@@ -313,10 +394,10 @@ document.getElementById('save').onclick = async () => {
   });
   status.textContent = response.ok ? 'saved to camera_tracks.json' : 'save failed';
 };
-select.onchange = () => { loadImage(); draw(); };
+select.onchange = () => { trackSelect.value = '0'; refreshTrackList(); loadImage(); draw(); };
 railSelect.onchange = draw;
 
-loadExisting().then(() => { loadImage(); draw(); });
+loadExisting().then(() => { refreshTrackList(); loadImage(); draw(); });
 </script>
 </body>
 </html>

@@ -27,16 +27,27 @@ FLAT_PAIR = {
         'b': [[100, 300], [700, 300]],
     }
 }
+# A station throat: a running line with a siding beside it, as at
+# Minehead or the Seaward Crossing.
+TWO_ROADS = {
+    'tracks': [
+        {'name': 'platform road', 'kind': 'running',
+         'rails': {'a': [[100, 200], [700, 200]], 'b': [[100, 300], [700, 300]]}},
+        {'name': 'goods siding', 'kind': 'siding',
+         'rails': {'a': [[100, 400], [700, 400]], 'b': [[100, 500], [700, 500]]}},
+    ]
+}
 
 
 @pytest.fixture(autouse=True)
 def synthetic(monkeypatch):
     monkeypatch.setitem(tg.TRACKS, 'curved', CURVED_PAIR)
     monkeypatch.setitem(tg.TRACKS, 'flat', FLAT_PAIR)
+    monkeypatch.setitem(tg.TRACKS, 'yard', TWO_ROADS)
     tg._CENTRELINE_CACHE.clear()
     yield
-    tg.TRACKS.pop('curved', None)
-    tg.TRACKS.pop('flat', None)
+    for name in ('curved', 'flat', 'yard'):
+        tg.TRACKS.pop(name, None)
     tg._CENTRELINE_CACHE.clear()
 
 
@@ -130,3 +141,45 @@ class TestOnTrack:
     def test_something_well_beside_the_line_is_not(self):
         # four gauges off the centreline: beside the railway, not on it
         assert not tg.project('flat', (400, 650))['on_track']
+
+
+class TestMultipleTracks:
+    """A camera usually sees several roads; a detection belongs to one."""
+
+    def test_legacy_single_pair_still_loads(self):
+        tracks = tg.tracks_of('flat')
+        assert len(tracks) == 1
+        assert tracks[0]['kind'] == 'running'
+
+    def test_every_traced_road_is_listed(self):
+        names = [t['name'] for t in tg.tracks_of('yard')]
+        assert names == ['platform road', 'goods siding']
+
+    def test_a_train_is_attributed_to_the_road_it_stands_on(self):
+        on_platform = tg.project('yard', (400, 250))
+        in_siding = tg.project('yard', (400, 450))
+        assert on_platform['track'] == 'platform road'
+        assert in_siding['track'] == 'goods siding'
+
+    def test_running_line_and_siding_are_distinguished(self):
+        assert tg.project('yard', (400, 250))['is_running_line']
+        assert not tg.project('yard', (400, 450))['is_running_line']
+
+    def test_the_runner_up_road_is_reported(self):
+        placed = tg.project('yard', (400, 250))
+        assert placed['alternatives'][0]['track'] == 'goods siding'
+
+    def test_a_clear_attribution_is_not_ambiguous(self):
+        assert not tg.project('yard', (400, 250))['ambiguous']
+
+    def test_a_point_between_two_roads_is_flagged_ambiguous(self):
+        # midway between the platform road and the siding
+        assert tg.project('yard', (400, 350))['ambiguous']
+
+    def test_offset_is_measured_in_gauges_not_pixels(self):
+        placed = tg.project('yard', (400, 250))
+        assert placed['offset_gauges'] == pytest.approx(0, abs=0.05)
+
+    def test_speed_can_be_pinned_to_one_road(self):
+        path = [[0.0, 300, 250], [2.0, 400, 250]]
+        assert tg.speed_mph('yard', path, track='platform road') is not None
