@@ -18,6 +18,8 @@ Usage:
     ok, frame = cap.read()
 """
 
+import os
+import random
 import threading
 import time
 
@@ -46,17 +48,62 @@ CACHE_TTL_S = 3 * 3600
 _cache: dict[str, tuple[float, dict[str, str]]] = {}
 _cache_lock = threading.Lock()
 
+# Resolutions are serialised and spaced out. Six cameras cold-starting
+# together is what tripped the challenge on 29/8: the watcher restarted,
+# asked YouTube for all six at once, and every camera was refused for the
+# rest of the evening.
+_resolve_lock = threading.Lock()
+_last_resolve = 0.0
+RESOLVE_SPACING_S = 2.5
+
+# Cookies from a signed-in browser are yt-dlp's documented remedy for the
+# "confirm you're not a bot" challenge. Off by default because reading the
+# cookie store needs keychain access; set WSR_COOKIES_FROM=chrome to enable.
+COOKIES_FROM = os.environ.get('WSR_COOKIES_FROM')
+
+# A challenge is not a transient network error — retrying promptly makes it
+# worse — so callers should back off hard when they see one.
+class BotChallenge(RuntimeError):
+    """YouTube refused the request pending human verification."""
+
+
+def _looks_like_challenge(error: Exception) -> bool:
+    text = str(error).lower()
+    return 'not a bot' in text or 'sign in to confirm' in text
+
 
 def _format_table(camera: str, force: bool = False) -> dict[str, str]:
     """{format_id: url} for a camera, cached until the URLs near expiry."""
+    global _last_resolve
     video_id = CAMERAS.get(camera, camera)
     with _cache_lock:
         hit = _cache.get(video_id)
         if hit and not force and time.time() - hit[0] < CACHE_TTL_S:
             return hit[1]
-    with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
-        info = ydl.extract_info(
-            f'https://www.youtube.com/watch?v={video_id}', download=False)
+
+    options: dict = {'quiet': True}
+    if COOKIES_FROM:
+        options['cookiesfrombrowser'] = (COOKIES_FROM,)
+
+    # one resolution at a time, spaced apart, so a cold start trickles
+    with _resolve_lock:
+        wait = RESOLVE_SPACING_S - (time.time() - _last_resolve)
+        if wait > 0:
+            time.sleep(wait + random.uniform(0, 0.5))
+        try:
+            with yt_dlp.YoutubeDL(options) as ydl:
+                info = ydl.extract_info(
+                    f'https://www.youtube.com/watch?v={video_id}', download=False)
+        except Exception as error:
+            if _looks_like_challenge(error):
+                raise BotChallenge(
+                    'YouTube is asking for human verification. Wait for it to '
+                    'clear, or set WSR_COOKIES_FROM=chrome to pass cookies '
+                    'from a signed-in browser.') from error
+            raise
+        finally:
+            _last_resolve = time.time()
+
     table = {f['format_id']: f['url'] for f in info.get('formats', [])
              if f.get('url')}
     with _cache_lock:

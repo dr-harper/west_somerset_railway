@@ -47,6 +47,18 @@ train_detection/          live webcam detection system (YOLO11 + zones)
 
 - Six public Railcam webcams via YouTube Live HLS (`wsr_live_capture.py`).
   Streams offer up to 1080p; the pipeline runs at 854×480.
+- YouTube rate-limits URL resolution with a "confirm you're not a bot"
+  challenge. Mitigations, in order of importance: one extraction serves
+  every rendition and is cached for three hours; resolutions are
+  serialised and spaced 2.5s apart so a six-camera cold start trickles
+  rather than floods; a challenge raises `BotChallenge` and the watcher
+  then waits 15 minutes rather than retrying into it. If it still bites,
+  set `WSR_COOKIES_FROM=chrome` to pass cookies from a signed-in browser.
+- Railcam publish TWELVE free WSR cameras on their own site (including
+  Williton, and second angles at Blue Anchor, Crowcombe, Watchet and
+  Minehead) versus the six on YouTube — but their content is copyright
+  and behind free registration, so that route needs their consent, not
+  scraping.
 - `detection_zones.py`: per-camera polygons (detect/approach/ignore),
   calibrated at 854×480 — recalibrate if a camera is repositioned.
 - `gala_watcher.py`: two-tier watcher (motion gate → YOLO11 episodes).

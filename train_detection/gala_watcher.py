@@ -30,7 +30,7 @@ import cv2
 import numpy as np
 
 from detection_zones import ZONES, classify, draw_zones
-from wsr_live_capture import CAMERAS, resolve_hls_url
+from wsr_live_capture import CAMERAS, BotChallenge, resolve_hls_url
 
 
 def grab_hires_still(camera: str, out_path: Path, delay_s: float = 4.0) -> None:
@@ -68,6 +68,7 @@ MOTION_FRACTION = 0.02         # fraction of zone mask that must change
 MOTION_CONSECUTIVE = 3         # samples needed to open the gate
 GLOBAL_JUMP_FRACTION = 0.35    # whole-frame change => exposure/camera jump
 CANDIDATE_TIMEOUT_S = 6        # YOLO tries before a gate is called false
+CHALLENGE_BACKOFF_S = 900      # wait this long after a bot challenge
 BACKFILL_STEP_S = 1.0          # how coarsely to rewind through the buffer
 BACKFILL_CONF = 0.35           # a train entering frame scores lower than one
                                # filling it, so accept less when rewinding
@@ -150,7 +151,7 @@ class CameraWorker(threading.Thread):
         self.frame_buffer = []         # (t, frame) rolling ~30s at 2 Hz
         self.heartbeat = time.time()
         self.stats = {'gates': 0, 'false_gates': 0, 'episodes': 0,
-                      'reconnects': 0, 'jumps': 0}
+                      'reconnects': 0, 'jumps': 0, 'challenges': 0}
 
     # --- setup -----------------------------------------------------------
 
@@ -378,17 +379,23 @@ class CameraWorker(threading.Thread):
                             self._close_episode()
                             self.state = 'IDLE'
             except Exception as exc:
+                challenged = isinstance(exc, BotChallenge)
                 self.log_queue.put(('error', {
                     'ts': now_iso(), 'camera': self.camera,
-                    'error': str(exc)[:200]}))
+                    'challenge': challenged, 'error': str(exc)[:200]}))
                 self.stats['reconnects'] += 1
+                if challenged:
+                    self.stats['challenges'] += 1
                 if self.episode:
                     self._close_episode()
                 self.state = 'IDLE'
                 if self.cap is not None:
                     self.cap.release()
                     self.cap = None
-                time.sleep(backoff)
+                # A challenge is a rate limit, not a blip: retrying promptly
+                # deepens it. On 29/8 six cameras retried into one for half an
+                # hour and stayed blind throughout.
+                time.sleep(CHALLENGE_BACKOFF_S if challenged else backoff)
                 backoff = min(backoff * 2, 120)
 
     def _detect(self, frame, conf: float = 0.5):
