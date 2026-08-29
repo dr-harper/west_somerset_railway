@@ -1,1 +1,21 @@
+# Environment
 train_detection/.env
+.env
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# Detection runtime output (regenerated every run)
+train_detection/captures/
+train_detection/events/
+train_detection/*.jsonl
+train_detection/*.log
+train_detection/*.err
+train_detection/working_images/
+
+# Model weights (downloaded on demand by ultralytics)
+*.pt
