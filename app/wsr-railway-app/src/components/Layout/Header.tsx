@@ -11,7 +11,7 @@ export const Header: React.FC = () => {
         <div className="container-narrow">
           <div className={styles.headerContent}>
             <div className={styles.logo}>
-              <img src="./west_somerset_railway.png" alt="WSR Logo" className={styles.logoImage} />
+              <img src={`${import.meta.env.BASE_URL}west_somerset_railway.png`} alt="WSR Logo" className={styles.logoImage} />
               <div>
                 <h1 className={styles.title}>West Somerset Railway Timetables</h1>
               </div>
@@ -34,6 +34,13 @@ export const Header: React.FC = () => {
                 className={`${styles.navLink} ${location.pathname === '/journey-planner' ? styles.active : ''}`}
               >
                 Journey Planner
+              </Link>
+              <Link
+                to="/admin"
+                className={`${styles.navLink} ${styles.adminLink} ${location.pathname.startsWith('/admin') ? styles.active : ''}`}
+                title="Detection system control room"
+              >
+                Control Room
               </Link>
             </nav>
           </div>

@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Navigate, Routes, Route } from 'react-router-dom';
 import './styles/global.css';
 import './App.css';
 import { Header } from './components/Layout/Header';
@@ -7,6 +7,10 @@ import { Home } from './pages/Home/Home';
 import { LiveTrains } from './pages/LiveTrains/LiveTrains';
 import { JourneyPlanner } from './pages/JourneyPlanner/JourneyPlanner';
 import { VerifyPage } from './pages/Verify/VerifyPage';
+import { AdminLayout } from './pages/Admin/AdminLayout';
+import { AdminOverview } from './pages/Admin/AdminOverview';
+import { AdminEpisodes } from './pages/Admin/AdminEpisodes';
+import { AdminCameras } from './pages/Admin/AdminCameras';
 
 function App() {
   // Get the base path from Vite's configuration
@@ -22,7 +26,14 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/live-trains" element={<LiveTrains />} />
             <Route path="/journey-planner" element={<JourneyPlanner />} />
-            <Route path="/verify" element={<VerifyPage />} />
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminOverview />} />
+              <Route path="verify" element={<VerifyPage />} />
+              <Route path="episodes" element={<AdminEpisodes />} />
+              <Route path="cameras" element={<AdminCameras />} />
+            </Route>
+            {/* the verify page moved under /admin; keep old links working */}
+            <Route path="/verify" element={<Navigate to="/admin/verify" replace />} />
           </Routes>
         </main>
 

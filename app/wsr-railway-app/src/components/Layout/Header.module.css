@@ -103,3 +103,14 @@
     gap: var(--spacing-md);
   }
 }
+
+/* The control room is for the operator, not the travelling public, so it
+   sits apart from the timetable links rather than among them. */
+.adminLink {
+  margin-left: var(--spacing-sm);
+  padding-left: var(--spacing-lg);
+  border-left: 1px solid rgba(243, 235, 218, 0.25);
+  color: var(--brass);
+}
+
+.adminLink:hover { color: var(--brass-bright); }
