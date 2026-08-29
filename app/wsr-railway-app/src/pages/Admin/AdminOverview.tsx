@@ -1,39 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { DetectionRibbon } from '../../components/Admin/DetectionRibbon';
 import { isFirebaseConfigured } from '../../firebase';
+import { CAMERAS } from '../../services/cameras';
 import { fetchEpisodes, type Episode } from '../../utils/firestore/episodes';
+import { fetchMovements, type Movement } from '../../utils/firestore/movements';
 import styles from './Admin.module.css';
 
-interface Summary {
-  total: number;
-  unverified: number;
-  confirmed: number;
-  rejected: number;
-  scheduled: number;
-  unscheduled: number;
-  cameras: number;
-  latest: string | null;
-  day: string | null;
-}
-
-function summarise(episodes: Episode[]): Summary {
-  const count = (predicate: (e: Episode) => boolean) => episodes.filter(predicate).length;
-  const sorted = [...episodes].sort((a, b) => b.t_enter.localeCompare(a.t_enter));
-  return {
-    total: episodes.length,
-    unverified: count(e => e.status === 'unverified'),
-    confirmed: count(e => e.status === 'confirmed'),
-    rejected: count(e => e.status === 'rejected'),
-    scheduled: count(e => e.claim?.kind === 'scheduled'),
-    unscheduled: count(e => e.claim?.kind === 'unscheduled'),
-    cameras: new Set(episodes.map(e => e.camera)).size,
-    latest: sorted[0]?.t_enter ?? null,
-    day: sorted[0]?.date_key ?? null,
-  };
-}
+/**
+ * The state of the detection run, in the order an operator needs it.
+ *
+ * What matters first is whether the day looks right — the ribbon answers
+ * that faster than any number. Then what still needs a human: unverified
+ * detections, unscheduled movements, cameras not yet set up. Counts that
+ * prompt no action are kept out.
+ */
 
 export const AdminOverview: React.FC = () => {
-  const [summary, setSummary] = useState<Summary | null>(null);
+  const [episodes, setEpisodes] = useState<Episode[]>([]);
+  const [movements, setMovements] = useState<Movement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,42 +27,65 @@ export const AdminOverview: React.FC = () => {
       setLoading(false);
       return;
     }
-    fetchEpisodes('all', 500)
-      .then(episodes => setSummary(summarise(episodes)))
+    Promise.all([fetchEpisodes('all', 500), fetchMovements(undefined, 300)])
+      .then(([loadedEpisodes, loadedMovements]) => {
+        setEpisodes(loadedEpisodes);
+        setMovements(loadedMovements);
+      })
       .catch(cause => {
-        console.error('Failed to load episodes', cause);
+        console.error('Failed to load detection data', cause);
         setError('Could not reach Firestore. Is the emulator running?');
       })
       .finally(() => setLoading(false));
   }, []);
+
+  const summary = useMemo(() => {
+    const count = (predicate: (e: Episode) => boolean) =>
+      episodes.filter(predicate).length;
+    const sorted = [...episodes].sort((a, b) => b.t_enter.localeCompare(a.t_enter));
+    const reviewed = count(
+      e => e.status === 'confirmed' || e.status === 'rejected' || e.status === 'corrected'
+    );
+    return {
+      total: episodes.length,
+      unverified: count(e => e.status === 'unverified'),
+      reviewed,
+      scheduled: count(e => e.claim?.kind === 'scheduled'),
+      latest: sorted[0]?.t_enter ?? null,
+      day: sorted[0]?.date_key ?? null,
+      camerasReporting: new Set(episodes.map(e => e.camera)).size,
+    };
+  }, [episodes]);
+
+  const notSetUp = CAMERAS.filter(c => !c.annotation.ready);
+  const unscheduled = movements.filter(m => m.kind === 'unscheduled');
 
   if (!isFirebaseConfigured) {
     return (
       <div className={styles.panel}>
         <h2>Not connected</h2>
         <p className={styles.muted}>
-          Set <code>VITE_FIREBASE_PROJECT_ID</code> to see detections here.
-          The public timetable works without it.
+          Set <code>VITE_FIREBASE_PROJECT_ID</code> to point the control room at
+          a project, or run the emulator and set{' '}
+          <code>VITE_FIRESTORE_EMULATOR</code>.
         </p>
       </div>
     );
   }
   if (loading) return <div className={styles.panel}>Loading…</div>;
   if (error) return <div className={styles.error}>{error}</div>;
-  if (!summary || summary.total === 0) {
+
+  if (!summary.total) {
     return (
       <div className={styles.panel}>
         <h2>No detections yet</h2>
         <p className={styles.muted}>
-          Run the watcher, then upload with{' '}
+          Run a day, then upload it with{' '}
           <code>python3 upload_episodes.py --project demo-wsr</code>.
         </p>
       </div>
     );
   }
-
-  const reviewed = summary.confirmed + summary.rejected;
-  const progress = summary.total ? Math.round((reviewed / summary.total) * 100) : 0;
 
   return (
     <>
@@ -87,40 +95,66 @@ export const AdminOverview: React.FC = () => {
           <span className={styles.statLabel}>detections</span>
         </div>
         <div className={styles.stat}>
-          <span className={styles.statValue}>{summary.scheduled}</span>
-          <span className={styles.statLabel}>matched a service</span>
+          <span className={styles.statValue}>{movements.length}</span>
+          <span className={styles.statLabel}>movements</span>
         </div>
         <div className={styles.stat}>
-          <span className={`${styles.statValue} ${styles.accent}`}>{summary.unscheduled}</span>
-          <span className={styles.statLabel}>unscheduled</span>
+          <span className={`${styles.statValue} ${unscheduled.length ? styles.accent : ''}`}>
+            {unscheduled.length}
+          </span>
+          <span className={styles.statLabel}>not in the timetable</span>
         </div>
         <div className={styles.stat}>
-          <span className={styles.statValue}>{summary.cameras}</span>
+          <span className={styles.statValue}>
+            {summary.camerasReporting}/{CAMERAS.length}
+          </span>
           <span className={styles.statLabel}>cameras reporting</span>
         </div>
       </div>
+
+      <div className={styles.panelHead}>
+        <h2>{summary.day ? `The day at ${summary.day}` : 'The day'}</h2>
+        <Link className={styles.action} to="/admin/events">Every detection</Link>
+      </div>
+      <DetectionRibbon episodes={episodes} />
 
       <div className={styles.panel}>
         <div className={styles.panelHead}>
           <h2>Verification</h2>
           <Link className={styles.action} to="/admin/verify">
-            {summary.unverified > 0 ? `Review ${summary.unverified}` : 'All reviewed'}
+            {summary.unverified ? `Review ${summary.unverified}` : 'All reviewed'}
           </Link>
         </div>
         <div className={styles.bar}>
-          <span className={styles.barFill} style={{ width: `${progress}%` }} />
+          <div
+            className={styles.barFill}
+            style={{ width: `${(summary.reviewed / summary.total) * 100}%` }}
+          />
         </div>
         <p className={styles.muted}>
-          {reviewed} of {summary.total} checked by a human
-          {summary.rejected > 0 && ` · ${summary.rejected} rejected as not a train`}
+          {summary.reviewed} of {summary.total} checked by hand
         </p>
       </div>
+
+      {notSetUp.length > 0 && (
+        <div className={styles.panel}>
+          <div className={styles.panelHead}>
+            <h2>Waiting on annotation</h2>
+            <Link className={styles.action} to="/admin/cameras">Cameras</Link>
+          </div>
+          <p className={styles.muted}>
+            {notSetUp.map(c => c.name).join(', ')} — no track traced, so
+            detections there cannot be placed on a road.
+          </p>
+        </div>
+      )}
 
       <div className={styles.panel}>
         <h2>Latest activity</h2>
         <p className={styles.muted}>
-          {summary.day && `Operating day ${summary.day}`}
-          {summary.latest && ` · last detection ${summary.latest.slice(11, 16)}`}
+          {summary.latest
+            ? `Last detection ${summary.latest.slice(11, 16)} on ${summary.day}`
+            : 'Nothing logged'}
         </p>
       </div>
     </>

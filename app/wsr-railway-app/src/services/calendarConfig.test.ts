@@ -3,6 +3,7 @@ import {
   getDayInfo,
   getTimetableType,
   hasServices,
+  specialEvents,
   timetableSummaries,
   toDateKey
 } from './calendarConfig';
@@ -69,5 +70,15 @@ describe('timetable data integrity', () => {
       expect(times.every(t => /^\d{2}:\d{2}$/.test(t))).toBe(true);
       expect([...times].sort()).toEqual(times);
     }
+  });
+
+  it('special events are keyed in local time, not UTC', () => {
+    // A BST date built at local midnight reports the previous day through
+    // toISOString. ServiceCalendar used that and drew every event marker a
+    // square early; toDateKey is what keeps it on the right day.
+    const bstDate = new Date(2026, 8, 12);
+    expect(bstDate.toISOString().split('T')[0]).toBe('2026-09-11');
+    expect(toDateKey(bstDate)).toBe('2026-09-12');
+    expect(specialEvents['2026-09-12']).toBeDefined();
   });
 });

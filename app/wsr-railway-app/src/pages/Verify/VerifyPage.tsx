@@ -7,16 +7,9 @@ import {
   type Episode,
   type VerificationStatus,
 } from '../../utils/firestore/episodes';
+import { cameraName } from '../../services/cameras';
+import { captureUrl } from '../../services/captures';
 import styles from './VerifyPage.module.css';
-
-const STATION_NAMES: Record<string, string> = {
-  bishops_lydeard: 'Bishops Lydeard',
-  crowcombe_heathfield: 'Crowcombe Heathfield',
-  watchet_visitor_centre: 'Watchet',
-  blue_anchor: 'Blue Anchor',
-  minehead_seaward_crossing: 'Minehead, Seaward Crossing',
-  minehead_station: 'Minehead',
-};
 
 function describeClaim(episode: Episode): string {
   const { claim } = episode;
@@ -169,8 +162,8 @@ export const VerifyPage: React.FC = () => {
               {current.keyframe ? (
                 <img
                   className={styles.image}
-                  src={`/captures/${current.keyframe}`}
-                  alt={`Detection at ${STATION_NAMES[current.camera] ?? current.camera}`}
+                  src={captureUrl(current.keyframe) ?? ''}
+                  alt={`Detection at ${cameraName(current.camera)}`}
                 />
               ) : (
                 <div className={styles.imagePlaceholder}>No keyframe saved</div>
@@ -179,7 +172,7 @@ export const VerifyPage: React.FC = () => {
 
             <div className={styles.facts}>
               <div className={styles.where}>
-                {STATION_NAMES[current.camera] ?? current.camera}
+                {cameraName(current.camera)}
               </div>
               <div className={styles.when}>
                 {current.t_enter.slice(11, 16)}

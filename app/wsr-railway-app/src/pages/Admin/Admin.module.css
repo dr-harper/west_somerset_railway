@@ -353,3 +353,140 @@
   .table th:nth-child(3), .table td:nth-child(3),
   .table th:nth-child(5), .table td:nth-child(5) { display: none; }
 }
+
+/* --- stills gallery ---------------------------------------------------
+   The keyframe is the fastest way to judge a detection, so the default
+   view leads with the picture and keeps the reading as a caption. */
+
+.stillGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+}
+
+.still {
+  position: relative;
+  display: block;
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--paper-deep);
+  overflow: hidden;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.still:hover {
+  border-color: var(--chocolate);
+  transform: translateY(-2px);
+}
+
+.still:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+.stillImage {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.stillMissing {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 9;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+}
+
+.stillMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--spacing-xs);
+  padding: 6px 8px;
+  background: var(--paper-raised);
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+
+.stillMeta strong {
+  font-family: var(--font-display);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.stillTag {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 2px 7px;
+  border-radius: 2px;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--paper);
+}
+
+.tagScheduled { background: var(--brunswick); }
+.tagUnscheduled { background: var(--brass); color: var(--chocolate-deep); }
+
+/* --- movements --------------------------------------------------------- */
+
+.movement {
+  border-top: 1px solid var(--rule);
+  padding: var(--spacing-sm) 0;
+}
+
+.movementHead {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.movementRoute {
+  font-family: var(--font-display);
+  letter-spacing: 0.06em;
+  color: var(--ink);
+}
+
+.sightings {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  margin: var(--spacing-xs) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+.sightings li { white-space: nowrap; }
+
+.onTime { color: var(--brunswick); border-color: var(--brunswick); }
+.late { color: var(--signal-red); border-color: var(--signal-red); }
+
+/* --- camera setup ------------------------------------------------------ */
+
+.setupRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--rule);
+}
+
+.setupOn,
+.setupOff {
+  font-size: 0.7rem;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--rule);
+  white-space: nowrap;
+}
+
+.setupOn { color: var(--brunswick); border-color: var(--brunswick); }
+.setupOff { color: var(--ink-soft); opacity: 0.7; }

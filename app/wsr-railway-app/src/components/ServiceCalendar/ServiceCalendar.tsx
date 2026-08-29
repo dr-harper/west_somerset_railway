@@ -129,8 +129,10 @@ export const ServiceCalendar: React.FC<ServiceCalendarProps> = ({
 
   const getSpecialEventForDay = (day: number, monthDate: Date): string | undefined => {
     const date = new Date(monthDate.getFullYear(), monthDate.getMonth(), day);
-    const dateStr = date.toISOString().split('T')[0];
-    return specialEvents[dateStr];
+    // toDateKey, not toISOString: the date is built at local midnight, so
+    // under BST toISOString reports the previous day and every event
+    // marker lands one square early.
+    return specialEvents[toDateKey(date)];
   };
 
   const renderMonthCalendar = (monthDate: Date) => {

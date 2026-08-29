@@ -4,9 +4,10 @@ import styles from './Admin.module.css';
 
 const SECTIONS = [
   { to: '/admin', end: true, label: 'Overview' },
-  { to: '/admin/verify', label: 'Verify' },
-  { to: '/admin/episodes', label: 'Detections' },
+  { to: '/admin/events', label: 'Events' },
+  { to: '/admin/trains', label: 'Trains' },
   { to: '/admin/cameras', label: 'Cameras' },
+  { to: '/admin/verify', label: 'Verify' },
 ];
 
 export const AdminLayout: React.FC = () => (

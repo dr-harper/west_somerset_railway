@@ -87,3 +87,33 @@ describe('verifiers', () => {
     await assertFails(setDoc(doc(db, 'verifiers', STRANGER), { email: 'x' }));
   });
 });
+
+describe('derived collections', () => {
+  // Movements and cameras are rebuilt wholesale by the pipeline on every
+  // upload. Nothing a verifier owns lives on them, so no client may write
+  // — a client write would simply be erased by the next run, silently.
+  const MOVEMENT = 'movements/20260829_0809_BL_BA';
+  const CAMERA = 'cameras/blue_anchor';
+
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async context => {
+      const db = context.firestore();
+      await setDoc(doc(db, MOVEMENT), { from: 'BL', to: 'BA', sightings: 2 });
+      await setDoc(doc(db, CAMERA), { id: 'blue_anchor', name: 'Blue Anchor' });
+    });
+  });
+
+  it('anyone may read movements and cameras', async () => {
+    const db = env.unauthenticatedContext().firestore();
+    await assertSucceeds(getDoc(doc(db, MOVEMENT)));
+    await assertSucceeds(getDoc(doc(db, CAMERA)));
+  });
+
+  it('not even a verifier may write them', async () => {
+    const db = env.authenticatedContext(VERIFIER).firestore();
+    await assertFails(updateDoc(doc(db, MOVEMENT), { sightings: 99 }));
+    await assertFails(updateDoc(doc(db, CAMERA), { name: 'Renamed' }));
+    await assertFails(setDoc(doc(db, 'movements/invented'), { from: 'BL' }));
+    await assertFails(setDoc(doc(db, 'cameras/invented'), { id: 'x' }));
+  });
+});

@@ -1,0 +1,116 @@
+.ribbon {
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: var(--spacing-md);
+  overflow-x: auto;
+}
+
+.axis,
+.row {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-width: 520px;
+}
+
+.axis { margin-bottom: var(--spacing-xs); }
+
+.axisTrack {
+  position: relative;
+  height: 16px;
+}
+
+.tick {
+  position: absolute;
+  transform: translateX(-50%);
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.row + .row { margin-top: 3px; }
+
+.rowLabel {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track {
+  position: relative;
+  height: 22px;
+  background: var(--paper-deep);
+  border-radius: 2px;
+}
+
+.gridline {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--rule);
+  opacity: 0.5;
+}
+
+/* A detection is a stroke rather than a dot: at this density round marks
+   merge into a smear, where verticals stay countable. */
+.mark {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  width: 4px;
+  margin-left: -2px;
+  padding: 0;
+  border: none;
+  border-radius: 1px;
+  cursor: pointer;
+  transition: transform var(--transition-fast);
+}
+
+.mark:hover { transform: scaleX(2.2); }
+
+.mark:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.markScheduled { background: var(--brunswick); }
+.markUnscheduled { background: var(--brass); }
+.markRejected { background: var(--rule-strong); }
+
+.markSelected {
+  transform: scaleX(2.5);
+  box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--chocolate);
+}
+
+.key {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  margin-top: var(--spacing-sm);
+  padding-left: 158px;
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+}
+
+.key span { display: inline-flex; align-items: center; gap: 5px; }
+
+.dot {
+  display: inline-block;
+  width: 4px;
+  height: 12px;
+  border-radius: 1px;
+}
+
+@media (max-width: 700px) {
+  .axis,
+  .row { grid-template-columns: 96px 1fr; }
+  .rowLabel { font-size: 0.68rem; }
+  .key { padding-left: 0; }
+}

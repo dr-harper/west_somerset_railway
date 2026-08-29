@@ -9,7 +9,8 @@ import { JourneyPlanner } from './pages/JourneyPlanner/JourneyPlanner';
 import { VerifyPage } from './pages/Verify/VerifyPage';
 import { AdminLayout } from './pages/Admin/AdminLayout';
 import { AdminOverview } from './pages/Admin/AdminOverview';
-import { AdminEpisodes } from './pages/Admin/AdminEpisodes';
+import { AdminEvents } from './pages/Admin/AdminEvents';
+import { AdminTrains } from './pages/Admin/AdminTrains';
 import { AdminCameras } from './pages/Admin/AdminCameras';
 
 function App() {
@@ -29,7 +30,9 @@ function App() {
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminOverview />} />
               <Route path="verify" element={<VerifyPage />} />
-              <Route path="episodes" element={<AdminEpisodes />} />
+              <Route path="events" element={<AdminEvents />} />
+              <Route path="trains" element={<AdminTrains />} />
+              <Route path="episodes" element={<Navigate to="/admin/events" replace />} />
               <Route path="cameras" element={<AdminCameras />} />
             </Route>
             {/* the verify page moved under /admin; keep old links working */}

@@ -132,3 +132,30 @@ def test_unknown_orientation_is_not_silently_assumed():
     assert untraced, 'expected some cameras still awaiting orientation'
     for camera in untraced:
         assert tg.trace_runs_to_minehead(camera) is True  # the safe default
+
+
+# --- registry sync ------------------------------------------------------
+
+def test_app_camera_registry_is_in_sync():
+    """The web app's copy must match what the pipeline actually runs.
+
+    Three pages once kept their own hardcoded six-camera list, so
+    detections from the five newer cameras rendered as raw ids and were
+    absent from the per-camera counts. One generated file replaced them;
+    this fails the moment it drifts.
+    """
+    import json
+    from camera_registry import APP_DATA, registry
+
+    assert APP_DATA.exists(), (
+        'cameras.json is missing — run python3 camera_registry.py --write')
+    on_disk = json.loads(APP_DATA.read_text())
+    assert on_disk == registry(), (
+        'cameras.json is stale — run python3 camera_registry.py --write')
+
+
+def test_every_camera_has_a_station_node():
+    """Without a node a camera cannot take part in movement chaining."""
+    from train_tracker import CAMERA_NODES
+    missing = [c for c in CAMERAS if c not in CAMERA_NODES]
+    assert not missing, f'no station node for {missing}'
