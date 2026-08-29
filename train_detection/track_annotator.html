@@ -49,6 +49,10 @@
 <main>
   <div class="row">
     <select id="camera"></select>
+    <select id="rail">
+      <option value="a">Rail A (nearer camera)</option>
+      <option value="b">Rail B (farther)</option>
+    </select>
     <button id="undo">Undo point</button>
     <button id="clear" class="danger">Clear</button>
     <button id="save" class="primary">Save all tracks</button>
@@ -56,10 +60,11 @@
   </div>
 
   <p class="hint">
-    Click along the centre of the running line, starting from whichever end
-    is nearer Bishops Lydeard. Drag an existing point to nudge it. The arrow
-    shows which way the tool thinks Minehead is — it should point the way a
-    northbound train travels.
+    Trace <strong>both rails of one track</strong>, each with several points
+    so curves are followed properly. Start each rail from whichever end is
+    nearer Bishops Lydeard. Their real separation is a known 1.435&nbsp;m, so
+    the gap between them tells the pipeline the scale at every depth — that
+    is what makes speed measurable. Drag a point to nudge it.
   </p>
 
   <div class="canvasWrap"><canvas id="canvas" width="854" height="480"></canvas></div>
@@ -102,10 +107,20 @@ async function loadExisting() {
   } catch { /* first run: nothing saved yet */ }
 }
 
-function current() {
+const railSelect = document.getElementById('rail');
+
+function track() {
   const name = select.value;
-  if (!tracks[name]) tracks[name] = { points: [], anchors: [] };
+  if (!tracks[name]) tracks[name] = { rails: { a: [], b: [] }, anchors: [] };
+  if (!tracks[name].rails) tracks[name].rails = { a: [], b: [] };
   return tracks[name];
+}
+
+function current() {
+  const rails = track().rails;
+  const key = railSelect.value;
+  if (!rails[key]) rails[key] = [];
+  return { points: rails[key] };
 }
 
 function loadImage() {
@@ -135,6 +150,29 @@ function nearestPoint(position, within = 12) {
   return best;
 }
 
+function pointAtFraction(points, fraction) {
+  if (points.length === 1) return points[0];
+  const lengths = [0];
+  for (let i = 1; i < points.length; i++) {
+    lengths.push(lengths[i - 1] + Math.hypot(
+      points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1]));
+  }
+  const total = lengths[lengths.length - 1];
+  if (!total) return points[0];
+  const target = fraction * total;
+  for (let i = 1; i < points.length; i++) {
+    if (lengths[i] >= target) {
+      const span = lengths[i] - lengths[i - 1];
+      const t = span ? (target - lengths[i - 1]) / span : 0;
+      return [
+        points[i - 1][0] + (points[i][0] - points[i - 1][0]) * t,
+        points[i - 1][1] + (points[i][1] - points[i - 1][1]) * t,
+      ];
+    }
+  }
+  return points[points.length - 1];
+}
+
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   if (image.complete && image.naturalWidth) {
@@ -142,38 +180,59 @@ function draw() {
   } else {
     ctx.fillStyle = '#222'; ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
-  const points = current().points;
-  if (points.length > 1) {
-    ctx.strokeStyle = 'rgba(255,180,58,.95)';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    points.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
-    ctx.stroke();
+  const rails = track().rails;
+  const active = railSelect.value;
+  const COLOURS = { a: 'rgba(255,180,58,.95)', b: 'rgba(127,201,127,.95)' };
 
-    // arrow at the Minehead end of the traced line
-    const [x1, y1] = points[points.length - 2];
-    const [x2, y2] = points[points.length - 1];
-    const angle = Math.atan2(y2 - y1, x2 - x1);
-    ctx.fillStyle = 'rgba(255,180,58,.95)';
-    ctx.beginPath();
-    ctx.moveTo(x2, y2);
-    ctx.lineTo(x2 - 16 * Math.cos(angle - 0.4), y2 - 16 * Math.sin(angle - 0.4));
-    ctx.lineTo(x2 - 16 * Math.cos(angle + 0.4), y2 - 16 * Math.sin(angle + 0.4));
-    ctx.closePath();
-    ctx.fill();
-    ctx.font = '12px sans-serif';
-    ctx.fillText('to Minehead', x2 + 10, y2 - 8);
+  // sleepers between the rails: shows the pairing the geometry will use
+  if (rails.a.length > 1 && rails.b.length > 1) {
+    ctx.strokeStyle = 'rgba(250,244,230,.35)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 10; i++) {
+      const pa = pointAtFraction(rails.a, i / 10);
+      const pb = pointAtFraction(rails.b, i / 10);
+      ctx.beginPath(); ctx.moveTo(pa[0], pa[1]); ctx.lineTo(pb[0], pb[1]); ctx.stroke();
+    }
   }
-  points.forEach(([x, y], index) => {
-    ctx.beginPath();
-    ctx.arc(x, y, 5, 0, Math.PI * 2);
-    ctx.fillStyle = index === 0 ? '#7FC97F' : '#FAF4E6';
-    ctx.fill();
-    ctx.strokeStyle = '#16130E';
-    ctx.lineWidth = 2;
-    ctx.stroke();
+
+  ['a', 'b'].forEach(key => {
+    const points = rails[key] || [];
+    if (points.length > 1) {
+      ctx.strokeStyle = COLOURS[key];
+      ctx.lineWidth = key === active ? 3 : 2;
+      ctx.globalAlpha = key === active ? 1 : 0.65;
+      ctx.beginPath();
+      points.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      const [x1, y1] = points[points.length - 2];
+      const [x2, y2] = points[points.length - 1];
+      const angle = Math.atan2(y2 - y1, x2 - x1);
+      ctx.fillStyle = COLOURS[key];
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - 14 * Math.cos(angle - 0.4), y2 - 14 * Math.sin(angle - 0.4));
+      ctx.lineTo(x2 - 14 * Math.cos(angle + 0.4), y2 - 14 * Math.sin(angle + 0.4));
+      ctx.closePath();
+      ctx.fill();
+      if (key === active) {
+        ctx.font = '12px sans-serif';
+        ctx.fillText('to Minehead', x2 + 10, y2 - 8);
+      }
+    }
+    points.forEach(([x, y], index) => {
+      ctx.beginPath();
+      ctx.arc(x, y, key === active ? 5 : 3, 0, Math.PI * 2);
+      ctx.fillStyle = index === 0 ? '#7FC97F' : COLOURS[key];
+      ctx.fill();
+      ctx.strokeStyle = '#16130E';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    });
   });
-  status.textContent = `${points.length} point${points.length === 1 ? '' : 's'}`;
+  const counts = `A:${rails.a.length} B:${(rails.b || []).length}`;
+  const ready = rails.a.length > 1 && (rails.b || []).length > 1;
+  status.textContent = ready ? `${counts} — pair complete` : `${counts} — need both rails`;
   output.value = JSON.stringify(tracks, null, 1);
 }
 
@@ -191,8 +250,8 @@ canvas.addEventListener('pointermove', event => {
 });
 window.addEventListener('pointerup', () => { dragging = null; });
 
-document.getElementById('undo').onclick = () => { current().points.pop(); draw(); };
-document.getElementById('clear').onclick = () => { current().points = []; draw(); };
+document.getElementById('undo').onclick = () => { track().rails[railSelect.value].pop(); draw(); };
+document.getElementById('clear').onclick = () => { track().rails[railSelect.value] = []; draw(); };
 document.getElementById('save').onclick = async () => {
   const response = await fetch('/save-tracks', {
     method: 'POST',
@@ -202,6 +261,7 @@ document.getElementById('save').onclick = async () => {
   status.textContent = response.ok ? 'saved to camera_tracks.json' : 'save failed';
 };
 select.onchange = () => { loadImage(); draw(); };
+railSelect.onchange = draw;
 
 loadExisting().then(() => { loadImage(); draw(); });
 </script>

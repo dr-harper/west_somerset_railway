@@ -1,83 +1,132 @@
-"""Tests for track-centreline geometry.
+"""Tests for rail-pair track geometry.
 
-Uses a synthetic camera whose track is an L-shape, so the two limbs have
-very different tangents — the case a single per-camera direction vector
-cannot represent, and the reason this module exists.
+The synthetic camera looks along a track that runs east then turns south,
+with the rails converging as they recede — so the fixture exercises both
+things a single traced line cannot represent: a changing tangent, and a
+changing scale.
 """
+
+import math
 
 import pytest
 
 import track_geometry as tg
 
-# Straight limb east, then a limb turning south: like a curve at a station
-L_TRACK = {'points': [[100, 100], [300, 100], [400, 200], [400, 400]]}
+# Rails 100px apart near the camera, narrowing to 20px as they recede,
+# turning a corner half way along.
+CURVED_PAIR = {
+    'rails': {
+        'a': [[100, 340], [300, 330], [420, 290], [470, 200], [478, 120]],
+        'b': [[100, 460], [300, 420], [452, 340], [500, 225], [502, 138]],
+    }
+}
+# A straight track with parallel rails: no perspective, constant scale.
+FLAT_PAIR = {
+    'rails': {
+        'a': [[100, 200], [700, 200]],
+        'b': [[100, 300], [700, 300]],
+    }
+}
 
 
 @pytest.fixture(autouse=True)
-def synthetic_track(monkeypatch):
-    monkeypatch.setitem(tg.TRACKS, 'test_cam', L_TRACK)
+def synthetic(monkeypatch):
+    monkeypatch.setitem(tg.TRACKS, 'curved', CURVED_PAIR)
+    monkeypatch.setitem(tg.TRACKS, 'flat', FLAT_PAIR)
+    tg._CENTRELINE_CACHE.clear()
     yield
-    tg.TRACKS.pop('test_cam', None)
+    tg.TRACKS.pop('curved', None)
+    tg.TRACKS.pop('flat', None)
+    tg._CENTRELINE_CACHE.clear()
 
 
-class TestProjection:
-    def test_point_on_track_has_no_offset(self):
-        placed = tg.project('test_cam', (200, 100))
-        assert placed['offset_px'] == pytest.approx(0, abs=0.5)
+class TestRailPair:
+    def test_a_single_rail_is_not_enough(self):
+        tg.TRACKS['lonely'] = {'rails': {'a': [[0, 0], [10, 10]], 'b': []}}
+        assert tg.rails_of('lonely') is None
+        tg.TRACKS.pop('lonely')
 
-    def test_offset_measures_distance_from_the_rails(self):
-        placed = tg.project('test_cam', (200, 140))
-        assert placed['offset_px'] == pytest.approx(40, abs=1)
+    def test_centreline_runs_between_the_rails(self):
+        samples = tg.centreline('flat')
+        assert all(abs(s['point'][1] - 250) < 1 for s in samples)
 
-    def test_arc_length_grows_along_the_track(self):
-        near = tg.project('test_cam', (150, 100))
-        far = tg.project('test_cam', (400, 300))
-        assert far['arc_px'] > near['arc_px']
-        assert 0 <= near['arc_normalised'] <= 1
+    def test_gauge_is_the_rail_separation(self):
+        placed = tg.project('flat', (400, 250))
+        assert placed['gauge_px'] == pytest.approx(100, abs=1)
 
-    def test_unknown_camera_returns_nothing(self):
-        assert tg.project('no_such_cam', (0, 0)) is None
+
+class TestScaleFromGauge:
+    def test_known_gauge_gives_metres_per_pixel(self):
+        placed = tg.project('flat', (400, 250))
+        # 100px between rails that are 1.435 m apart
+        assert placed['metres_per_px'] == pytest.approx(tg.STANDARD_GAUGE_M / 100, rel=0.02)
+
+    def test_scale_changes_with_depth_on_a_perspective_view(self):
+        near = tg.project('curved', (150, 400))
+        far = tg.project('curved', (500, 140))
+        assert near['gauge_px'] > far['gauge_px']
+        # the same pixel motion covers more ground further away
+        assert far['metres_per_px'] > near['metres_per_px'] * 1.5
+
+    def test_flat_view_has_constant_scale(self):
+        a = tg.project('flat', (200, 250))['metres_per_px']
+        b = tg.project('flat', (600, 250))['metres_per_px']
+        assert a == pytest.approx(b, rel=0.02)
 
 
 class TestLocalTangent:
-    """The point of the module: tangent varies along the track."""
+    def test_tangent_follows_the_curve(self):
+        first = tg.project('curved', (200, 390))['tangent_to_minehead']
+        last = tg.project('curved', (500, 140))['tangent_to_minehead']
+        # east along the first limb, mostly north up the second
+        assert first[0] > 0.8
+        assert last[1] < -0.5
 
-    def test_tangent_differs_between_limbs(self):
-        first = tg.project('test_cam', (200, 100))['tangent_to_minehead']
-        second = tg.project('test_cam', (400, 300))['tangent_to_minehead']
-        assert first == pytest.approx((1.0, 0.0), abs=0.01)   # heading east
-        assert second == pytest.approx((0.0, 1.0), abs=0.01)  # heading south
+    def test_direction_uses_the_tangent_where_the_train_is(self):
+        assert tg.direction_of_motion('curved', (200, 390), (60, 0)) == 'northbound'
+        assert tg.direction_of_motion('curved', (200, 390), (-60, 0)) == 'southbound'
+        # the same rightward motion means nothing on the second limb
+        assert tg.direction_of_motion('curved', (500, 140), (60, 0)) == 'unclear'
 
-    def test_same_motion_reads_differently_on_each_limb(self):
-        """Rightward motion is northbound on one limb, unclear on the other."""
-        drift = (60, 0)
-        assert tg.direction_of_motion('test_cam', (200, 100), drift) == 'northbound'
-        assert tg.direction_of_motion('test_cam', (400, 300), drift) == 'unclear'
-
-    def test_direction_reverses_with_motion(self):
-        assert tg.direction_of_motion('test_cam', (200, 100), (-60, 0)) == 'southbound'
-        assert tg.direction_of_motion('test_cam', (400, 300), (0, 60)) == 'northbound'
-        assert tg.direction_of_motion('test_cam', (400, 300), (0, -60)) == 'southbound'
+    def test_motion_across_the_rails_is_not_travel(self):
+        assert tg.direction_of_motion('flat', (400, 250), (0, 70)) == 'unclear'
 
     def test_tiny_motion_is_unclear(self):
-        assert tg.direction_of_motion('test_cam', (200, 100), (3, 1)) == 'unclear'
-
-    def test_motion_across_the_track_is_unclear(self):
-        # a person crossing the line, not a train running along it
-        assert tg.direction_of_motion('test_cam', (200, 100), (0, 80)) == 'unclear'
+        assert tg.direction_of_motion('flat', (400, 250), (4, 0)) == 'unclear'
 
 
-class TestAnchors:
-    def test_no_anchors_means_no_mileage(self):
-        assert tg.arc_to_miles('test_cam', 100) is None
+class TestSpeed:
+    def test_speed_uses_the_local_scale(self):
+        # 100px in 2s on the flat pair: 100 * 0.01435 m = 1.435 m -> 0.72 m/s
+        path = [[0.0, 300, 250], [2.0, 400, 250]]
+        mph = tg.speed_mph('flat', path)
+        expected = (100 * tg.STANDARD_GAUGE_M / 100) / 2.0 * 2.23694
+        assert mph == pytest.approx(expected, rel=0.05)
 
-    def test_two_anchors_map_arc_length_to_miles(self):
-        tg.TRACKS['test_cam'] = {
-            **L_TRACK,
-            'anchors': [
-                {'point': [100, 100], 'miles': 10.0},
-                {'point': [300, 100], 'miles': 10.5},
-            ],
-        }
-        assert tg.arc_to_miles('test_cam', 0) == pytest.approx(10.0, abs=0.01)
-        assert tg.arc_to_miles('test_cam', 200) == pytest.approx(10.5, abs=0.01)
+    def test_similar_pixel_motion_is_faster_further_away(self):
+        """Sixty pixels near the camera is a crawl; sixty in the distance
+        is a real speed. Ignoring perspective would call them equal."""
+        near = tg.speed_mph('curved', [[0.0, 150, 395], [2.0, 210, 393]])
+        far = tg.speed_mph('curved', [[0.0, 470, 172], [2.0, 478, 113]])
+        assert far > near * 2
+
+    def test_a_single_sample_has_no_speed(self):
+        assert tg.speed_mph('flat', [[0.0, 100, 250]]) is None
+
+
+class TestVanishingPoint:
+    def test_converging_rails_have_one(self):
+        vp = tg.vanishing_point('curved')
+        assert vp is not None and all(math.isfinite(v) for v in vp)
+
+    def test_parallel_rails_have_none(self):
+        assert tg.vanishing_point('flat') is None
+
+
+class TestOnTrack:
+    def test_a_point_on_the_rails_is_on_track(self):
+        assert tg.project('flat', (400, 250))['on_track']
+
+    def test_something_well_beside_the_line_is_not(self):
+        # four gauges off the centreline: beside the railway, not on it
+        assert not tg.project('flat', (400, 650))['on_track']

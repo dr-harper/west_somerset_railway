@@ -66,13 +66,17 @@ train_detection/          live webcam detection system (YOLO11 + zones)
   loop, backed by Firestore.
 - `classify_trains.py`: per-episode Gemini classification (structured
   output). Needs a fresh key.
-- `track_geometry.py` + `track_annotator.html`: per-camera track
-  centrelines. Direction comes from the LOCAL tangent where the train is,
-  which handles curves that a single per-camera vector cannot. Trace new
-  cameras with `python3 serve_annotator.py` then open the annotator; the
-  traces live in `camera_tracks.json` (854x480 image space, ordered from
-  the Bishops Lydeard end towards Minehead). Bishops Lydeard and Watchet
-  are traced; the other four are not yet.
+- `track_geometry.py` + `track_annotator.html`: per-camera track geometry,
+  traced as a PAIR of multi-point rails rather than one line. Two rails
+  are what make perspective recoverable: their real separation is a known
+  1.435 m, so the pixel gap between them gives metres-per-pixel at every
+  depth. From that comes direction (local tangent), position along the
+  track (arc length), and speed in mph from a single camera. Trace with
+  `python3 serve_annotator.py --port 8090`, then open the annotator and
+  do rail A and rail B for each camera; traces live in
+  `camera_tracks.json` (854x480 image space, each rail ordered from the
+  Bishops Lydeard end towards Minehead). Bishops Lydeard is traced; the
+  other five are not yet.
 
 ### Findings from the 29th August gala (the only full day of real data)
 
