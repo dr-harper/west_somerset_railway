@@ -26,6 +26,45 @@ from pathlib import Path
 HERE = Path(__file__).parent
 CAPTURES = HERE / 'captures'
 COLLECTION = 'episodes'
+MOVEMENTS = 'movements'
+CAMERAS_COLLECTION = 'cameras'
+
+
+def movement_document(movement: dict, record: dict, date_key: str) -> dict:
+    """One journey: the same train recognised at several cameras.
+
+    An episode on its own says a train passed one camera. The movement is
+    what the operator actually wants to see — where it started, where it
+    got to, how the delay ran on, and which sightings support that.
+    """
+    scheduled = record.get('scheduled') or {}
+    return {
+        'date_key': date_key,
+        'first_seen': record['first_seen'],
+        'last_seen': record['last_seen'],
+        'from': record['from'],
+        'to': record['to'],
+        'direction': record['direction'],
+        'sightings': record['sightings'],
+        'miles': record['miles'],
+        'avg_mph': record['avg_mph'],
+        'identity': record.get('identity'),
+        'observations': record['observations'],
+        'kind': 'scheduled' if scheduled else 'unscheduled',
+        'booked_departure': scheduled.get('booked_departure'),
+        'serviceType': scheduled.get('serviceType'),
+        'loco': scheduled.get('loco'),
+        'delay_min': scheduled.get('delay_min'),
+        'delay_start_min': scheduled.get('delay_start_min'),
+        'delay_end_min': scheduled.get('delay_end_min'),
+        'episode_ids': [episode_id(o['episode']) for o in movement['_chain']],
+        'uploaded_at': datetime.now().isoformat(timespec='seconds'),
+    }
+
+
+def movement_id(record: dict, date_key: str) -> str:
+    return (f"{date_key.replace('-', '')}_{record['first_seen'].replace(':', '')}"
+            f"_{record['from']}_{record['to']}")
 
 
 def episode_document(episode: dict, movement: dict | None) -> dict:
@@ -104,9 +143,23 @@ def main() -> None:
     print(f'{len(documents)} episodes '
           f'({scheduled} scheduled, {len(documents) - scheduled} unscheduled)')
 
+    movement_docs = [(movement_id(record, date_key),
+                      movement_document(movement, record, date_key))
+                     for movement, record in zip(movements, annotated)]
+    matched = sum(1 for _, d in movement_docs if d['kind'] == 'scheduled')
+    print(f'{len(movement_docs)} movements '
+          f'({matched} matched to a service, {len(movement_docs) - matched} not)')
+
+    from camera_registry import registry
+    camera_docs = [(entry['id'], entry) for entry in registry()]
+    print(f'{len(camera_docs)} cameras')
+
     if args.dry_run:
         for doc_id, doc in documents[:3]:
             print(f'  {doc_id}: {doc["claim"]}')
+        for doc_id, doc in movement_docs[:3]:
+            print(f"  {doc_id}: {doc['from']}->{doc['to']} "
+                  f"{doc['sightings']} sightings, {doc['kind']}")
         print('dry run — nothing written')
         return
 
@@ -138,6 +191,20 @@ def main() -> None:
     batch.commit()
     print(f'wrote {written} documents to {COLLECTION} '
           f'({new} new, {written - new} refreshed without touching verification)')
+
+    # Movements and cameras are derived, so they are replaced outright
+    # rather than merged — nothing a verifier owns lives on them.
+    for name, docs in ((MOVEMENTS, movement_docs),
+                       (CAMERAS_COLLECTION, camera_docs)):
+        target = client.collection(name)
+        batch = client.batch()
+        for index, (doc_id, doc) in enumerate(docs, 1):
+            batch.set(target.document(doc_id), doc)
+            if index % 400 == 0:
+                batch.commit()
+                batch = client.batch()
+        batch.commit()
+        print(f'wrote {len(docs)} documents to {name}')
 
 
 if __name__ == '__main__':

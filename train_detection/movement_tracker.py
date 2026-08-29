@@ -147,17 +147,22 @@ def build_movements(episodes: list[dict],
 
 
 def _merge_occupancies(observations: list[dict]) -> list[dict]:
-    """Collapse repeat sightings at one camera into a single observation.
+    """Collapse repeat sightings at one station into a single observation.
 
     A rake standing in a terminus platform produces a detection every
     time the gate reopens; those are one occupancy of that station, not
     a series of separate trains, and left alone each one seeds a bogus
     movement. The earliest sighting of the group is kept as the arrival.
+
+    Grouped by station rather than camera, because several stations now
+    have two cameras overlooking them: one train passing Blue Anchor is
+    seen twice, and grouping by camera would let the second sighting seed
+    a duplicate movement of its own.
     """
     merged: list[dict] = []
     for obs in observations:
         previous = next((m for m in reversed(merged)
-                         if m['camera'] == obs['camera']), None)
+                         if m['station'] == obs['station']), None)
         if previous and obs['clock'] - previous['clock'] <= OCCUPANCY_MERGE_MIN:
             previous['repeat_sightings'] = previous.get('repeat_sightings', 1) + 1
             previous['clock_last'] = obs['clock']

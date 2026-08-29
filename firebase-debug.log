@@ -579,3 +579,21 @@ INFO: Detected non-HTTP/2 connection.
 [debug] [2026-08-29T17:45:27.363Z] Aug 29, 2026 6:45:27 PM com.google.cloud.datastore.emulator.firestore.webchannel.FirestoreV1WebChannelAdapter$FirestoreListenHandler onClose
 INFO: channel closed
  {"metadata":{"emulator":{"name":"firestore"},"message":"Aug 29, 2026 6:45:27 PM com.google.cloud.datastore.emulator.firestore.webchannel.FirestoreV1WebChannelAdapter$FirestoreListenHandler onClose\nINFO: channel closed\n"}}
+[debug] [2026-08-29T22:02:21.835Z] Aug 29, 2026 11:02:21 PM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected non-HTTP/2 connection.
+ {"metadata":{"emulator":{"name":"firestore"},"message":"Aug 29, 2026 11:02:21 PM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead\nINFO: Detected non-HTTP/2 connection.\n"}}
+[debug] [2026-08-29T22:02:21.977Z] Aug 29, 2026 11:02:21 PM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected HTTP/2 connection.
+ {"metadata":{"emulator":{"name":"firestore"},"message":"Aug 29, 2026 11:02:21 PM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead\nINFO: Detected HTTP/2 connection.\n"}}
+[info] i  firestore: Change detected, updating rules... 
+[debug] [2026-08-29T22:05:11.326Z] >>> [apiv2][query] PUT http://127.0.0.1:8085/emulator/v1/projects/demo-wsr:securityRules [none]
+[debug] [2026-08-29T22:05:11.326Z] >>> [apiv2][body] PUT http://127.0.0.1:8085/emulator/v1/projects/demo-wsr:securityRules {"ignore_errors":true,"rules":{"files":[{"name":"security.rules","content":"rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n\n    // A verifier is anyone with a document under /verifiers keyed by uid.\n    // Membership is granted out of band (admin SDK), never self-served.\n    function isVerifier() {\n      return request.auth != null\n        && exists(/databases/$(database)/documents/verifiers/$(request.auth.uid));\n    }\n\n    // Episodes are written only by the detection pipeline, which uses the\n    // admin SDK and bypasses these rules. Anyone may read them; a verifier\n    // may set the verification fields and nothing else.\n    match /episodes/{episodeId} {\n      allow read: if true;\n      allow create, delete: if false;\n      allow update: if isVerifier()\n        && request.resource.data.diff(resource.data).affectedKeys()\n             .hasOnly(['status', 'verification']);\n    }\n\n    // Movements and cameras are derived from the episodes by the pipeline\n    // and carry nothing a verifier owns, so they are read-only to clients\n    // and rewritten wholesale on each upload.\n    match /movements/{movementId} {\n      allow read: if true;\n      allow write: if false;\n    }\n\n    match /cameras/{cameraId} {\n      allow read: if true;\n      allow write: if false;\n    }\n\n    // Verifier membership is readable by the signed-in user, writable only\n    // by the admin SDK.\n    match /verifiers/{uid} {\n      allow read: if request.auth != null && request.auth.uid == uid;\n      allow write: if false;\n    }\n\n    match /{document=**} {\n      allow read, write: if false;\n    }\n  }\n}\n"}]}}
+[debug] [2026-08-29T22:05:11.338Z] Aug 29, 2026 11:05:11 PM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected non-HTTP/2 connection.
+ {"metadata":{"emulator":{"name":"firestore"},"message":"Aug 29, 2026 11:05:11 PM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead\nINFO: Detected non-HTTP/2 connection.\n"}}
+[debug] [2026-08-29T22:05:11.372Z] <<< [apiv2][status] PUT http://127.0.0.1:8085/emulator/v1/projects/demo-wsr:securityRules 200
+[debug] [2026-08-29T22:05:11.372Z] <<< [apiv2][body] PUT http://127.0.0.1:8085/emulator/v1/projects/demo-wsr:securityRules {}
+[info] ✔  firestore: Rules updated. 
+[debug] [2026-08-29T22:05:19.567Z] Aug 29, 2026 11:05:19 PM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected HTTP/2 connection.
+ {"metadata":{"emulator":{"name":"firestore"},"message":"Aug 29, 2026 11:05:19 PM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead\nINFO: Detected HTTP/2 connection.\n"}}

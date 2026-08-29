@@ -40,8 +40,13 @@ NAME_TO_CODE = {v: k for k, v in STATION_NAMES.items()}
 CAMERA_NODES = {
     'bishops_lydeard': 'BL',
     'crowcombe_heathfield': 'CH',
+    'crowcombe_heathfield_2': 'CH',      # second view of the same station
+    'williton': 'WIL',
+    'williton_2': 'WIL',
+    'watchet_1': 'WAT',
     'watchet_visitor_centre': 'WAT',
     'blue_anchor': 'BA',
+    'blue_anchor_2': 'BA',
     'minehead_station': 'MIN',
     'minehead_seaward_crossing': 'DUN',  # observes the Dunster–Minehead approach
 }

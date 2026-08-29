@@ -1,0 +1,189 @@
+[
+ {
+  "id": "bishops_lydeard",
+  "name": "Bishops Lydeard",
+  "station": "BL",
+  "stationName": "Bishops Lydeard",
+  "lineIndex": 1,
+  "videoId": "hEa16bHxHMM",
+  "directionValidated": true,
+  "annotation": {
+   "roads": 2,
+   "platforms": 2,
+   "occluders": 0,
+   "blockedShare": 0.7,
+   "orientationKnown": true,
+   "ready": true
+  }
+ },
+ {
+  "id": "crowcombe_heathfield",
+  "name": "Crowcombe Heathfield",
+  "station": "CH",
+  "stationName": "Crowcombe Heathfield",
+  "lineIndex": 2,
+  "videoId": "ptn6Fnc5u08",
+  "directionValidated": true,
+  "annotation": {
+   "roads": 2,
+   "platforms": 2,
+   "occluders": 0,
+   "blockedShare": 0.761,
+   "orientationKnown": true,
+   "ready": true
+  }
+ },
+ {
+  "id": "crowcombe_heathfield_2",
+  "name": "Crowcombe Heathfield, second view",
+  "station": "CH",
+  "stationName": "Crowcombe Heathfield",
+  "lineIndex": 2,
+  "videoId": "x-OipExeKQM",
+  "directionValidated": false,
+  "annotation": {
+   "roads": 0,
+   "platforms": 2,
+   "occluders": 0,
+   "blockedShare": 0.76,
+   "orientationKnown": false,
+   "ready": false
+  }
+ },
+ {
+  "id": "williton",
+  "name": "Williton",
+  "station": "WIL",
+  "stationName": "Williton",
+  "lineIndex": 4,
+  "videoId": "77rYzQYyQYQ",
+  "directionValidated": false,
+  "annotation": {
+   "roads": 2,
+   "platforms": 2,
+   "occluders": 0,
+   "blockedShare": 0.629,
+   "orientationKnown": false,
+   "ready": true
+  }
+ },
+ {
+  "id": "williton_2",
+  "name": "Williton, second view",
+  "station": "WIL",
+  "stationName": "Williton",
+  "lineIndex": 4,
+  "videoId": "YHILlgN9cFs",
+  "directionValidated": false,
+  "annotation": {
+   "roads": 2,
+   "platforms": 1,
+   "occluders": 0,
+   "blockedShare": 0.595,
+   "orientationKnown": false,
+   "ready": true
+  }
+ },
+ {
+  "id": "watchet_1",
+  "name": "Watchet, station",
+  "station": "WAT",
+  "stationName": "Watchet",
+  "lineIndex": 6,
+  "videoId": "yCoeSJjUsDg",
+  "directionValidated": false,
+  "annotation": {
+   "roads": 1,
+   "platforms": 1,
+   "occluders": 0,
+   "blockedShare": 0.832,
+   "orientationKnown": false,
+   "ready": true
+  }
+ },
+ {
+  "id": "watchet_visitor_centre",
+  "name": "Watchet, visitor centre",
+  "station": "WAT",
+  "stationName": "Watchet",
+  "lineIndex": 6,
+  "videoId": "lHPtw6tKigc",
+  "directionValidated": true,
+  "annotation": {
+   "roads": 1,
+   "platforms": 1,
+   "occluders": 0,
+   "blockedShare": 0.906,
+   "orientationKnown": false,
+   "ready": true
+  }
+ },
+ {
+  "id": "blue_anchor",
+  "name": "Blue Anchor",
+  "station": "BA",
+  "stationName": "Blue Anchor",
+  "lineIndex": 8,
+  "videoId": "oURn7l3gpr4",
+  "directionValidated": true,
+  "annotation": {
+   "roads": 3,
+   "platforms": 2,
+   "occluders": 0,
+   "blockedShare": 0.747,
+   "orientationKnown": true,
+   "ready": true
+  }
+ },
+ {
+  "id": "blue_anchor_2",
+  "name": "Blue Anchor, second view",
+  "station": "BA",
+  "stationName": "Blue Anchor",
+  "lineIndex": 8,
+  "videoId": "CDO4ObH-O5k",
+  "directionValidated": false,
+  "annotation": {
+   "roads": 2,
+   "platforms": 2,
+   "occluders": 0,
+   "blockedShare": 0.669,
+   "orientationKnown": false,
+   "ready": true
+  }
+ },
+ {
+  "id": "minehead_seaward_crossing",
+  "name": "Seaward Crossing",
+  "station": "DUN",
+  "stationName": "Dunster",
+  "lineIndex": 9,
+  "videoId": "cO1MFjvfKUE",
+  "directionValidated": true,
+  "annotation": {
+   "roads": 1,
+   "platforms": 0,
+   "occluders": 0,
+   "blockedShare": 0.584,
+   "orientationKnown": true,
+   "ready": true
+  }
+ },
+ {
+  "id": "minehead_station",
+  "name": "Minehead",
+  "station": "MIN",
+  "stationName": "Minehead",
+  "lineIndex": 10,
+  "videoId": "k40FIAhyhjo",
+  "directionValidated": true,
+  "annotation": {
+   "roads": 1,
+   "platforms": 0,
+   "occluders": 0,
+   "blockedShare": 0.178,
+   "orientationKnown": true,
+   "ready": true
+  }
+ }
+]

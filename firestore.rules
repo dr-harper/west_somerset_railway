@@ -20,6 +20,19 @@ service cloud.firestore {
              .hasOnly(['status', 'verification']);
     }
 
+    // Movements and cameras are derived from the episodes by the pipeline
+    // and carry nothing a verifier owns, so they are read-only to clients
+    // and rewritten wholesale on each upload.
+    match /movements/{movementId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /cameras/{cameraId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Verifier membership is readable by the signed-in user, writable only
     // by the admin SDK.
     match /verifiers/{uid} {
