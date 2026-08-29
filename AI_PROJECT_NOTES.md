@@ -52,11 +52,41 @@ train_detection/          live webcam detection system (YOLO11 + zones)
 - `gala_watcher.py`: two-tier watcher (motion gate → YOLO11 episodes).
   Idle cost ~7% of one core. Episodes → `episodes.jsonl`, media →
   `captures/` (gitignored).
-- `episode_analysis.py`: episodes ↔ timetable matching; unmatched confirmed
-  episode = special train. `classify_trains.py`: per-episode Gemini
-  classification (structured output).
-- Direction vectors in `gala_watcher.py` are PROVISIONAL until validated
-  against known services.
+- `episode_analysis.py`: episodes ↔ timetable matching (superseded for
+  tracking by the modules below, still used for single-sighting queries).
+- `train_tracker.py`: the line graph — stations as nodes, real geojson
+  segments as edges — plus position interpolation in the app's
+  TrainLocation shape.
+- `movement_tracker.py`: the primary tracker. Chains sightings into
+  physical movements using transit windows, direction and optional
+  identity, THEN compares to the timetable. An unmatched movement is an
+  unscheduled working, tracked in full. Prefer this over train_tracker's
+  run assignment.
+- `upload_episodes.py` + the app's `/verify` page: the human verification
+  loop, backed by Firestore.
+- `classify_trains.py`: per-episode Gemini classification (structured
+  output). Needs a fresh key.
+
+### Findings from the 29th August gala (the only full day of real data)
+
+- Direction vectors validated 100% at Bishops Lydeard, Blue Anchor,
+  Crowcombe and Minehead. Watchet is in `UNRELIABLE_DRIFT_CAMERAS`: it
+  looks along a curve, so northbound drifts left while southbound drifts
+  down and no single vector separates them — direction there comes from
+  the movement's station order. Seaward Crossing is still unvalidated.
+- Delay ACCUMULATES along a journey (the 10:15 steam left 10 down and
+  reached Blue Anchor 22 down), so matching tolerates growth rather than
+  assuming a constant offset.
+- Trains run late, not early: an early-looking match is nearly always the
+  previous service running late, hence the asymmetric cost.
+- Every tuning constant is fitted to this one gala day, which is the most
+  atypical day of the year. Re-check them against an ordinary running day.
+- Hi-res episode stills are unreliable for classification: even with the
+  12s delay they sometimes catch a departing train's rear coach or an
+  empty scene. Timing needs per-camera tuning.
+- The identity gate is proven by tests but untested at scale: with 3 of 84
+  episodes labelled it never fires, because it only helps where identity
+  contradicts a chain.
 - Jupyter kernel: use "Python (WSR)" (the user's default `python3` kernel
   points at a different project's venv).
 

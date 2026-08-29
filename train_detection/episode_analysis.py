@@ -8,7 +8,7 @@ import json
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from gala_watcher import NORTHBOUND_VECTORS
+from gala_watcher import NORTHBOUND_VECTORS, UNRELIABLE_DRIFT_CAMERAS
 
 HERE = Path(__file__).parent
 EPISODES_PATH = HERE / 'episodes.jsonl'
@@ -61,6 +61,8 @@ def _scheduled_calls(date_key: str, station: str) -> list[dict]:
 def _direction_from_drift(episode: dict) -> str:
     """Recompute direction from stored drift so vector corrections apply
     retrospectively to already-logged episodes."""
+    if episode['camera'] in UNRELIABLE_DRIFT_CAMERAS:
+        return 'unclear'   # let the movement's station order decide
     drift = episode.get('drift_px')
     if not drift:
         return episode.get('direction', 'unclear')

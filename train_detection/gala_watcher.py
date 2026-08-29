@@ -72,15 +72,24 @@ URL_REFRESH_S = 4 * 3600       # HLS URLs expire after ~6h; refresh early
 CLIP_FPS = 2
 
 # Image-space unit vector meaning "travelling northbound (towards Minehead)".
-# PROVISIONAL — sign-check these against the first known timetabled moves.
+# Validated 29/8 against timetable-confirmed movements: Bishops Lydeard,
+# Blue Anchor, Crowcombe and Minehead all agree; Seaward Crossing is still
+# unvalidated for want of a decisive sighting.
 NORTHBOUND_VECTORS = {
     'minehead_station': (0.0, 1.0),            # arriving = towards camera
     'minehead_seaward_crossing': (-0.95, 0.3), # sign-checked v the 08:10 ex-Minehead 29/8: departing (SB) drifts right
     'blue_anchor': (0.0, -1.0),                # away, towards Dunster
-    'watchet_visitor_centre': (-0.2, 0.9),     # sign-checked v the 08:59 NB call 29/8: towards Minehead = down the frame
+    'watchet_visitor_centre': (0.0, 0.0),      # see UNRELIABLE_DRIFT_CAMERAS
     'crowcombe_heathfield': (-0.9, -0.45),     # away, towards Stogumber
     'bishops_lydeard': (0.4, -0.9),            # departing, towards the yard
 }
+
+
+# Cameras looking along a curve give drift that does not separate the two
+# directions: at Watchet on 29/8 northbound trains drifted strongly left
+# while southbound ones drifted strongly down, so no single vector fits.
+# Direction for these comes from the order of stations a movement visits.
+UNRELIABLE_DRIFT_CAMERAS = {'watchet_visitor_centre'}
 
 
 def now_iso() -> str:
