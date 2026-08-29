@@ -68,8 +68,12 @@
 <main>
   <div class="row">
     <select id="camera"></select>
+    <select id="mode">
+      <option value="rails">Trace rails</option>
+      <option value="regions">Mark regions</option>
+    </select>
     <select id="trackSelect"></select>
-    <button id="addTrack">+ Track</button>
+    <button id="addTrack">+ Add</button>
     <select id="rail">
       <option value="a">Rail A</option>
       <option value="b">Rail B</option>
@@ -79,6 +83,11 @@
       <option value="loop">Loop / other platform road</option>
       <option value="siding">Siding</option>
       <option value="shed">Shed road</option>
+    </select>
+    <select id="regionKind" style="display:none">
+      <option value="exclude">Ignore for motion (crowds, road, trees)</option>
+      <option value="platform">Platform</option>
+      <option value="occluder">Blocks the view</option>
     </select>
     <button id="undo">Undo point</button>
     <button id="clear" class="danger">Clear</button>
@@ -169,6 +178,28 @@ async function loadExisting() {
 const railSelect = document.getElementById('rail');
 const trackSelect = document.getElementById('trackSelect');
 const kindSelect = document.getElementById('kind');
+const modeSelect = document.getElementById('mode');
+const regionKindSelect = document.getElementById('regionKind');
+const REGION_COLOURS = {
+  exclude: 'rgba(220,60,60,.85)',
+  platform: 'rgba(90,150,220,.85)',
+  occluder: 'rgba(160,120,220,.85)',
+};
+
+function isRegionMode() { return modeSelect.value === 'regions'; }
+
+function regionList() {
+  const entry = camera();
+  if (!entry.regions) entry.regions = [];
+  return entry.regions;
+}
+
+function activeRegion() {
+  const list = regionList();
+  const index = Math.min(Number(trackSelect.value) || 0, list.length - 1);
+  if (index < 0 || !list.length) return null;
+  return list[index];
+}
 const DEFAULT_NAMES = ['running line', 'loop', 'siding', 'shed road', 'track 5'];
 
 function camera() {
@@ -196,6 +227,12 @@ function track() {
 }
 
 function current() {
+  if (isRegionMode()) {
+    const region = activeRegion();
+    if (!region) return { points: [] };
+    if (!region.points) region.points = [];
+    return { points: region.points };
+  }
   const rails = track().rails;
   const key = railSelect.value;
   if (!rails[key]) rails[key] = [];
@@ -203,6 +240,29 @@ function current() {
 }
 
 function refreshTrackList() {
+  railSelect.style.display = isRegionMode() ? 'none' : '';
+  kindSelect.style.display = isRegionMode() ? 'none' : '';
+  regionKindSelect.style.display = isRegionMode() ? '' : 'none';
+  if (isRegionMode()) {
+    const regions = regionList();
+    const chosen = Math.min(Number(trackSelect.value) || 0, regions.length - 1);
+    trackSelect.innerHTML = '';
+    regions.forEach((region, index) => {
+      const option = document.createElement('option');
+      option.value = index;
+      option.textContent = `${index + 1}. ${region.name} (${(region.points || []).length})`;
+      trackSelect.appendChild(option);
+    });
+    if (!regions.length) {
+      const option = document.createElement('option');
+      option.textContent = 'no regions — press + Region';
+      trackSelect.appendChild(option);
+    }
+    trackSelect.value = String(Math.max(0, chosen));
+    const active = activeRegion();
+    if (active) regionKindSelect.value = active.kind || 'exclude';
+    return;
+  }
   const list = camera().tracks;
   const chosen = Math.min(Number(trackSelect.value) || 0, list.length - 1);
   trackSelect.innerHTML = '';
@@ -278,6 +338,29 @@ function draw() {
   } else {
     ctx.fillStyle = '#222'; ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
+  // regions first, so rails sit on top of them
+  regionList().forEach(region => {
+    const points = region.points || [];
+    if (points.length < 2) return;
+    const colour = REGION_COLOURS[region.kind] || REGION_COLOURS.exclude;
+    const selected = isRegionMode() && region === activeRegion();
+    ctx.beginPath();
+    points.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+    ctx.closePath();
+    ctx.fillStyle = colour.replace('.85', selected ? '.35' : '.18');
+    ctx.fill();
+    ctx.strokeStyle = colour;
+    ctx.lineWidth = selected ? 3 : 1.5;
+    ctx.stroke();
+    if (selected) {
+      points.forEach(([x, y]) => {
+        ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = colour; ctx.fill();
+        ctx.strokeStyle = '#16130E'; ctx.lineWidth = 2; ctx.stroke();
+      });
+    }
+  });
+
   const activeTrack = track();
   const rails = activeTrack.rails;
   const active = railSelect.value;
@@ -389,7 +472,22 @@ window.addEventListener('pointercancel', () => { dragging = null; hideLoupe(); }
 
 document.getElementById('undo').onclick = () => { track().rails[railSelect.value].pop(); refreshTrackList(); draw(); };
 document.getElementById('clear').onclick = () => { track().rails[railSelect.value] = []; refreshTrackList(); draw(); };
+modeSelect.onchange = () => { trackSelect.value = '0'; refreshTrackList(); draw(); };
+regionKindSelect.onchange = () => {
+  const region = activeRegion();
+  if (region) { region.kind = regionKindSelect.value; region.name = regionKindSelect.value; }
+  refreshTrackList(); draw();
+};
 document.getElementById('addTrack').onclick = () => {
+  if (isRegionMode()) {
+    const regions = regionList();
+    const kind = regionKindSelect.value;
+    regions.push({ name: kind, kind, points: [] });
+    refreshTrackList();
+    trackSelect.value = String(regions.length - 1);
+    draw();
+    return;
+  }
   const list = camera().tracks;
   const name = prompt('Name this track',
     DEFAULT_NAMES[list.length] || `track ${list.length + 1}`);

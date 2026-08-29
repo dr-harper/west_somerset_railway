@@ -30,6 +30,7 @@ import cv2
 import numpy as np
 
 from detection_zones import ZONES, classify, draw_zones
+from track_geometry import regions_of
 from wsr_live_capture import CAMERAS, BotChallenge, resolve_hls_url
 
 
@@ -156,11 +157,28 @@ class CameraWorker(threading.Thread):
     # --- setup -----------------------------------------------------------
 
     def _build_mask(self):
+        """Where the motion gate is allowed to look.
+
+        Detect and approach zones minus any annotated exclusions. On 29/8
+        95% of gate openings were false — crowds on platforms, traffic at
+        the Blue Anchor crossing, flowerbeds in the wind — and each one
+        cost up to six YOLO calls. Subtracting those areas is the single
+        cheapest accuracy and compute win available.
+        """
         mask = np.zeros((PROC_H, PROC_W), np.uint8)
         for _name, kind, poly in ZONES.get(self.camera, []):
             if kind in ('detect', 'approach'):
                 pts = (np.array(poly, np.float32) * SCALE).astype(np.int32)
                 cv2.fillPoly(mask, [pts], 255)
+        excluded = 0
+        for region in regions_of(self.camera, 'exclude'):
+            pts = (np.array(region['points'], np.float32) * SCALE).astype(np.int32)
+            cv2.fillPoly(mask, [pts], 0)
+            excluded += 1
+        if excluded:
+            self.log_queue.put(('info', {
+                'ts': now_iso(), 'camera': self.camera,
+                'message': f'{excluded} exclusion region(s) applied to motion mask'}))
         return mask
 
     def _connect(self):

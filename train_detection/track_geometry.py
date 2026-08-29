@@ -46,6 +46,54 @@ SAMPLES = 64          # resolution of the derived centreline
 # timetabled movements; stock on the others is stabled or being shunted.
 RUNNING_KINDS = {'running', 'loop', 'platform'}
 
+# Regions annotated alongside the rails. Kinds:
+#   exclude   the motion gate must ignore this: platforms full of people,
+#             roads, car parks, moving vegetation, sky. 95% of gates on
+#             29/8 were false and this is the remedy.
+#   platform  where passengers stand — a train stopped alongside one is
+#             calling rather than passing, and a detection here that is
+#             not on a track is probably a person.
+#   occluder  something that hides the track (a signal post, a canopy) so
+#             a train vanishing behind it does not end an episode.
+REGION_KINDS = {'exclude', 'platform', 'occluder'}
+
+
+def regions_of(camera: str, kind: str | None = None) -> list[dict]:
+    """Annotated regions at a camera, optionally of one kind."""
+    entry = TRACKS.get(camera) or {}
+    out = []
+    for region in entry.get('regions', []):
+        points = region.get('points') or []
+        if len(points) < 3:
+            continue          # a polygon needs three corners
+        if kind and region.get('kind') != kind:
+            continue
+        out.append({
+            'name': region.get('name', region.get('kind', 'region')),
+            'kind': region.get('kind', 'exclude'),
+            'points': [tuple(p) for p in points],
+        })
+    return out
+
+
+def in_region(camera: str, point, kind: str) -> str | None:
+    """Name of the region of that kind containing the point, if any."""
+    px, py = point
+    for region in regions_of(camera, kind):
+        poly = region['points']
+        inside = False
+        j = len(poly) - 1
+        for i, (xi, yi) in enumerate(poly):
+            xj, yj = poly[j]
+            if (yi > py) != (yj > py) and \
+                    px < (xj - xi) * (py - yi) / ((yj - yi) or 1e-9) + xi:
+                inside = not inside
+            j = i
+        if inside:
+            return region['name']
+    return None
+
+
 # Below this the two rails are too close to measure against: a few pixels
 # of tracing error becomes a large fraction of the gauge, so the implied
 # scale swings wildly. Rails traced right up to their vanishing point hit

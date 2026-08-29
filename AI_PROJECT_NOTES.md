@@ -78,6 +78,13 @@ train_detection/          live webcam detection system (YOLO11 + zones)
   identity, THEN compares to the timetable. An unmatched movement is an
   unscheduled working, tracked in full. Prefer this over train_tracker's
   run assignment.
+- Alongside the rails, `regions` mark areas by kind: `exclude` (the motion
+  gate ignores them — platforms full of people, roads, moving vegetation),
+  `platform` (a train alongside one is calling, not passing; a detection
+  here that is not on a track is probably a person) and `occluder`
+  (something that hides the track, so a train vanishing behind it should
+  not end an episode). Excluding is the priority: 95% of gate openings on
+  29/8 were false, costing up to 12,000 wasted YOLO calls in a day.
 - `upload_episodes.py` + the app's `/verify` page: the human verification
   loop, backed by Firestore.
 - `classify_trains.py`: per-episode Gemini classification (structured

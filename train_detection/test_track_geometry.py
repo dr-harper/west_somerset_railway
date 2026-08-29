@@ -214,3 +214,49 @@ class TestUnreliableScale:
         assert tg.speed_mph('converged', [[0.0, 570, 250], [2.0, 595, 250]]) is None
         tg.TRACKS.pop('converged')
         tg._CENTRELINE_CACHE.clear()
+
+
+class TestRegions:
+    """Annotated areas the detector should treat specially."""
+
+    def setup_method(self):
+        tg.TRACKS['regioned'] = {
+            'rails': {'a': [[100, 200], [700, 200]], 'b': [[100, 300], [700, 300]]},
+            'regions': [
+                {'name': 'platform crowd', 'kind': 'exclude',
+                 'points': [[0, 400], [400, 400], [400, 500], [0, 500]]},
+                {'name': 'down platform', 'kind': 'platform',
+                 'points': [[100, 310], [700, 310], [700, 380], [100, 380]]},
+            ],
+        }
+        tg._CENTRELINE_CACHE.clear()
+
+    def teardown_method(self):
+        tg.TRACKS.pop('regioned', None)
+        tg._CENTRELINE_CACHE.clear()
+
+    def test_regions_are_listed(self):
+        assert len(tg.regions_of('regioned')) == 2
+
+    def test_regions_filter_by_kind(self):
+        assert len(tg.regions_of('regioned', 'exclude')) == 1
+        assert tg.regions_of('regioned', 'platform')[0]['name'] == 'down platform'
+
+    def test_a_polygon_needs_three_corners(self):
+        tg.TRACKS['regioned']['regions'].append(
+            {'name': 'sliver', 'kind': 'exclude', 'points': [[0, 0], [1, 1]]})
+        assert len(tg.regions_of('regioned')) == 2
+
+    def test_a_point_inside_an_exclusion_is_found(self):
+        assert tg.in_region('regioned', (200, 450), 'exclude') == 'platform crowd'
+
+    def test_a_point_outside_is_not(self):
+        assert tg.in_region('regioned', (600, 450), 'exclude') is None
+
+    def test_kinds_do_not_bleed_into_each_other(self):
+        # inside the exclusion, but asked about platforms
+        assert tg.in_region('regioned', (200, 450), 'platform') is None
+
+    def test_a_camera_without_regions_is_fine(self):
+        assert tg.regions_of('flat') == []
+        assert tg.in_region('flat', (400, 250), 'exclude') is None
