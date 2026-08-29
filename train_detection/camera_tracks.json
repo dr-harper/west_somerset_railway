@@ -55,7 +55,67 @@
    }
   ],
   "anchors": [],
-  "regions": []
+  "regions": [
+   {
+    "name": "platform",
+    "kind": "platform",
+    "points": [
+     [
+      342,
+      477
+     ],
+     [
+      541,
+      89
+     ],
+     [
+      663,
+      94
+     ],
+     [
+      764,
+      475
+     ]
+    ]
+   },
+   {
+    "name": "platform",
+    "kind": "platform",
+    "points": [
+     [
+      0,
+      398
+     ],
+     [
+      169,
+      260
+     ],
+     [
+      472,
+      68
+     ],
+     [
+      467,
+      44
+     ],
+     [
+      0,
+      200
+     ],
+     [
+      0,
+      287
+     ]
+    ]
+   }
+  ],
+  "mask_cells": {
+   "grid": [
+    32,
+    18
+   ],
+   "cells": []
+  }
  },
  "crowcombe_heathfield": {
   "tracks": [
@@ -157,7 +217,63 @@
    }
   ],
   "anchors": [],
-  "regions": []
+  "regions": [
+   {
+    "name": "platform",
+    "kind": "platform",
+    "points": [
+     [
+      852,
+      456
+     ],
+     [
+      175,
+      178
+     ],
+     [
+      185,
+      162
+     ],
+     [
+      854,
+      334
+     ]
+    ]
+   },
+   {
+    "name": "platform",
+    "kind": "platform",
+    "points": [
+     [
+      345,
+      479
+     ],
+     [
+      212,
+      311
+     ],
+     [
+      139,
+      193
+     ],
+     [
+      99,
+      189
+     ],
+     [
+      109,
+      475
+     ]
+    ]
+   }
+  ],
+  "mask_cells": {
+   "grid": [
+    32,
+    18
+   ],
+   "cells": []
+  }
  },
  "watchet_visitor_centre": {
   "tracks": [
