@@ -3072,7 +3072,7 @@
     }
    ]
   },
-  "purple-889cde09": {
+  "purple-1ab680d4": {
    "family": "purple",
    "title": "Diesels @ 65 - Saturday 29th of August",
    "services": [
@@ -3108,6 +3108,12 @@
        "d": null,
        "p": "Main"
       }
+     ],
+     "passes": [
+      {
+       "c": "CH",
+       "t": "08:32"
+      }
      ]
     },
     {
@@ -3124,6 +3130,12 @@
        "c": "WIL",
        "a": "10:03",
        "d": null
+      }
+     ],
+     "passes": [
+      {
+       "c": "CH",
+       "t": "09:47"
       }
      ]
     },
@@ -3587,6 +3599,12 @@
        "d": null,
        "p": "2"
       }
+     ],
+     "passes": [
+      {
+       "c": "CH",
+       "t": "09:09"
+      }
      ]
     },
     {
@@ -3904,6 +3922,12 @@
        "x": true,
        "p": "1"
       }
+     ],
+     "passes": [
+      {
+       "c": "CH",
+       "t": "16:30"
+      }
      ]
     },
     {
@@ -4000,11 +4024,17 @@
        "d": null,
        "p": "2"
       }
+     ],
+     "passes": [
+      {
+       "c": "CH",
+       "t": "19:19"
+      }
      ]
     }
    ]
   },
-  "purple-fb5a2f9e": {
+  "purple-6034e191": {
    "family": "purple",
    "title": "Diesels @ 65 - Sunday 30th of August",
    "services": [
@@ -4040,6 +4070,12 @@
        "d": null,
        "p": "MAIN"
       }
+     ],
+     "passes": [
+      {
+       "c": "CH",
+       "t": "08:33"
+      }
      ]
     },
     {
@@ -4056,6 +4092,12 @@
        "c": "WIL",
        "a": "10:03",
        "d": null
+      }
+     ],
+     "passes": [
+      {
+       "c": "CH",
+       "t": "09:47"
       }
      ]
     },
@@ -4496,6 +4538,12 @@
        "d": null,
        "p": "2"
       }
+     ],
+     "passes": [
+      {
+       "c": "CH",
+       "t": "09:09"
+      }
      ]
     },
     {
@@ -4803,6 +4851,12 @@
        "a": "16:55",
        "d": null
       }
+     ],
+     "passes": [
+      {
+       "c": "CH",
+       "t": "16:28"
+      }
      ]
     },
     {
@@ -4899,11 +4953,17 @@
        "d": null,
        "p": "2"
       }
+     ],
+     "passes": [
+      {
+       "c": "CH",
+       "t": "19:19"
+      }
      ]
     }
    ]
   },
-  "purple-99afac2e": {
+  "purple-167891ca": {
    "family": "purple",
    "title": "Diesels @ 65 - Monday 31st of August",
    "services": [
@@ -4939,6 +4999,12 @@
        "d": null,
        "p": "MAIN"
       }
+     ],
+     "passes": [
+      {
+       "c": "CH",
+       "t": "08:32"
+      }
      ]
     },
     {
@@ -4955,6 +5021,12 @@
        "c": "WIL",
        "a": "10:03",
        "d": null
+      }
+     ],
+     "passes": [
+      {
+       "c": "CH",
+       "t": "09:47"
       }
      ]
     },
@@ -5364,6 +5436,12 @@
        "d": null,
        "p": "2"
       }
+     ],
+     "passes": [
+      {
+       "c": "CH",
+       "t": "09:09"
+      }
      ]
     },
     {
@@ -5580,6 +5658,12 @@
        "a": "15:07",
        "d": null,
        "p": "2"
+      }
+     ],
+     "passes": [
+      {
+       "c": "CH",
+       "t": "14:56"
       }
      ]
     },
@@ -7734,17 +7818,17 @@
   },
   "2026-08-29": {
    "kind": "service",
-   "pattern": "purple-889cde09",
+   "pattern": "purple-1ab680d4",
    "pdf": "https://www.west-somerset-railway.co.uk/uploads/diesel_65_sat_ptt_v2.pdf"
   },
   "2026-08-30": {
    "kind": "service",
-   "pattern": "purple-fb5a2f9e",
+   "pattern": "purple-6034e191",
    "pdf": "https://www.west-somerset-railway.co.uk/uploads/diesel_65_sun_ptt_v3.pdf"
   },
   "2026-08-31": {
    "kind": "service",
-   "pattern": "purple-99afac2e",
+   "pattern": "purple-167891ca",
    "pdf": "https://www.west-somerset-railway.co.uk/uploads/diesel_65_mon_ptt_v2.pdf"
   },
   "2026-09-01": {

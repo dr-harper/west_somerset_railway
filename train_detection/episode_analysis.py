@@ -40,20 +40,19 @@ def _services_for_date(date_key: str) -> list[dict]:
 
 
 def _scheduled_calls(date_key: str, station: str) -> list[dict]:
-    """Every scheduled call at a station: [{time, direction, serviceType}]."""
+    """Every scheduled call OR non-stop pass at a station."""
     calls = []
     for service in _services_for_date(date_key):
+        direction = 'northbound' if service['direction'] == 'NB' else 'southbound'
+        base = {'direction': direction,
+                'serviceType': service['serviceType'],
+                'loco': service.get('loco')}
         for stop in service['stops']:
-            if stop['c'] != station:
-                continue
-            when = stop['a'] or stop['d']
-            if when:
-                calls.append({
-                    'time': when,
-                    'direction': 'northbound' if service['direction'] == 'NB' else 'southbound',
-                    'serviceType': service['serviceType'],
-                    'loco': service.get('loco'),
-                })
+            if stop['c'] == station and (stop['a'] or stop['d']):
+                calls.append({**base, 'time': stop['a'] or stop['d'], 'passes': False})
+        for p in service.get('passes', []):
+            if p['c'] == station:
+                calls.append({**base, 'time': p['t'], 'passes': True})
     return sorted(calls, key=lambda c: c['time'])
 
 

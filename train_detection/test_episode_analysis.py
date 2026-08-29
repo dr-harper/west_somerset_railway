@@ -47,6 +47,15 @@ class TestSpecialDetection:
         assert m['is_special']
 
 
+class TestNonStopPasses:
+    def test_gala_pass_is_not_special(self):
+        # the 08:20 ex-Bishops Lydeard passes Crowcombe non-stop at 08//32
+        m = match_episode(episode('crowcombe_heathfield', '2026-08-29T08:33:04', 'unclear'))
+        assert not m['is_special']
+        assert m['match']['passes'] is True
+        assert m['match']['time'] == '08:32'
+
+
 class TestStationMapping:
     def test_seaward_crossing_maps_to_minehead(self):
         m = match_episode(episode('minehead_seaward_crossing', '2026-08-29T03:00:00', 'northbound'))

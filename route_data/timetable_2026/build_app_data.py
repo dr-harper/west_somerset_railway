@@ -148,9 +148,14 @@ def parse_service_table(table: list[list[str]]):
     services = []
     for col in range(n_cols - 1):
         entries = []  # (code, time, crosses, platform)
+        passes = []   # non-stop '//' timings — not calls, but real movements
         for idx, (code, cells) in enumerate(station_rows):
-            time, crosses = parse_cell(cells[col] if col < len(cells) else '')
+            raw = cells[col] if col < len(cells) else ''
+            time, crosses = parse_cell(raw)
             if time is None:
+                m = TIME_RE.match(raw.strip())
+                if m and m.group(2) == '//':
+                    passes.append({'c': code, 't': f'{int(m.group(1)):02d}:{m.group(3)}'})
                 continue
             platform_cells = platforms.get(idx)
             platform = None
@@ -201,12 +206,15 @@ def parse_service_table(table: list[list[str]]):
                 stop['p'] = platform
             stops.append(stop)
 
-        services.append({
+        service = {
             'direction': direction_of(codes),
             'serviceType': service_type,
             'loco': loco,
             'stops': stops,
-        })
+        }
+        if passes:
+            service['passes'] = passes
+        services.append(service)
     return services
 
 
