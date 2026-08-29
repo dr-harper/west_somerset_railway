@@ -30,7 +30,7 @@ import cv2
 import numpy as np
 
 from detection_zones import ZONES, classify, draw_zones
-from track_geometry import exclusion_mask, regions_of
+from track_geometry import corridor_mask, exclusion_mask, project, regions_of
 from wsr_live_capture import CAMERAS, BotChallenge, resolve_hls_url
 
 
@@ -176,6 +176,11 @@ class CameraWorker(threading.Thread):
             if kind in ('detect', 'approach'):
                 pts = (np.array(poly, np.float32) * SCALE).astype(np.int32)
                 cv2.fillPoly(mask, [pts], 255)
+        if not mask.any():
+            # No hand-drawn zones. Without this the mask is empty, the gate
+            # never opens, and the camera is silently blind rather than
+            # noisily broken — so fall back to the traced rails.
+            mask = corridor_mask(self.camera, PROC_W, PROC_H)
         blocked = exclusion_mask(self.camera, PROC_W, PROC_H)
         before = int((mask > 0).sum())
         mask[blocked > 0] = 0
@@ -333,12 +338,17 @@ class CameraWorker(threading.Thread):
             (t0, (x0, y0)), (t1, (x1, y1)) = centroids[0], centroids[-1]
             drift = (x1 - x0, y1 - y0)
             ep['drift_px'] = drift
-            nvec = NORTHBOUND_VECTORS[self.camera]
-            dot = drift[0] * nvec[0] + drift[1] * nvec[1]
+            # A camera with no validated vector gets no guess. The tangent
+            # of the traced centreline gives the right axis but not
+            # reliably the right sign — at Minehead it points the opposite
+            # way — and a confidently reversed direction is worse than
+            # none. Movement chaining recovers it from station order.
+            nvec = NORTHBOUND_VECTORS.get(self.camera)
             magnitude = (drift[0] ** 2 + drift[1] ** 2) ** 0.5
-            if magnitude < 30:
+            if not nvec or magnitude < 30:
                 ep['direction'] = 'unclear'
             else:
+                dot = drift[0] * nvec[0] + drift[1] * nvec[1]
                 ep['direction'] = 'northbound' if dot > 0 else 'southbound'
         else:
             ep['direction'] = 'unclear'
@@ -450,10 +460,22 @@ class CameraWorker(threading.Thread):
 
     def _detect(self, frame, conf: float = 0.5):
         detections = []
+        zones = ZONES.get(self.camera)
         for confidence, box, centre in self.detector.trains(frame):
-            zone = classify(self.camera, centre)
-            kind = next((k for n, k, _ in ZONES[self.camera] if n == zone), None)
-            if kind in ('detect', 'approach') and confidence >= conf:
+            if confidence < conf:
+                continue
+            if zones:
+                zone = classify(self.camera, centre)
+                kind = next((k for n, k, _ in zones if n == zone), None)
+                accepted = kind in ('detect', 'approach')
+            else:
+                # Newer cameras have traced rails but no hand-drawn zones.
+                # The rails say the same thing more precisely: a detection
+                # belongs if it sits on a road.
+                placed = project(self.camera, centre)
+                accepted = bool(placed and placed['on_track'])
+                zone = placed['track'] if placed else None
+            if accepted:
                 detections.append({'conf': confidence, 'box': box,
                                    'centre': centre, 'zone': zone})
         return detections

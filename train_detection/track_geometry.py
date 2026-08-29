@@ -108,6 +108,30 @@ def exclusion_mask(camera: str, width: int, height: int):
     return mask
 
 
+def corridor_mask(camera: str, width: int, height: int,
+                  gauges: float = 3.0):
+    """Where a train can appear, taken from the traced rails.
+
+    The hand-drawn detect zones do this for the six original cameras, but
+    the rails describe the same corridor more precisely and are already
+    traced. Width follows the local gauge, so the band narrows into the
+    distance exactly as the track does — a fixed pixel width would be far
+    too wide at the vanishing point and too narrow in the foreground.
+    """
+    import numpy as np
+
+    mask = np.zeros((height, width), np.uint8)
+    scale_x, scale_y = width / 854, height / 480
+    for track in tracks_of(camera):
+        samples = _cached_centreline(camera, track['name']) or []
+        for near, far in zip(samples, samples[1:]):
+            a = (int(near['point'][0] * scale_x), int(near['point'][1] * scale_y))
+            b = (int(far['point'][0] * scale_x), int(far['point'][1] * scale_y))
+            gauge = (near['gauge_px'] + far['gauge_px']) / 2 * scale_x
+            cv2.line(mask, a, b, 255, max(2, int(gauge * gauges)))
+    return mask
+
+
 def in_region(camera: str, point, kind: str) -> str | None:
     """Name of the region of that kind containing the point, if any."""
     px, py = point

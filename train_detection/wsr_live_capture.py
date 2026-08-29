@@ -44,8 +44,12 @@ CAMERAS = {
     'minehead_station': 'k40FIAhyhjo',
 }
 
-# Cameras the detector is calibrated for. The rest stream fine but have no
-# zones or traced track yet, so they are captured for reference only.
+# Cameras with a hand-validated northbound vector, so drift alone gives a
+# direction. The watcher runs every camera in CAMERAS regardless; the rest
+# report 'unclear' and take their direction from the order of stations a
+# movement visits. Do not add a camera here on the strength of a traced
+# centreline: the tangent gives the right axis but not reliably the right
+# sign, and at Minehead it points the opposite way.
 CALIBRATED = {
     'bishops_lydeard', 'crowcombe_heathfield', 'watchet_visitor_centre',
     'blue_anchor', 'minehead_seaward_crossing', 'minehead_station',
