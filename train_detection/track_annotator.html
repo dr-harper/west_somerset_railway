@@ -6,364 +6,331 @@
 <title>WSR track annotator</title>
 <style>
   :root {
-    --paper: #F3EBDA; --paper-raised: #FAF4E6; --chocolate: #3E2723;
+    --paper: #F3EBDA; --paper-raised: #FAF4E6; --paper-deep: #EADFC6;
+    --chocolate: #3E2723; --chocolate-deep: #2B1B17;
     --ink: #2A211C; --ink-soft: #6B5D52; --brass: #C9A227;
-    --brunswick: #1E4735; --signal-red: #B5342A; --rule: rgba(62,39,35,.28);
+    --brunswick: #1E4735; --signal-red: #B5342A;
+    --rule: rgba(62,39,35,.28); --rule-strong: rgba(62,39,35,.55);
+    --rail-a: #FFB43A; --rail-b: #7FC97F; --block: #DC3C3C;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0; background: var(--paper); color: var(--ink);
     font: 15px/1.5 'Cabin', 'Gill Sans', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
+
   header {
     background: var(--chocolate); color: var(--paper);
-    padding: 12px 20px; border-bottom: 3px solid var(--brass);
-    display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap;
+    padding: 10px 16px; border-bottom: 3px solid var(--brass);
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
   }
-  h1 { margin: 0; font-size: 1.1rem; letter-spacing: .12em; text-transform: uppercase; }
-  header p { margin: 0; color: var(--brass); font-size: .85rem; }
-  main { padding: 20px; max-width: 1000px; margin: 0 auto; }
-  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
-  select, button, input {
-    font: inherit; padding: 7px 12px; border-radius: 3px;
-    border: 1px solid var(--rule); background: var(--paper-raised); color: var(--ink);
+  h1 {
+    margin: 0; font-size: 1rem; letter-spacing: .14em;
+    text-transform: uppercase; font-weight: 600;
   }
-  button { cursor: pointer; }
+  #cameraPicker { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  #saveState { font-size: .8rem; color: var(--brass); min-width: 90px; }
+
+  main { max-width: 1040px; margin: 0 auto; padding: 14px 16px 40px; }
+
+  /* Mode is the primary choice, so it looks like one rather than hiding
+     in a dropdown among seven other controls. */
+  .modes { display: flex; gap: 2px; margin-bottom: 12px; }
+  .mode {
+    flex: 1; padding: 11px 8px; border: 1px solid var(--rule);
+    background: var(--paper-raised); color: var(--ink-soft);
+    font-family: inherit; font-size: .82rem; letter-spacing: .08em;
+    text-transform: uppercase; cursor: pointer; border-radius: 3px;
+  }
+  .mode[aria-pressed="true"] {
+    background: var(--chocolate); color: var(--paper); border-color: var(--chocolate);
+  }
+  .mode small { display: block; font-size: .68rem; letter-spacing: 0; text-transform: none; opacity: .75; }
+
+  /* One toolbar, rebuilt per mode, showing only what that mode needs. */
+  .toolbar {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    padding: 10px 12px; background: var(--paper-raised);
+    border: 1px solid var(--rule); border-radius: 3px 3px 0 0; border-bottom: none;
+    min-height: 52px;
+  }
+  .spacer { flex: 1; }
+  select, button {
+    font: inherit; font-size: .9rem; padding: 7px 11px; border-radius: 3px;
+    border: 1px solid var(--rule-strong); background: var(--paper);
+    color: var(--ink); cursor: pointer;
+  }
   button.primary { background: var(--brunswick); color: var(--paper); border-color: transparent; }
-  button.danger { background: var(--signal-red); color: var(--paper); border-color: transparent; }
-  .canvasWrap { position: relative; line-height: 0; border: 1px solid var(--rule); }
-  canvas { width: 100%; height: auto; cursor: crosshair; touch-action: none; }
-  /* A fingertip hides the rail it is aiming at, so show a magnified inset
-     of the area under the touch while placing or dragging a point. */
+  button.danger  { background: var(--signal-red); color: var(--paper); border-color: transparent; }
+  button.on      { background: var(--brass); border-color: var(--brass); color: var(--chocolate-deep); }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; }
+
+  .canvasWrap {
+    position: relative; line-height: 0;
+    border: 1px solid var(--rule); border-radius: 0; overflow: hidden;
+  }
+  canvas { width: 100%; height: auto; cursor: crosshair; touch-action: none; display: block; }
+
   #loupe {
-    position: absolute; top: 8px; right: 8px; width: 140px; height: 140px;
+    position: absolute; top: 8px; right: 8px; width: 132px; height: 132px;
     border: 2px solid var(--brass); border-radius: 50%; overflow: hidden;
     display: none; background: #111; pointer-events: none; z-index: 5;
   }
   #loupe.visible { display: block; }
   #loupe canvas { width: 100%; height: 100%; }
+
+  .statusbar {
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+    padding: 8px 12px; font-size: .86rem; color: var(--ink-soft);
+    background: var(--paper-raised); border: 1px solid var(--rule);
+    border-top: none; border-radius: 0 0 3px 3px;
+  }
+  .warn { color: var(--signal-red); font-weight: 600; }
+  .hint { color: var(--ink-soft); font-size: .88rem; margin: 12px 0 0; }
+
+  /* Progress across every camera, so what is left is visible at a glance. */
+  .progress { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 14px; }
+  .chip {
+    font-size: .74rem; padding: 4px 9px; border-radius: 999px;
+    border: 1px solid var(--rule); background: var(--paper-raised);
+    color: var(--ink-soft); cursor: pointer; white-space: nowrap;
+  }
+  .chip.done { border-color: var(--brunswick); color: var(--brunswick); }
+  .chip.current { background: var(--chocolate); color: var(--paper); border-color: var(--chocolate); }
+
   @media (max-width: 700px) {
     main { padding: 10px; }
-    .row { gap: 8px; }
-    select, button { padding: 10px 12px; font-size: 15px; flex: 1 1 auto; }
-    #save { flex-basis: 100%; }
-    textarea { display: none; }
-    #loupe { width: 116px; height: 116px; }
+    header { padding: 8px 12px; }
+    h1 { font-size: .85rem; }
+    .mode { padding: 10px 4px; font-size: .72rem; }
+    .mode small { display: none; }
+    select, button { padding: 9px 10px; }
+    #loupe { width: 108px; height: 108px; }
   }
-  .hint { color: var(--ink-soft); font-size: .9rem; margin: 10px 0; }
-  textarea {
-    width: 100%; height: 150px; font-family: ui-monospace, monospace;
-    font-size: 12px; padding: 10px; border: 1px solid var(--rule);
-    border-radius: 3px; background: var(--paper-raised); color: var(--ink);
-  }
-  .status { font-size: .9rem; color: var(--brunswick); }
-  .status.warn { color: var(--signal-red); font-weight: 600; }
 </style>
 </head>
 <body>
 <header>
   <h1>Track annotator</h1>
-  <p>Trace the running line, Bishops&nbsp;Lydeard end &rarr; Minehead end</p>
-</header>
-<main>
-  <div class="row">
+  <div id="cameraPicker">
     <select id="camera"></select>
-    <select id="mode">
-      <option value="rails">Trace rails</option>
-      <option value="paint">Block out areas</option>
-      <option value="regions">Mark regions (polygon)</option>
-    </select>
-    <span id="paintTools" style="display:none">
-      <button id="paintErase">Erase: off</button>
-      <button id="paintClear" class="danger">Clear blocks</button>
-    </span>
-    <select id="trackSelect"></select>
-    <button id="addTrack">+ Add</button>
-    <select id="rail">
-      <option value="a">Rail A</option>
-      <option value="b">Rail B</option>
-    </select>
-    <select id="kind">
-      <option value="running">Running line</option>
-      <option value="loop">Loop / other platform road</option>
-      <option value="siding">Siding</option>
-      <option value="shed">Shed road</option>
-    </select>
-    <select id="regionKind" style="display:none">
-      <option value="exclude">Ignore for motion (crowds, road, trees)</option>
-      <option value="platform">Platform</option>
-      <option value="occluder">Blocks the view</option>
-    </select>
-    <button id="undo">Undo point</button>
-    <button id="clear" class="danger">Clear</button>
-    <button id="save" class="primary">Save all tracks</button>
-    <span class="status" id="status"></span>
+    <span id="saveState"></span>
+  </div>
+</header>
+
+<main>
+  <div class="modes">
+    <button class="mode" data-mode="paint" aria-pressed="true">
+      Block out<small>drag over what is never a train</small></button>
+    <button class="mode" data-mode="rails" aria-pressed="false">
+      Trace rails<small>both rails of each road</small></button>
+    <button class="mode" data-mode="regions" aria-pressed="false">
+      Regions<small>platforms, obstructions</small></button>
   </div>
 
-  <p class="hint">
-    <strong>Block out areas</strong> is the quickest win: switch to it and
-    drag over anything that moves but is never a train — platforms with
-    people, roads, car parks, waving trees. Those areas cost 95% of our
-    wasted work. Otherwise, trace <strong>both rails of every track in view</strong>, each with
-    several points so curves are followed properly, starting from whichever
-    end is nearer Bishops Lydeard. Add a track for each running line, loop,
-    siding and shed road — that is how a detection gets attributed to the
-    road it is standing on, which separates a movement from stabled stock.
-    The rails' real separation is a known 1.435&nbsp;m, so the gap between
-    them gives the scale at every depth. Drag a point to nudge it.
-  </p>
+  <div class="toolbar" id="toolbar"></div>
 
   <div class="canvasWrap">
     <canvas id="canvas" width="854" height="480"></canvas>
-    <div id="loupe"><canvas id="loupeCanvas" width="140" height="140"></canvas></div>
+    <div id="loupe"><canvas id="loupeCanvas" width="132" height="132"></canvas></div>
   </div>
 
-  <p class="hint">Saved file: <code>camera_tracks.json</code></p>
-  <textarea id="output" readonly></textarea>
+  <div class="statusbar">
+    <span id="status"></span>
+    <span class="spacer"></span>
+    <label style="font-size:.8rem"><input type="checkbox" id="showOthers" checked> show other layers</label>
+  </div>
+
+  <p class="hint" id="hint"></p>
+  <div class="progress" id="progress"></div>
 </main>
 
 <script>
 const CAMERAS = [
-  'bishops_lydeard', 'crowcombe_heathfield', 'watchet_visitor_centre',
-  'blue_anchor', 'minehead_seaward_crossing', 'minehead_station',
+  ['bishops_lydeard', 'Bishops Lydeard'],
+  ['crowcombe_heathfield', 'Crowcombe 1'],
+  ['crowcombe_heathfield_2', 'Crowcombe 2'],
+  ['williton', 'Williton 1'],
+  ['williton_2', 'Williton 2'],
+  ['watchet_1', 'Watchet 1'],
+  ['watchet_visitor_centre', 'Watchet 2'],
+  ['blue_anchor', 'Blue Anchor 1'],
+  ['blue_anchor_2', 'Blue Anchor 2'],
+  ['minehead_seaward_crossing', 'Seaward Crossing'],
+  ['minehead_station', 'Minehead'],
 ];
+const PAINT_W = 32, PAINT_H = 18, MIN_GAUGE = 14, LOUPE_ZOOM = 4;
+const TRACK_NAMES = ['running line', 'loop', 'siding', 'shed road'];
+
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-const select = document.getElementById('camera');
-const status = document.getElementById('status');
-const output = document.getElementById('output');
+const cameraSelect = document.getElementById('camera');
+const toolbar = document.getElementById('toolbar');
+const statusEl = document.getElementById('status');
+const hintEl = document.getElementById('hint');
+const progressEl = document.getElementById('progress');
+const saveState = document.getElementById('saveState');
+const showOthers = document.getElementById('showOthers');
+const loupe = document.getElementById('loupe');
+const loupeCtx = document.getElementById('loupeCanvas').getContext('2d');
 
 let tracks = {};
 let image = new Image();
+let mode = 'paint';
 let dragging = null;
-const loupe = document.getElementById('loupe');
-const loupeCanvas = document.getElementById('loupeCanvas');
-const loupeCtx = loupeCanvas.getContext('2d');
-const LOUPE_ZOOM = 4;
-// matches MIN_RELIABLE_GAUGE_PX in track_geometry.py
-const MIN_GAUGE = 14;
-// Painting resolution. The motion mask itself is coarse, so a fine
-// polygon would be false precision — a grid you can drag over is both
-// easier and honest about what the gate can actually resolve.
-const PAINT_W = 32, PAINT_H = 18;
+let lastPaint = null;
 let erasing = false;
+let trackIndex = 0, regionIndex = 0, rail = 'a';
+let dirty = false;
 
-function paintCells() {
-  const entry = camera();
-  if (!entry.mask_cells) entry.mask_cells = { grid: [PAINT_W, PAINT_H], cells: [] };
-  return entry.mask_cells;
-}
+CAMERAS.forEach(([id, label]) => cameraSelect.appendChild(new Option(label, id)));
 
-function cellAt(position) {
-  const col = Math.floor(position[0] / (canvas.width / PAINT_W));
-  const row = Math.floor(position[1] / (canvas.height / PAINT_H));
-  if (col < 0 || row < 0 || col >= PAINT_W || row >= PAINT_H) return null;
-  return row * PAINT_W + col;
-}
-
-function paintAt(position) {
-  const cell = cellAt(position);
-  if (cell === null) return;
-  const store = paintCells();
-  const index = store.cells.indexOf(cell);
-  if (erasing) {
-    if (index >= 0) store.cells.splice(index, 1);
-  } else if (index < 0) {
-    store.cells.push(cell);
-  }
-}
-
-function isPaintMode() { return modeSelect.value === 'paint'; }
-
-function showLoupe(position) {
-  const size = loupeCanvas.width / LOUPE_ZOOM;
-  loupeCtx.fillStyle = '#111';
-  loupeCtx.fillRect(0, 0, loupeCanvas.width, loupeCanvas.height);
-  loupeCtx.imageSmoothingEnabled = false;
-  loupeCtx.drawImage(canvas,
-    position[0] - size / 2, position[1] - size / 2, size, size,
-    0, 0, loupeCanvas.width, loupeCanvas.height);
-  // crosshair marking the exact pixel the point will land on
-  loupeCtx.strokeStyle = 'rgba(255,180,58,.9)';
-  loupeCtx.lineWidth = 1;
-  const mid = loupeCanvas.width / 2;
-  loupeCtx.beginPath();
-  loupeCtx.moveTo(mid - 10, mid); loupeCtx.lineTo(mid + 10, mid);
-  loupeCtx.moveTo(mid, mid - 10); loupeCtx.lineTo(mid, mid + 10);
-  loupeCtx.stroke();
-  loupe.classList.add('visible');
-}
-
-function hideLoupe() { loupe.classList.remove('visible'); }
-
-CAMERAS.forEach(name => {
-  const option = document.createElement('option');
-  option.value = name;
-  option.textContent = name.replace(/_/g, ' ');
-  select.appendChild(option);
-});
-
-async function loadExisting() {
-  try {
-    const response = await fetch('camera_tracks.json', { cache: 'no-store' });
-    if (response.ok) {
-      const data = await response.json();
-      Object.entries(data).forEach(([key, value]) => {
-        if (!key.startsWith('_')) tracks[key] = value;
-      });
-    }
-  } catch { /* first run: nothing saved yet */ }
-}
-
-const railSelect = document.getElementById('rail');
-const trackSelect = document.getElementById('trackSelect');
-const kindSelect = document.getElementById('kind');
-const modeSelect = document.getElementById('mode');
-const regionKindSelect = document.getElementById('regionKind');
-const REGION_COLOURS = {
-  exclude: 'rgba(220,60,60,.85)',
-  platform: 'rgba(90,150,220,.85)',
-  occluder: 'rgba(160,120,220,.85)',
-};
-
-function isRegionMode() { return modeSelect.value === 'regions'; }
-
-function regionList() {
-  const entry = camera();
-  if (!entry.regions) entry.regions = [];
-  return entry.regions;
-}
-
-function activeRegion() {
-  const list = regionList();
-  const index = Math.min(Number(trackSelect.value) || 0, list.length - 1);
-  if (index < 0 || !list.length) return null;
-  return list[index];
-}
-const DEFAULT_NAMES = ['running line', 'loop', 'siding', 'shed road', 'track 5'];
+// ---- data --------------------------------------------------------------
 
 function camera() {
-  const name = select.value;
-  if (!tracks[name]) tracks[name] = { tracks: [], anchors: [] };
-  const entry = tracks[name];
-  // migrate a legacy single-pair trace into the list form
-  if (entry.rails && !entry.tracks) {
+  const id = cameraSelect.value;
+  if (!tracks[id]) tracks[id] = {};
+  const entry = tracks[id];
+  if (entry.rails && !entry.tracks) {          // migrate a legacy single pair
     entry.tracks = [{ name: 'running line', kind: 'running', rails: entry.rails }];
     delete entry.rails;
   }
   if (!entry.tracks) entry.tracks = [];
-  if (!entry.tracks.length) {
-    entry.tracks.push({ name: DEFAULT_NAMES[0], kind: 'running', rails: { a: [], b: [] } });
-  }
+  if (!entry.regions) entry.regions = [];
+  if (!entry.mask_cells) entry.mask_cells = { grid: [PAINT_W, PAINT_H], cells: [] };
   return entry;
 }
-
-function track() {
+function activeTrack() {
   const list = camera().tracks;
-  const index = Math.min(Number(trackSelect.value) || 0, list.length - 1);
-  const chosen = list[index];
-  if (!chosen.rails) chosen.rails = { a: [], b: [] };
-  return chosen;
+  return list.length ? list[Math.min(trackIndex, list.length - 1)] : null;
 }
-
-function current() {
-  if (isRegionMode()) {
+function activeRegion() {
+  const list = camera().regions;
+  return list.length ? list[Math.min(regionIndex, list.length - 1)] : null;
+}
+function editablePoints() {
+  if (mode === 'rails') {
+    const track = activeTrack();
+    if (!track) return null;
+    if (!track.rails) track.rails = { a: [], b: [] };
+    if (!track.rails[rail]) track.rails[rail] = [];
+    return track.rails[rail];
+  }
+  if (mode === 'regions') {
     const region = activeRegion();
-    if (!region) return { points: [] };
+    if (!region) return null;
     if (!region.points) region.points = [];
-    return { points: region.points };
+    return region.points;
   }
-  const rails = track().rails;
-  const key = railSelect.value;
-  if (!rails[key]) rails[key] = [];
-  return { points: rails[key] };
+  return null;
 }
 
-function refreshTrackList() {
-  const paint = isPaintMode();
-  document.getElementById('paintTools').style.display = paint ? '' : 'none';
-  trackSelect.style.display = paint ? 'none' : '';
-  document.getElementById('addTrack').style.display = paint ? 'none' : '';
-  railSelect.style.display = (isRegionMode() || paint) ? 'none' : '';
-  kindSelect.style.display = (isRegionMode() || paint) ? 'none' : '';
-  regionKindSelect.style.display = isRegionMode() ? '' : 'none';
-  if (paint) {
-    const n = (camera().mask_cells || {}).cells?.length || 0;
-    status.textContent = `${n} of ${PAINT_W * PAINT_H} cells blocked — drag to paint`;
-    status.classList.remove('warn');
-    return;
+// ---- toolbar, rebuilt per mode ----------------------------------------
+
+function el(html) {
+  const holder = document.createElement('div');
+  holder.innerHTML = html.trim();
+  return holder.firstElementChild;
+}
+
+function buildToolbar() {
+  toolbar.innerHTML = '';
+  const add = node => toolbar.appendChild(node);
+
+  if (mode === 'paint') {
+    const erase = el(`<button class="${erasing ? 'on' : ''}">${erasing ? 'Erasing' : 'Painting'}</button>`);
+    erase.onclick = () => { erasing = !erasing; buildToolbar(); };
+    add(erase);
+    const clear = el('<button class="danger">Clear all</button>');
+    clear.onclick = () => { camera().mask_cells.cells = []; touch(); };
+    add(clear);
+    add(el('<span class="spacer"></span>'));
+    add(el('<span style="font-size:.82rem;color:var(--ink-soft)"><span class="swatch" style="background:var(--block)"></span>blocked from motion</span>'));
   }
-  if (isRegionMode()) {
-    const regions = regionList();
-    const chosen = Math.min(Number(trackSelect.value) || 0, regions.length - 1);
-    trackSelect.innerHTML = '';
-    regions.forEach((region, index) => {
-      const option = document.createElement('option');
-      option.value = index;
-      option.textContent = `${index + 1}. ${region.name} (${(region.points || []).length})`;
-      trackSelect.appendChild(option);
+
+  if (mode === 'rails') {
+    const list = camera().tracks;
+    const picker = document.createElement('select');
+    list.forEach((track, i) => {
+      const done = track.rails && track.rails.a && track.rails.a.length > 1
+                   && track.rails.b && track.rails.b.length > 1;
+      picker.appendChild(new Option(`${track.name}${done ? ' ✓' : ''}`, i));
     });
-    if (!regions.length) {
-      const option = document.createElement('option');
-      option.textContent = 'no regions — press + Region';
-      trackSelect.appendChild(option);
+    if (!list.length) picker.appendChild(new Option('no roads yet', ''));
+    picker.value = String(Math.min(trackIndex, Math.max(0, list.length - 1)));
+    picker.onchange = () => { trackIndex = Number(picker.value) || 0; buildToolbar(); draw(); };
+    add(picker);
+
+    const addRoad = el('<button>+ Road</button>');
+    addRoad.onclick = () => {
+      list.push({ name: TRACK_NAMES[list.length] || `road ${list.length + 1}`,
+                  kind: list.length ? 'siding' : 'running', rails: { a: [], b: [] } });
+      trackIndex = list.length - 1; rail = 'a'; touch();
+    };
+    add(addRoad);
+
+    if (list.length) {
+      ['a', 'b'].forEach(key => {
+        const track = activeTrack();
+        const count = (track.rails && track.rails[key] || []).length;
+        const button = el(`<button class="${rail === key ? 'on' : ''}"><span class="swatch" style="background:var(--rail-${key})"></span>Rail ${key.toUpperCase()} (${count})</button>`);
+        button.onclick = () => { rail = key; buildToolbar(); draw(); };
+        add(button);
+      });
+      const kind = document.createElement('select');
+      ['running', 'loop', 'siding', 'shed'].forEach(k => kind.appendChild(new Option(k, k)));
+      kind.value = activeTrack().kind || 'running';
+      kind.onchange = () => { activeTrack().kind = kind.value; touch(); };
+      add(kind);
     }
-    trackSelect.value = String(Math.max(0, chosen));
-    const active = activeRegion();
-    if (active) regionKindSelect.value = active.kind || 'exclude';
-    return;
   }
-  const list = camera().tracks;
-  const chosen = Math.min(Number(trackSelect.value) || 0, list.length - 1);
-  trackSelect.innerHTML = '';
-  list.forEach((entry, index) => {
-    const option = document.createElement('option');
-    option.value = index;
-    const rails = entry.rails || { a: [], b: [] };
-    const done = (rails.a || []).length > 1 && (rails.b || []).length > 1;
-    option.textContent = `${index + 1}. ${entry.name}${done ? ' ✓' : ''}`;
-    trackSelect.appendChild(option);
-  });
-  trackSelect.value = String(Math.max(0, chosen));
-  kindSelect.value = list[Math.max(0, chosen)].kind || 'running';
+
+  if (mode === 'regions') {
+    const list = camera().regions;
+    const picker = document.createElement('select');
+    list.forEach((region, i) => picker.appendChild(
+      new Option(`${region.kind} (${(region.points || []).length} pts)`, i)));
+    if (!list.length) picker.appendChild(new Option('no regions yet', ''));
+    picker.value = String(Math.min(regionIndex, Math.max(0, list.length - 1)));
+    picker.onchange = () => { regionIndex = Number(picker.value) || 0; buildToolbar(); draw(); };
+    add(picker);
+
+    const kind = document.createElement('select');
+    kind.appendChild(new Option('Platform', 'platform'));
+    kind.appendChild(new Option('Blocks the view', 'occluder'));
+    if (list.length) kind.value = activeRegion().kind;
+    kind.onchange = () => { if (activeRegion()) { activeRegion().kind = kind.value; touch(); } };
+    add(kind);
+
+    const addRegion = el('<button>+ Region</button>');
+    addRegion.onclick = () => {
+      list.push({ name: kind.value, kind: kind.value, points: [] });
+      regionIndex = list.length - 1; touch();
+    };
+    add(addRegion);
+  }
+
+  if (mode !== 'paint') {
+    add(el('<span class="spacer"></span>'));
+    const undo = el('<button>Undo point</button>');
+    undo.onclick = () => { const points = editablePoints(); if (points) { points.pop(); touch(); } };
+    add(undo);
+  }
+
+  const save = el('<button class="primary">Save</button>');
+  save.onclick = saveAll;
+  add(save);
 }
 
-function loadImage() {
-  image = new Image();
-  image.onload = draw;
-  image.onerror = () => { status.textContent = 'reference frame missing'; draw(); };
-  image.src = `working_images/cam_${select.value}.jpg`;
-}
-
-function toCanvas(event) {
-  const rect = canvas.getBoundingClientRect();
-  // clamp: a drag that leaves the canvas should stop at the edge rather
-  // than record a point outside the image
-  const clamp = (value, max) => Math.max(0, Math.min(max, Math.round(value)));
-  return [
-    clamp((event.clientX - rect.left) * canvas.width / rect.width, canvas.width),
-    clamp((event.clientY - rect.top) * canvas.height / rect.height, canvas.height),
-  ];
-}
-
-function nearestPoint(position, within = 12) {
-  const points = current().points;
-  let best = null;
-  points.forEach((point, index) => {
-    const distance = Math.hypot(point[0] - position[0], point[1] - position[1]);
-    if (distance <= within && (best === null || distance < best.distance)) {
-      best = { index, distance };
-    }
-  });
-  return best;
-}
+// ---- drawing -----------------------------------------------------------
 
 function pointAtFraction(points, fraction) {
-  if (points.length === 1) return points[0];
+  if (points.length < 2) return points[0];
   const lengths = [0];
   for (let i = 1; i < points.length; i++) {
-    lengths.push(lengths[i - 1] + Math.hypot(
-      points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1]));
+    lengths.push(lengths[i - 1] + Math.hypot(points[i][0] - points[i - 1][0],
+                                             points[i][1] - points[i - 1][1]));
   }
   const total = lengths[lengths.length - 1];
   if (!total) return points[0];
@@ -372,10 +339,8 @@ function pointAtFraction(points, fraction) {
     if (lengths[i] >= target) {
       const span = lengths[i] - lengths[i - 1];
       const t = span ? (target - lengths[i - 1]) / span : 0;
-      return [
-        points[i - 1][0] + (points[i][0] - points[i - 1][0]) * t,
-        points[i - 1][1] + (points[i][1] - points[i - 1][1]) * t,
-      ];
+      return [points[i - 1][0] + (points[i][0] - points[i - 1][0]) * t,
+              points[i - 1][1] + (points[i][1] - points[i - 1][1]) * t];
     }
   }
   return points[points.length - 1];
@@ -388,20 +353,21 @@ function draw() {
   } else {
     ctx.fillStyle = '#222'; ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
-  // painted blocks first: the areas the motion gate must ignore
-  const painted = (camera().mask_cells || {}).cells || [];
-  if (painted.length) {
-    const cw = canvas.width / PAINT_W, ch = canvas.height / PAINT_H;
-    ctx.fillStyle = 'rgba(220,60,60,.42)';
-    painted.forEach(cell => {
-      const col = cell % PAINT_W, row = Math.floor(cell / PAINT_W);
-      ctx.fillRect(col * cw, row * ch, cw, ch);
+
+  const entry = camera();
+  const visible = layer => mode === layer || showOthers.checked;
+  const cw = canvas.width / PAINT_W, ch = canvas.height / PAINT_H;
+
+  if (visible('paint')) {
+    ctx.globalAlpha = mode === 'paint' ? 0.45 : 0.2;
+    ctx.fillStyle = 'rgb(220,60,60)';
+    entry.mask_cells.cells.forEach(cell => {
+      ctx.fillRect((cell % PAINT_W) * cw, Math.floor(cell / PAINT_W) * ch, cw, ch);
     });
+    ctx.globalAlpha = 1;
   }
-  if (isPaintMode()) {
-    const cw = canvas.width / PAINT_W, ch = canvas.height / PAINT_H;
-    ctx.strokeStyle = 'rgba(250,244,230,.18)';
-    ctx.lineWidth = 1;
+  if (mode === 'paint') {
+    ctx.strokeStyle = 'rgba(250,244,230,.16)'; ctx.lineWidth = 1;
     for (let c = 1; c < PAINT_W; c++) {
       ctx.beginPath(); ctx.moveTo(c * cw, 0); ctx.lineTo(c * cw, canvas.height); ctx.stroke();
     }
@@ -410,190 +376,251 @@ function draw() {
     }
   }
 
-  // regions next, so rails sit on top of them
-  regionList().forEach(region => {
-    const points = region.points || [];
-    if (points.length < 2) return;
-    const colour = REGION_COLOURS[region.kind] || REGION_COLOURS.exclude;
-    const selected = isRegionMode() && region === activeRegion();
-    ctx.beginPath();
-    points.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
-    ctx.closePath();
-    ctx.fillStyle = colour.replace('.85', selected ? '.35' : '.18');
-    ctx.fill();
-    ctx.strokeStyle = colour;
-    ctx.lineWidth = selected ? 3 : 1.5;
-    ctx.stroke();
-    if (selected) {
-      points.forEach(([x, y]) => {
-        ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2);
-        ctx.fillStyle = colour; ctx.fill();
-        ctx.strokeStyle = '#16130E'; ctx.lineWidth = 2; ctx.stroke();
-      });
-    }
-  });
-
-  const activeTrack = track();
-  const rails = activeTrack.rails;
-  const active = railSelect.value;
-  const COLOURS = { a: 'rgba(255,180,58,.95)', b: 'rgba(127,201,127,.95)' };
-
-  // other tracks at this camera, drawn faintly for context
-  camera().tracks.forEach(entry => {
-    if (entry === activeTrack) return;
-    ['a', 'b'].forEach(key => {
-      const points = (entry.rails || {})[key] || [];
+  if (visible('regions')) {
+    entry.regions.forEach(region => {
+      const points = region.points || [];
       if (points.length < 2) return;
-      ctx.strokeStyle = 'rgba(250,244,230,.45)';
-      ctx.lineWidth = 1.5;
+      const selected = mode === 'regions' && region === activeRegion();
+      const rgb = region.kind === 'platform' ? '90,150,220' : '160,120,220';
       ctx.beginPath();
       points.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
-      ctx.stroke();
-    });
-  });
-
-  // Sleepers between the rails show the pairing the geometry will use.
-  // Where the pair closes below the usable gauge the sleeper turns red:
-  // scale cannot be measured there, so the trace should stop before it.
-  let tooNarrow = 0;
-  if (rails.a.length > 1 && rails.b.length > 1) {
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= 20; i++) {
-      const pa = pointAtFraction(rails.a, i / 20);
-      const pb = pointAtFraction(rails.b, i / 20);
-      const gauge = Math.hypot(pa[0] - pb[0], pa[1] - pb[1]);
-      if (gauge < MIN_GAUGE) tooNarrow++;
-      ctx.strokeStyle = gauge < MIN_GAUGE ? 'rgba(220,60,60,.9)' : 'rgba(250,244,230,.35)';
-      ctx.beginPath(); ctx.moveTo(pa[0], pa[1]); ctx.lineTo(pb[0], pb[1]); ctx.stroke();
-    }
-  }
-
-  ['a', 'b'].forEach(key => {
-    const points = rails[key] || [];
-    if (points.length > 1) {
-      ctx.strokeStyle = COLOURS[key];
-      ctx.lineWidth = key === active ? 3 : 2;
-      ctx.globalAlpha = key === active ? 1 : 0.65;
-      ctx.beginPath();
-      points.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-      const [x1, y1] = points[points.length - 2];
-      const [x2, y2] = points[points.length - 1];
-      const angle = Math.atan2(y2 - y1, x2 - x1);
-      ctx.fillStyle = COLOURS[key];
-      ctx.beginPath();
-      ctx.moveTo(x2, y2);
-      ctx.lineTo(x2 - 14 * Math.cos(angle - 0.4), y2 - 14 * Math.sin(angle - 0.4));
-      ctx.lineTo(x2 - 14 * Math.cos(angle + 0.4), y2 - 14 * Math.sin(angle + 0.4));
       ctx.closePath();
-      ctx.fill();
-      if (key === active) {
-        ctx.font = '12px sans-serif';
-        ctx.fillText('to Minehead', x2 + 10, y2 - 8);
+      ctx.fillStyle = `rgba(${rgb},${selected ? 0.3 : 0.14})`; ctx.fill();
+      ctx.strokeStyle = `rgba(${rgb},${selected ? 0.95 : 0.5})`;
+      ctx.lineWidth = selected ? 3 : 1.5; ctx.stroke();
+      if (selected) {
+        points.forEach(([x, y]) => {
+          ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2);
+          ctx.fillStyle = `rgb(${rgb})`; ctx.fill();
+          ctx.strokeStyle = '#16130E'; ctx.lineWidth = 2; ctx.stroke();
+        });
       }
-    }
-    points.forEach(([x, y], index) => {
-      ctx.beginPath();
-      ctx.arc(x, y, key === active ? 5 : 3, 0, Math.PI * 2);
-      ctx.fillStyle = index === 0 ? '#7FC97F' : COLOURS[key];
-      ctx.fill();
-      ctx.strokeStyle = '#16130E';
-      ctx.lineWidth = 2;
-      ctx.stroke();
     });
-  });
-  const counts = `A:${rails.a.length} B:${(rails.b || []).length}`;
-  const ready = rails.a.length > 1 && (rails.b || []).length > 1;
-  const done = camera().tracks.filter(t => (t.rails?.a || []).length > 1
-                                        && (t.rails?.b || []).length > 1).length;
+  }
+
+  let narrow = 0, sparse = false;
+  if (visible('rails')) {
+    entry.tracks.forEach(track => {
+      const rails = track.rails || {};
+      const isActive = mode === 'rails' && track === activeTrack();
+      const hasPair = rails.a && rails.a.length > 1 && rails.b && rails.b.length > 1;
+      if (hasPair) {
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 20; i++) {
+          const pa = pointAtFraction(rails.a, i / 20);
+          const pb = pointAtFraction(rails.b, i / 20);
+          const gauge = Math.hypot(pa[0] - pb[0], pa[1] - pb[1]);
+          if (isActive && gauge < MIN_GAUGE) narrow++;
+          ctx.strokeStyle = gauge < MIN_GAUGE
+            ? 'rgba(220,60,60,.9)' : `rgba(250,244,230,${isActive ? 0.3 : 0.12})`;
+          ctx.beginPath(); ctx.moveTo(pa[0], pa[1]); ctx.lineTo(pb[0], pb[1]); ctx.stroke();
+        }
+        if (isActive && (rails.a.length < 3 || rails.b.length < 3)) sparse = true;
+      }
+      ['a', 'b'].forEach(key => {
+        const points = rails[key] || [];
+        if (!points.length) return;
+        const rgb = key === 'a' ? '255,180,58' : '127,201,127';
+        const live = isActive && key === rail;
+        if (points.length > 1) {
+          ctx.strokeStyle = `rgba(${rgb},${isActive ? 0.95 : 0.4})`;
+          ctx.lineWidth = live ? 3 : 2;
+          ctx.beginPath();
+          points.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+          ctx.stroke();
+        }
+        if (isActive) {
+          points.forEach(([x, y], i) => {
+            ctx.beginPath(); ctx.arc(x, y, live ? 5 : 3, 0, Math.PI * 2);
+            ctx.fillStyle = i === 0 ? '#7FC97F' : `rgb(${rgb})`; ctx.fill();
+            ctx.strokeStyle = '#16130E'; ctx.lineWidth = 2; ctx.stroke();
+          });
+        }
+      });
+    });
+  }
+
+  updateStatus(narrow, sparse);
+}
+
+const HINTS = {
+  paint: 'Drag over anything that moves but is never a train — platforms with people, roads, car parks, waving trees. Most of our wasted work comes from these.',
+  rails: 'Trace both rails of each road, several points each, from the Bishops Lydeard end towards Minehead. Stop before the rails visually meet.',
+  regions: 'Outline platforms (a train alongside one is calling, not passing) and anything that hides the track, so a train behind a post does not end its episode.',
+};
+
+function updateStatus(narrow, sparse) {
+  const entry = camera();
   const notes = [];
-  if (ready && tooNarrow > 1) {
-    notes.push('rails converge — stop the trace before they meet');
+  if (mode === 'paint') {
+    notes.push(`${entry.mask_cells.cells.length} of ${PAINT_W * PAINT_H} cells blocked`);
+  } else if (mode === 'rails') {
+    const done = entry.tracks.filter(t => t.rails && t.rails.a && t.rails.a.length > 1
+                                          && t.rails.b && t.rails.b.length > 1).length;
+    notes.push(`${done}/${entry.tracks.length} roads complete`);
+    if (narrow > 1) notes.push('<span class="warn">rails converge — stop before they meet</span>');
+    if (sparse) notes.push('<span class="warn">add more points to follow the curve</span>');
+  } else {
+    notes.push(`${entry.regions.length} region(s)`);
   }
-  if (ready && (rails.a.length < 3 || rails.b.length < 3)) {
-    notes.push('add more points so curves are followed');
+  statusEl.innerHTML = notes.join(' · ');
+  saveState.textContent = dirty ? 'unsaved changes' : 'saved';
+  saveState.style.color = dirty ? 'var(--signal-red)' : 'var(--brass)';
+  hintEl.textContent = HINTS[mode];
+  buildProgress();
+}
+
+function buildProgress() {
+  progressEl.innerHTML = '';
+  CAMERAS.forEach(([id, label]) => {
+    const entry = tracks[id] || {};
+    const roads = (entry.tracks || []).filter(t => t.rails && t.rails.a && t.rails.a.length > 1
+                                                   && t.rails.b && t.rails.b.length > 1).length;
+    const blocked = ((entry.mask_cells || {}).cells || []).length;
+    const chip = document.createElement('button');
+    chip.className = 'chip' + (roads ? ' done' : '') + (id === cameraSelect.value ? ' current' : '');
+    chip.textContent = label
+      + (roads ? ` · ${roads} road${roads > 1 ? 's' : ''}` : '')
+      + (blocked ? ` · ${blocked} blocked` : '');
+    chip.onclick = () => { cameraSelect.value = id; switchCamera(); };
+    progressEl.appendChild(chip);
+  });
+}
+
+// ---- interaction -------------------------------------------------------
+
+function toCanvas(event) {
+  const rect = canvas.getBoundingClientRect();
+  const clamp = (v, max) => Math.max(0, Math.min(max, Math.round(v)));
+  return [clamp((event.clientX - rect.left) * canvas.width / rect.width, canvas.width),
+          clamp((event.clientY - rect.top) * canvas.height / rect.height, canvas.height)];
+}
+
+function showLoupe(position) {
+  const size = 132 / LOUPE_ZOOM;
+  loupeCtx.fillStyle = '#111'; loupeCtx.fillRect(0, 0, 132, 132);
+  loupeCtx.imageSmoothingEnabled = false;
+  loupeCtx.drawImage(canvas, position[0] - size / 2, position[1] - size / 2,
+                     size, size, 0, 0, 132, 132);
+  loupeCtx.strokeStyle = 'rgba(255,180,58,.9)'; loupeCtx.lineWidth = 1;
+  loupeCtx.beginPath();
+  loupeCtx.moveTo(56, 66); loupeCtx.lineTo(76, 66);
+  loupeCtx.moveTo(66, 56); loupeCtx.lineTo(66, 76);
+  loupeCtx.stroke();
+  loupe.classList.add('visible');
+}
+
+function paintAt(position) {
+  const col = Math.floor(position[0] / (canvas.width / PAINT_W));
+  const row = Math.floor(position[1] / (canvas.height / PAINT_H));
+  if (col < 0 || row < 0 || col >= PAINT_W || row >= PAINT_H) return;
+  const cell = row * PAINT_W + col;
+  const cells = camera().mask_cells.cells;
+  const at = cells.indexOf(cell);
+  if (erasing) { if (at >= 0) cells.splice(at, 1); }
+  else if (at < 0) cells.push(cell);
+}
+
+// A quick drag fires pointermove only every few cells, leaving holes along the
+// stroke. Fill in the line between samples so the brush is continuous.
+function paintStroke(to) {
+  const from = lastPaint || to;
+  const step = Math.min(canvas.width / PAINT_W, canvas.height / PAINT_H) / 2;
+  const span = Math.hypot(to[0] - from[0], to[1] - from[1]);
+  const steps = Math.max(1, Math.ceil(span / step));
+  for (let i = 1; i <= steps; i++) {
+    paintAt([from[0] + (to[0] - from[0]) * i / steps,
+             from[1] + (to[1] - from[1]) * i / steps]);
   }
-  status.textContent = (ready ? `${counts} — pair complete` : `${counts} — need both rails`)
-    + ` · ${done}/${camera().tracks.length} tracks done`
-    + (notes.length ? ` · ${notes.join('; ')}` : '');
-  status.classList.toggle('warn', notes.length > 0);
-  output.value = JSON.stringify(tracks, null, 1);
+  if (!lastPaint) paintAt(to);
+  lastPaint = to;
+}
+
+function nearestPoint(position, within) {
+  const points = editablePoints();
+  if (!points) return null;
+  let best = null;
+  points.forEach((point, index) => {
+    const distance = Math.hypot(point[0] - position[0], point[1] - position[1]);
+    if (distance <= within && (!best || distance < best.distance)) best = { index, distance };
+  });
+  return best;
 }
 
 canvas.addEventListener('pointerdown', event => {
   canvas.setPointerCapture(event.pointerId);
   const position = toCanvas(event);
-  if (isPaintMode()) { dragging = 'paint'; paintAt(position); draw(); return; }
-  // a fingertip is blunter than a mouse, so allow a wider grab radius
-  const radius = event.pointerType === 'touch' ? 26 : 12;
-  const near = nearestPoint(position, radius);
-  if (near) { dragging = near.index; }
-  else { current().points.push(position); dragging = current().points.length - 1; }
-  draw();
-  showLoupe(position);
+  if (mode === 'paint') { dragging = 'paint'; lastPaint = null; paintStroke(position); touch(); return; }
+  const points = editablePoints();
+  if (!points) return;
+  const near = nearestPoint(position, event.pointerType === 'touch' ? 26 : 12);
+  if (near) dragging = near.index;
+  else { points.push(position); dragging = points.length - 1; }
+  touch(); showLoupe(position);
 });
 canvas.addEventListener('pointermove', event => {
   if (dragging === null) return;
   const position = toCanvas(event);
-  if (dragging === 'paint') { paintAt(position); draw(); return; }
-  current().points[dragging] = position;
-  draw();
-  showLoupe(position);
+  if (dragging === 'paint') { paintStroke(position); touch(); return; }
+  const points = editablePoints();
+  if (points) { points[dragging] = position; touch(); showLoupe(position); }
 });
-window.addEventListener('pointerup', () => { dragging = null; hideLoupe(); });
-window.addEventListener('pointercancel', () => { dragging = null; hideLoupe(); });
+function endDrag() { dragging = null; lastPaint = null; loupe.classList.remove('visible'); }
+window.addEventListener('pointerup', endDrag);
+window.addEventListener('pointercancel', endDrag);
 
-document.getElementById('undo').onclick = () => { track().rails[railSelect.value].pop(); refreshTrackList(); draw(); };
-document.getElementById('clear').onclick = () => { track().rails[railSelect.value] = []; refreshTrackList(); draw(); };
-modeSelect.onchange = () => { trackSelect.value = '0'; refreshTrackList(); draw(); };
-document.getElementById('paintErase').onclick = event => {
-  erasing = !erasing;
-  event.target.textContent = `Erase: ${erasing ? 'on' : 'off'}`;
-};
-document.getElementById('paintClear').onclick = () => {
-  paintCells().cells = []; draw();
-};
-regionKindSelect.onchange = () => {
-  const region = activeRegion();
-  if (region) { region.kind = regionKindSelect.value; region.name = regionKindSelect.value; }
-  refreshTrackList(); draw();
-};
-document.getElementById('addTrack').onclick = () => {
-  if (isRegionMode()) {
-    const regions = regionList();
-    const kind = regionKindSelect.value;
-    regions.push({ name: kind, kind, points: [] });
-    refreshTrackList();
-    trackSelect.value = String(regions.length - 1);
-    draw();
-    return;
+// ---- plumbing ----------------------------------------------------------
+
+function touch() { dirty = true; buildToolbar(); draw(); }
+
+function switchCamera() {
+  trackIndex = 0; regionIndex = 0; rail = 'a';
+  image = new Image();
+  image.onload = draw;
+  image.onerror = () => { statusEl.textContent = 'reference frame missing'; draw(); };
+  image.src = `working_images/cam_${cameraSelect.value}.jpg`;
+  buildToolbar(); draw();
+}
+
+async function saveAll() {
+  saveState.textContent = 'saving…';
+  try {
+    const response = await fetch('/save-tracks', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(tracks, null, 1),
+    });
+    dirty = !response.ok;
+    saveState.textContent = response.ok ? 'saved' : 'save failed';
+    saveState.style.color = response.ok ? 'var(--brass)' : 'var(--signal-red)';
+  } catch {
+    saveState.textContent = 'save failed';
+    saveState.style.color = 'var(--signal-red)';
   }
-  const list = camera().tracks;
-  const name = prompt('Name this track',
-    DEFAULT_NAMES[list.length] || `track ${list.length + 1}`);
-  if (!name) return;
-  list.push({ name, kind: 'siding', rails: { a: [], b: [] } });
-  refreshTrackList();
-  trackSelect.value = String(list.length - 1);
-  kindSelect.value = 'siding';
-  railSelect.value = 'a';
-  draw();
-};
-trackSelect.onchange = () => { kindSelect.value = track().kind || 'running'; draw(); };
-kindSelect.onchange = () => { track().kind = kindSelect.value; refreshTrackList(); draw(); };
-document.getElementById('save').onclick = async () => {
-  const response = await fetch('/save-tracks', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(tracks, null, 1),
-  });
-  status.textContent = response.ok ? 'saved to camera_tracks.json' : 'save failed';
-};
-select.onchange = () => { trackSelect.value = '0'; refreshTrackList(); loadImage(); draw(); };
-railSelect.onchange = draw;
+}
 
-loadExisting().then(() => { refreshTrackList(); loadImage(); draw(); });
+document.querySelectorAll('.mode').forEach(button => {
+  button.onclick = () => {
+    mode = button.dataset.mode;
+    document.querySelectorAll('.mode').forEach(other =>
+      other.setAttribute('aria-pressed', String(other === button)));
+    buildToolbar(); draw();
+  };
+});
+cameraSelect.onchange = switchCamera;
+showOthers.onchange = draw;
+window.addEventListener('beforeunload', event => {
+  if (dirty) { event.preventDefault(); event.returnValue = ''; }
+});
+
+fetch('camera_tracks.json', { cache: 'no-store' })
+  .then(response => response.ok ? response.json() : {})
+  .catch(() => ({}))
+  .then(data => {
+    Object.entries(data).forEach(([key, value]) => {
+      if (!key.startsWith('_')) tracks[key] = value;
+    });
+    switchCamera();
+  });
 </script>
 </body>
 </html>
