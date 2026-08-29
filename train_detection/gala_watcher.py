@@ -231,6 +231,11 @@ class CameraWorker(threading.Thread):
         ep = self.episode
         self.episode = None
         centroids = ep.pop('centroids')
+        # Persist where the train actually was, not just its net drift:
+        # track geometry needs a position to take the local tangent at,
+        # which a single drift vector cannot supply (29/8 lesson).
+        ep['path'] = [[round(t - centroids[0][0], 1), c[0], c[1]]
+                      for t, c in centroids]
         clip_frames = ep.pop('clip_frames')
         ep['t_exit'] = now_iso()
         ep['n_observations'] = len(centroids)

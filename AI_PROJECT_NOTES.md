@@ -66,6 +66,13 @@ train_detection/          live webcam detection system (YOLO11 + zones)
   loop, backed by Firestore.
 - `classify_trains.py`: per-episode Gemini classification (structured
   output). Needs a fresh key.
+- `track_geometry.py` + `track_annotator.html`: per-camera track
+  centrelines. Direction comes from the LOCAL tangent where the train is,
+  which handles curves that a single per-camera vector cannot. Trace new
+  cameras with `python3 serve_annotator.py` then open the annotator; the
+  traces live in `camera_tracks.json` (854x480 image space, ordered from
+  the Bishops Lydeard end towards Minehead). Bishops Lydeard and Watchet
+  are traced; the other four are not yet.
 
 ### Findings from the 29th August gala (the only full day of real data)
 
@@ -87,6 +94,10 @@ train_detection/          live webcam detection system (YOLO11 + zones)
 - The identity gate is proven by tests but untested at scale: with 3 of 84
   episodes labelled it never fires, because it only helps where identity
   contradicts a chain.
+- Episodes recorded before 29/8 evening store only net drift, not the
+  train's path, so track-tangent direction cannot be validated against
+  them. The watcher now persists a `path` of timestamped centroids; the
+  next running day will let the track model be checked properly.
 - Jupyter kernel: use "Python (WSR)" (the user's default `python3` kernel
   points at a different project's venv).
 

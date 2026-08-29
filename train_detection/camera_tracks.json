@@ -1,0 +1,65 @@
+{
+ "bishops_lydeard": {
+  "points": [
+   [
+    37,
+    465
+   ],
+   [
+    156,
+    372
+   ],
+   [
+    262,
+    287
+   ],
+   [
+    357,
+    208
+   ],
+   [
+    431,
+    143
+   ],
+   [
+    476,
+    96
+   ],
+   [
+    505,
+    59
+   ]
+  ],
+  "anchors": []
+ },
+ "watchet_visitor_centre": {
+  "points": [
+   [
+    619,
+    478
+   ],
+   [
+    668,
+    433
+   ],
+   [
+    716,
+    394
+   ],
+   [
+    760,
+    356
+   ],
+   [
+    801,
+    322
+   ],
+   [
+    837,
+    296
+   ]
+  ],
+  "anchors": []
+ },
+ "_note": "Track centrelines in 854x480 image space, ordered from the Bishops Lydeard end towards Minehead. Traced with track_annotator.html."
+}
