@@ -24,7 +24,7 @@
 .trainId {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #333;
+  color: var(--ink);
 }
 
 .serviceType {
@@ -52,7 +52,7 @@
 }
 
 .notes {
-  color: #666;
+  color: var(--ink-soft);
   font-size: 0.85rem;
   font-style: italic;
 }
@@ -65,7 +65,7 @@
 }
 
 .duration {
-  color: #666;
+  color: var(--ink-soft);
   font-size: 0.9rem;
 }
 
@@ -137,7 +137,7 @@
   transform: translateX(-50%) translateY(-50%);
   width: 12px;
   height: 12px;
-  background: white;
+  background: var(--paper-raised);
   border: 2px solid #9ca3af;
   border-radius: 50%;
   z-index: 2;
@@ -154,7 +154,7 @@
 }
 
 .stop.upcoming .stopDot {
-  background: white;
+  background: var(--paper-raised);
   border-color: #9ca3af;
 }
 
@@ -252,7 +252,7 @@
 .stationName {
   font-size: 0.95rem;
   font-weight: 500;
-  color: #333;
+  color: var(--ink);
 }
 
 .requestStop {
@@ -263,7 +263,7 @@
 
 .time {
   font-size: 0.875rem;
-  color: #666;
+  color: var(--ink-soft);
 }
 
 .delay {

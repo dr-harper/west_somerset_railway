@@ -22,10 +22,10 @@
   align-items: flex-end;
   margin-bottom: var(--spacing-xl);
   padding: var(--spacing-lg);
-  background: white;
-  border-radius: var(--radius-sm);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid #E5E5E5;
+  background: var(--paper-raised);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--rule);
 }
 
 .departureSection {

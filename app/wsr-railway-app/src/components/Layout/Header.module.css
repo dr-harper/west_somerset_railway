@@ -1,7 +1,8 @@
 .header {
-  background: white;
+  background: var(--chocolate);
   padding: var(--spacing-md) 0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-bottom: 3px solid var(--brass);
+  box-shadow: var(--shadow-md);
 }
 
 .headerContent {
@@ -17,24 +18,26 @@
 }
 
 .logoImage {
-  width: 50px;
-  height: 50px;
+  width: 48px;
+  height: 48px;
   object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
 }
 
 .title {
-  font-family: var(--font-header);
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--color-wsr-burgundy);
-  letter-spacing: 0.5px;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: var(--paper);
+  letter-spacing: 0.12em;
   margin: 0;
 }
 
 .subtitle {
   font-family: var(--font-body);
   font-size: 0.85rem;
-  color: var(--color-text-light);
+  color: var(--brass-bright);
   font-weight: 400;
   letter-spacing: 0.3px;
   margin: 0;
@@ -47,13 +50,13 @@
 }
 
 .navLink {
-  color: var(--color-wsr-burgundy);
+  color: rgba(243, 235, 218, 0.75);
   text-decoration: none;
-  font-family: var(--font-body);
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-weight: 400;
   font-size: 0.95rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.1em;
   transition: color var(--transition-fast);
   position: relative;
   padding: var(--spacing-xs) 0;
@@ -66,12 +69,12 @@
   left: 0;
   width: 0;
   height: 2px;
-  background: var(--color-wsr-gold);
+  background: var(--brass-bright);
   transition: width var(--transition-fast);
 }
 
 .navLink:hover {
-  color: var(--color-wsr-gold);
+  color: var(--paper);
 }
 
 .navLink:hover::after {
@@ -79,7 +82,7 @@
 }
 
 .navLink.active {
-  color: var(--color-wsr-gold);
+  color: var(--brass-bright);
 }
 
 .navLink.active::after {
@@ -93,12 +96,7 @@
   }
 
   .title {
-    font-size: 1.5rem;
-  }
-
-  .logoIcon {
-    width: 40px;
-    height: 40px;
+    font-size: 1.2rem;
   }
 
   .nav {

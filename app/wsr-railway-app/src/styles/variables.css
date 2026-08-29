@@ -1,31 +1,56 @@
 :root {
-  /* WSR Brand Colors */
-  --color-wsr-burgundy: #7D2239;
-  --color-wsr-dark-burgundy: #5A1A2A;
-  --color-wsr-gold: #D4AF37;
-  --color-wsr-cream: #F5F5F0;
-  --color-wsr-light-gray: #F8F8F8;
-  --color-wsr-black: #1C1C1C;
-  --color-railway-amber: #FFBF00;
-  
-  /* Semantic Colors */
-  --color-primary: var(--color-wsr-burgundy);
-  --color-secondary: var(--color-wsr-dark-burgundy);
-  --color-accent: var(--color-wsr-gold);
-  --color-background: var(--color-wsr-light-gray);
-  --color-text: #333333;
-  --color-text-light: #666666;
-  
-  /* Status Colors */
-  --color-on-time: #22C55E;
-  --color-delayed: #EF4444;
-  --color-cancelled: #6B7280;
-  
+  /* GWR print-room palette */
+  --paper: #F3EBDA;            /* cream ground (carriage cream) */
+  --paper-raised: #FAF4E6;     /* cards and panels */
+  --paper-deep: #EADFC6;       /* inset areas, table heads */
+  --chocolate: #3E2723;        /* GWR chocolate — structure, chrome */
+  --chocolate-deep: #2B1B17;   /* footer, pressed states */
+  --ink: #2A211C;              /* body text on cream */
+  --ink-soft: #6B5D52;         /* secondary text */
+  --rule: rgba(62, 39, 35, 0.28);      /* printed hairlines */
+  --rule-strong: rgba(62, 39, 35, 0.55);
+  --brunswick: #1E4735;        /* running / live / on-time */
+  --signal-red: #B5342A;       /* alerts, cancelled */
+  --brass: #C9A227;            /* accents, active markers */
+  --brass-bright: #E3BC3F;
+
+  /* Solari departure board */
+  --board-black: #16130E;
+  --board-flap: #23201A;
+  --board-flap-edge: #060504;
+  --board-text: #F2E8CF;
+  --board-amber: #FFB43A;
+  --board-green: #7FC97F;
+
+  /* Legacy aliases (older components reference these) */
+  --color-wsr-burgundy: var(--chocolate);
+  --color-wsr-dark-burgundy: var(--chocolate-deep);
+  --color-wsr-gold: var(--brass);
+  --color-wsr-cream: var(--paper);
+  --color-wsr-light-gray: var(--paper);
+  --color-wsr-black: var(--ink);
+  --color-railway-amber: var(--board-amber);
+
+  /* Semantic */
+  --color-primary: var(--chocolate);
+  --color-secondary: var(--chocolate-deep);
+  --color-accent: var(--brass);
+  --color-background: var(--paper);
+  --color-surface: var(--paper-raised);
+  --color-text: var(--ink);
+  --color-text-light: var(--ink-soft);
+
+  /* Status */
+  --color-on-time: var(--brunswick);
+  --color-delayed: var(--signal-red);
+  --color-cancelled: var(--ink-soft);
+
   /* Typography */
-  --font-header: 'Playfair Display', 'Georgia', serif;
-  --font-body: 'Inter', 'Segoe UI', 'Roboto', sans-serif;
-  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
-  
+  --font-display: 'Oswald', 'Arial Narrow', sans-serif;   /* poster headings */
+  --font-header: var(--font-display);
+  --font-body: 'Cabin', 'Gill Sans', 'Segoe UI', sans-serif;
+  --font-mono: 'Cabin', sans-serif;
+
   /* Spacing */
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
@@ -33,25 +58,25 @@
   --spacing-lg: 1.5rem;
   --spacing-xl: 2rem;
   --spacing-2xl: 3rem;
-  
-  /* Border Radius */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(28, 28, 28, 0.1);
-  --shadow-md: 0 4px 6px rgba(28, 28, 28, 0.1);
-  --shadow-lg: 0 10px 15px rgba(28, 28, 28, 0.15);
-  --shadow-xl: 0 20px 25px rgba(28, 28, 28, 0.2);
-  
+
+  /* Border radius — print, not pill */
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-xl: 6px;
+
+  /* Shadows — kept faint; rules do the structural work */
+  --shadow-sm: 0 1px 2px rgba(43, 27, 23, 0.08);
+  --shadow-md: 0 2px 6px rgba(43, 27, 23, 0.1);
+  --shadow-lg: 0 6px 16px rgba(43, 27, 23, 0.14);
+  --shadow-xl: 0 12px 24px rgba(43, 27, 23, 0.18);
+
   /* Z-index */
   --z-dropdown: 100;
   --z-header: 200;
   --z-modal: 300;
   --z-toast: 400;
-  
+
   /* Transitions */
   --transition-fast: 150ms ease-in-out;
   --transition-normal: 300ms ease-in-out;

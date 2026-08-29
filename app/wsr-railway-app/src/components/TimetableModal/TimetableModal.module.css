@@ -14,7 +14,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: white;
+  background: var(--paper-raised);
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   z-index: 1001;
@@ -32,7 +32,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--rule);
 }
 
 .headerLeft {
@@ -50,21 +50,21 @@
 .modalTitle {
   margin: 0;
   font-size: 1.5rem;
-  color: #333;
+  color: var(--ink);
 }
 
 .closeButton {
   background: none;
   border: none;
   font-size: 24px;
-  color: #666;
+  color: var(--ink-soft);
   cursor: pointer;
   padding: 4px 8px;
   transition: color 0.2s;
 }
 
 .closeButton:hover {
-  color: #333;
+  color: var(--ink);
 }
 
 .modalContent {
@@ -87,13 +87,13 @@
 .directionTitle {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #333;
+  color: var(--ink);
   margin: 0 0 16px 0;
 }
 
 .tableWrapper {
   overflow-x: auto;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--rule);
   border-radius: 8px;
 }
 
@@ -104,7 +104,7 @@
 }
 
 .timetableTable th {
-  background: #f8f9fa;
+  background: var(--paper);
   padding: 12px 8px;
   text-align: left;
   font-weight: 600;
@@ -131,22 +131,22 @@
 
 .serviceId {
   font-size: 0.75rem;
-  color: #666;
+  color: var(--ink-soft);
 }
 
 .timetableTable td {
   padding: 8px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--rule);
   vertical-align: middle;
 }
 
 .stationName {
   font-weight: 500;
-  color: #333;
+  color: var(--ink);
   white-space: nowrap;
   position: sticky;
   left: 0;
-  background: white;
+  background: var(--paper-raised);
   z-index: 5;
 }
 
@@ -156,37 +156,37 @@
 }
 
 .arrivalTime {
-  color: #666;
+  color: var(--ink-soft);
 }
 
 .departureTime {
-  color: #333;
+  color: var(--ink);
 }
 
 .platformInfo {
   font-size: 0.7rem;
-  color: #999;
+  color: var(--ink-soft);
   margin-top: 2px;
 }
 
 .noTrains {
   text-align: center;
   padding: 40px;
-  color: #666;
+  color: var(--ink-soft);
   font-size: 1rem;
 }
 
 .modalFooter {
   padding: 16px 20px;
-  border-top: 1px solid #e0e0e0;
-  background: #f8f9fa;
+  border-top: 1px solid var(--rule);
+  background: var(--paper);
 }
 
 .legend {
   display: flex;
   gap: 24px;
   font-size: 0.875rem;
-  color: #666;
+  color: var(--ink-soft);
 }
 
 .legendItem {

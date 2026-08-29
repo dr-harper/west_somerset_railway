@@ -1,5 +1,5 @@
 .tabbedSchedules {
-  background: white;
+  background: var(--paper-raised);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
@@ -8,7 +8,7 @@
 
 .tabs {
   display: flex;
-  background: #f8f9fa;
+  background: var(--paper);
   border-bottom: 1px solid #dee2e6;
   overflow-x: auto;
 }
@@ -20,7 +20,7 @@
   border-bottom: 3px solid transparent;
   font-size: 0.9rem;
   font-weight: 500;
-  color: #666;
+  color: var(--ink-soft);
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
@@ -31,12 +31,12 @@
 
 .tab:hover {
   background: rgba(0, 0, 0, 0.05);
-  color: #333;
+  color: var(--ink);
 }
 
 .tab.active {
-  background: white;
-  color: #333;
+  background: var(--paper-raised);
+  color: var(--ink);
   font-weight: 600;
 }
 
@@ -63,11 +63,11 @@
 }
 
 .scheduleCard {
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--rule);
   border-radius: 8px;
   padding: 16px;
   transition: all 0.2s;
-  background: white;
+  background: var(--paper-raised);
 }
 
 .scheduleCard:hover {
@@ -91,13 +91,13 @@
 .cardTitle {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #333;
+  color: var(--ink);
   margin: 0;
 }
 
 .cardSummary {
   font-size: 0.9rem;
-  color: #555;
+  color: var(--ink-soft);
   margin-bottom: 8px;
   line-height: 1.4;
 }
@@ -130,7 +130,7 @@
 .noSchedules {
   text-align: center;
   padding: 40px;
-  color: #666;
+  color: var(--ink-soft);
   font-size: 1rem;
 }
 
@@ -155,7 +155,7 @@
 .timetableTitle {
   font-size: 1.3rem;
   font-weight: 600;
-  color: #333;
+  color: var(--ink);
   margin: 0;
 }
 
@@ -173,13 +173,13 @@
 .directionTitle {
   font-size: 1rem;
   font-weight: 600;
-  color: #333;
+  color: var(--ink);
   margin: 0 0 12px 0;
 }
 
 .tableWrapper {
   overflow-x: auto;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--rule);
   border-radius: 8px;
 }
 
@@ -187,14 +187,22 @@
   width: 100%;
   border-collapse: collapse;
   min-width: 400px;
+  border-top: 3px double var(--rule-strong);
+  border-bottom: 3px double var(--rule-strong);
+  font-variant-numeric: tabular-nums;
 }
 
 .timetableTable th {
-  background: #f8f9fa;
+  background: var(--paper);
   padding: 10px 8px;
   text-align: left;
-  font-weight: 600;
-  border-bottom: 2px solid #dee2e6;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--rule-strong);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -204,7 +212,7 @@
   width: 150px;
   position: sticky;
   left: 0;
-  background: #f8f9fa;
+  background: var(--paper);
   z-index: 11;
 }
 
@@ -214,33 +222,38 @@
 }
 
 .serviceType {
-  font-size: 0.7rem;
-  background: #4A90E2;
-  color: white;
-  padding: 2px 6px;
-  border-radius: 3px;
+  font-family: var(--font-display);
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  background: var(--chocolate);
+  color: var(--paper);
+  padding: 2px 7px;
+  border-radius: 2px;
   margin-bottom: 2px;
   display: inline-block;
 }
 
 .serviceId {
   font-size: 0.7rem;
-  color: #666;
+  color: var(--ink-soft);
 }
 
 .timetableTable td {
   padding: 8px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--rule);
   vertical-align: middle;
 }
 
 .stationName {
-  font-weight: 500;
-  color: #333;
+  font-weight: 600;
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink);
   white-space: nowrap;
   position: sticky;
   left: 0;
-  background: white;
+  background: var(--paper-raised);
   z-index: 5;
 }
 
@@ -251,20 +264,20 @@
 
 .emptyCell {
   text-align: center;
-  color: #ccc;
+  color: var(--rule-strong);
 }
 
 .arrivalTime {
-  color: #666;
+  color: var(--ink-soft);
 }
 
 .departureTime {
-  color: #333;
+  color: var(--ink);
 }
 
 .platformInfo {
   font-size: 0.65rem;
-  color: #999;
+  color: var(--ink-soft);
   margin-top: 2px;
 }
 
@@ -272,10 +285,10 @@
   display: flex;
   gap: 24px;
   padding: 12px;
-  background: #f8f9fa;
+  background: var(--paper);
   border-radius: 6px;
   font-size: 0.85rem;
-  color: #666;
+  color: var(--ink-soft);
 }
 
 .legendItem {
@@ -303,14 +316,14 @@
 }
 
 .christmasNotice p {
-  color: #333;
+  color: var(--ink);
   font-size: 1rem;
   line-height: 1.6;
   margin-bottom: 20px;
 }
 
 .christmasDates {
-  background: white;
+  background: var(--paper-raised);
   border-radius: 8px;
   padding: 20px;
   margin: 0;

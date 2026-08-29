@@ -1,259 +1,254 @@
+/* Split-flap (Solari) departure board */
+
 .departureBoard {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
+  background: var(--board-black);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--chocolate-deep);
+  box-shadow: var(--shadow-lg), inset 0 0 60px rgba(0, 0, 0, 0.55);
+  padding: var(--spacing-lg);
+  color: var(--board-text);
 }
 
 .boardHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #e5e5e5;
+  padding-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  border-bottom: 2px solid rgba(242, 232, 207, 0.15);
 }
 
+/* Station name set like a cast totem sign */
 .stationName {
-  color: #333;
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.35rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper);
+  background: var(--chocolate);
+  border: 2px solid var(--paper);
+  border-radius: 999px;
+  padding: 0.3rem 1.4rem;
+  margin: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
 }
 
 .currentTime {
-  color: #666;
-  font-size: 1rem;
+  font-family: var(--font-display);
   font-weight: 400;
+  font-size: 1.3rem;
+  letter-spacing: 0.12em;
+  color: var(--board-amber);
+  text-shadow: 0 0 12px rgba(255, 180, 58, 0.45);
+}
+
+.notice {
+  background: rgba(255, 180, 58, 0.12);
+  border: 1px solid rgba(255, 180, 58, 0.4);
+  border-radius: var(--radius-md);
+  color: var(--board-amber);
+  font-size: 0.85rem;
+  text-align: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin-bottom: var(--spacing-md);
 }
 
 .departureTable {
   width: 100%;
   border-collapse: separate;
-  border-spacing: 0;
-}
-
-.tableHeader {
-  background: #f9fafb;
+  border-spacing: 0 6px;
 }
 
 .tableHeader th {
-  padding: 12px 16px;
-  text-align: left;
-  color: #666;
-  font-size: 0.875rem;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 0.75rem;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 500;
-  border-bottom: 1px solid #e5e5e5;
-}
-
-.departureRow {
-  background: white;
-  transition: all 0.2s ease;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.departureRow:hover {
-  background: #f9fafb;
-}
-
-.departureRow.clickable {
-  cursor: pointer;
+  color: rgba(242, 232, 207, 0.55);
+  text-align: left;
+  padding: 0 var(--spacing-sm) var(--spacing-xs);
 }
 
 .departureRow td {
-  padding: 14px 16px;
-  color: #333;
-  font-size: 0.95rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  vertical-align: middle;
 }
 
-.time {
-  font-size: 1.1rem;
+.clickable {
+  cursor: pointer;
+}
+
+.clickable:hover .flapCell {
+  background: #2C2820;
+}
+
+/* --- Flap cells --- */
+
+.flapGroup {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.flapCell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 2.1rem;
+  padding: 0 0.3rem;
+  background: var(--board-flap);
+  border: 1px solid var(--board-flap-edge);
+  border-radius: 3px;
+  font-family: var(--font-display);
   font-weight: 500;
-  min-width: 80px;
-  color: #333;
+  font-size: 1.25rem;
+  letter-spacing: 0.05em;
+  color: var(--board-text);
+  position: relative;
+  transform-style: preserve-3d;
+  animation: flapIn 320ms cubic-bezier(0.3, 1.4, 0.6, 1) backwards;
+  transition: background var(--transition-fast);
 }
 
-.destination {
-  font-size: 1rem;
-  color: #333;
-  font-weight: 500;
+/* the horizontal split line across every flap */
+.flapCell::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.65);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
-.serviceType {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.flapWide {
+  min-width: 13rem;
+  justify-content: flex-start;
+  font-size: 1.05rem;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
 }
 
-.serviceType.diesel {
-  background: #dcfce7;
-  color: #15803d;
-}
-
-.serviceType.dmu {
-  background: #e0e7ff;
-  color: #3730a3;
-}
-
-.serviceType.steam {
-  background: #fed7aa;
-  color: #9a3412;
-}
-
-.noDepartures {
-  text-align: center;
-  padding: 60px 20px;
-  color: #666;
-  font-size: 1.1rem;
-}
-
-.noDepartures p {
-  margin: 8px 0;
-}
-
-.noDepartures p:first-child {
-  font-size: 1.2rem;
-  font-weight: 500;
-  color: #333;
-  margin-bottom: 12px;
-}
-
-.notice {
-  background: #fef3c7;
-  color: #92400e;
-  padding: 12px 16px;
-  margin-bottom: 16px;
-  border-radius: 8px;
-  border: 1px solid #fde68a;
-  text-align: center;
-  font-size: 0.875rem;
-}
-
-.loading {
-  text-align: center;
-  padding: 60px 20px;
-  color: #666;
-  font-size: 1.1rem;
-}
-
-.platform {
-  color: #666;
-  text-align: center;
-  font-weight: 500;
-}
-
-.status {
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.status.onTime {
-  color: #15803d;
-}
-
-.status.delayed {
-  color: #dc2626;
-}
-
-.status.cancelled {
-  color: #dc2626;
-  text-decoration: line-through;
+@keyframes flapIn {
+  0% {
+    transform: rotateX(-88deg);
+    filter: brightness(0.4);
+  }
+  70% {
+    transform: rotateX(12deg);
+  }
+  100% {
+    transform: rotateX(0deg);
+    filter: brightness(1);
+  }
 }
 
 .expandIcon {
+  font-size: 0.6rem;
+  margin-left: var(--spacing-sm);
+  color: rgba(242, 232, 207, 0.4);
+}
+
+/* --- Livery plates for traction type --- */
+
+.serviceType {
   display: inline-block;
-  margin-left: 8px;
-  font-size: 0.8rem;
-  opacity: 0.6;
-  transition: transform 0.2s ease;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.6rem;
+  border-radius: 2px;
+  border: 1px solid;
 }
 
-.departureRow.expanded .expandIcon {
-  transform: rotate(90deg);
+.steam {
+  color: var(--brass-bright);
+  border-color: var(--brass);
+  background: rgba(201, 162, 39, 0.12);
 }
 
-.expandedRow {
-  background: white !important;
-  border-bottom: 1px solid #f0f0f0;
+.diesel {
+  color: var(--board-green);
+  border-color: rgba(127, 201, 127, 0.6);
+  background: rgba(127, 201, 127, 0.1);
 }
 
-.expandedRow:hover {
-  background: white !important;
+.dmu {
+  color: var(--board-amber);
+  border-color: rgba(255, 180, 58, 0.6);
+  background: rgba(255, 180, 58, 0.1);
+}
+
+/* --- Status lamps --- */
+
+.status {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.onTime {
+  color: var(--board-green);
+  text-shadow: 0 0 10px rgba(127, 201, 127, 0.35);
+}
+
+.delayed {
+  color: var(--board-amber);
+  text-shadow: 0 0 10px rgba(255, 180, 58, 0.35);
+}
+
+.cancelled {
+  color: var(--signal-red);
+}
+
+/* --- Expanded journey detail: paper pulled out of the board --- */
+
+.expandedRow td {
+  padding: 0 var(--spacing-sm) var(--spacing-sm);
 }
 
 .expandedContent {
-  padding: 0 !important;
-  background: transparent;
-  border: none;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  color: var(--ink);
 }
 
-.expandedContent > * {
-  margin: 16px;
-  animation: slideDown 0.3s ease;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.noDepartures,
+.loading {
+  text-align: center;
+  padding: var(--spacing-2xl);
+  color: rgba(242, 232, 207, 0.6);
+  font-family: var(--font-display);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 0.95rem;
 }
 
 @media (max-width: 768px) {
   .departureBoard {
-    padding: 16px;
-    margin-bottom: 16px;
+    padding: var(--spacing-md);
   }
 
-  .boardHeader {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+  .flapWide {
+    min-width: 8rem;
+    font-size: 0.9rem;
   }
 
-  .stationName {
-    font-size: 1.25rem;
-  }
-
-  .currentTime {
-    font-size: 0.875rem;
-  }
-
-  .tableHeader th {
-    font-size: 0.75rem;
-    padding: 10px 12px;
-  }
-
-  .tableHeader th:nth-child(4),
-  .departureRow td:nth-child(4) {
-    display: none;
-  }
-
-  .departureRow td {
-    padding: 12px;
-    font-size: 0.875rem;
-  }
-
-  .time {
+  .flapCell {
+    height: 1.8rem;
     font-size: 1rem;
   }
 
-  .destination {
-    font-size: 0.875rem;
-  }
-
-  .serviceType {
-    font-size: 0.7rem;
-    padding: 3px 8px;
+  .stationName {
+    font-size: 1rem;
+    padding: 0.25rem 1rem;
   }
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import type { DepartureBoard as DepartureBoardType, Departure, StationCode, Train } from '../../types/models';
 import { trainService } from '../../services/trainService';
 import { JourneyTimeline } from '../JourneyTimeline/JourneyTimeline';
@@ -8,6 +8,30 @@ interface DepartureBoardProps {
   stationCode: StationCode | null;
   stationName?: string;
 }
+
+// Split-flap cell group: each character remounts (and re-flips) when it changes
+const Flap: React.FC<{ text: string; wide?: boolean }> = ({ text, wide }) => {
+  if (wide) {
+    return (
+      <span className={styles.flapGroup}>
+        <span key={text} className={`${styles.flapCell} ${styles.flapWide}`}>{text}</span>
+      </span>
+    );
+  }
+  return (
+    <span className={styles.flapGroup}>
+      {text.split('').map((ch, i) => (
+        <span
+          key={`${i}-${ch}`}
+          className={styles.flapCell}
+          style={{ animationDelay: `${i * 45}ms` }}
+        >
+          {ch}
+        </span>
+      ))}
+    </span>
+  );
+};
 
 export const DepartureBoard: React.FC<DepartureBoardProps> = ({ 
   stationCode,
@@ -27,23 +51,9 @@ export const DepartureBoard: React.FC<DepartureBoardProps> = ({
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    if (stationCode) {
-      loadDepartures();
-      
-      // Subscribe to real-time updates
-      const unsubscribe = trainService.onDepartureBoardUpdate(
-        stationCode,
-        (board) => setDepartureBoard(board)
-      );
-      
-      return () => unsubscribe();
-    }
-  }, [stationCode]);
-
-  const loadDepartures = async () => {
+  const loadDepartures = useCallback(async () => {
     if (!stationCode) return;
-    
+
     setLoading(true);
     try {
       const board = await trainService.getDepartureBoard(stationCode);
@@ -53,7 +63,21 @@ export const DepartureBoard: React.FC<DepartureBoardProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [stationCode]);
+
+  useEffect(() => {
+    if (stationCode) {
+      loadDepartures();
+
+      // Subscribe to real-time updates
+      const unsubscribe = trainService.onDepartureBoardUpdate(
+        stationCode,
+        (board) => setDepartureBoard(board)
+      );
+
+      return () => unsubscribe();
+    }
+  }, [stationCode, loadDepartures]);
 
   const formatTime = (time: string) => {
     return time;
@@ -145,17 +169,17 @@ export const DepartureBoard: React.FC<DepartureBoardProps> = ({
                   onClick={() => handleRowClick(departure.trainId)}
                 >
                   <td className={styles.time}>
-                    {formatTime(departure.time)}
-                    {expandedTrainId === departure.trainId ? 
-                      <span className={styles.expandIcon}>▼</span> : 
+                    <Flap text={formatTime(departure.time)} />
+                    {expandedTrainId === departure.trainId ?
+                      <span className={styles.expandIcon}>▼</span> :
                       <span className={styles.expandIcon}>▶</span>
                     }
                   </td>
                   <td className={styles.destination}>
-                    {departure.destination}
+                    <Flap wide text={departure.destination.toUpperCase()} />
                   </td>
                   <td className={styles.platform}>
-                    {departure.platform || '-'}
+                    <Flap text={departure.platform || '-'} />
                   </td>
                   <td>
                     <span className={`${styles.serviceType} ${styles[getServiceTypeClass(departure.serviceType)]}`}>

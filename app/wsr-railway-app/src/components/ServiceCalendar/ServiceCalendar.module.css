@@ -1,5 +1,5 @@
 .calendar {
-  background: white;
+  background: var(--paper-raised);
   border-radius: 12px;
   padding: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -19,11 +19,11 @@
   margin: 0;
   font-size: 1.1rem;
   font-weight: 600;
-  color: #333;
+  color: var(--ink);
 }
 
 .monthButton {
-  background: #f0f0f0;
+  background: var(--paper-deep);
   border: none;
   border-radius: 6px;
   padding: 6px 10px;
@@ -33,7 +33,7 @@
 }
 
 .monthButton:hover {
-  background: #e0e0e0;
+  background: var(--rule);
 }
 
 .monthButtonPlaceholder {
@@ -45,7 +45,7 @@
   width: 100%;
   padding: 8px;
   margin-bottom: 12px;
-  background: #f8f9fa;
+  background: var(--paper);
   border: 1px solid #dee2e6;
   border-radius: 6px;
   font-size: 0.85rem;
@@ -55,7 +55,7 @@
 }
 
 .expandButton:hover {
-  background: #e9ecef;
+  background: var(--paper-deep);
 }
 
 .multiMonthGrid {
@@ -67,10 +67,10 @@
 }
 
 .monthContainer {
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--rule);
   border-radius: 8px;
   padding: 10px;
-  background: #fafafa;
+  background: var(--paper);
   min-width: 0;
   overflow: hidden;
 }
@@ -79,7 +79,7 @@
   margin: 0 0 8px 0;
   font-size: 0.95rem;
   font-weight: 600;
-  color: #333;
+  color: var(--ink);
   text-align: center;
 }
 
@@ -90,7 +90,7 @@
   margin-bottom: 4px;
   font-weight: 600;
   font-size: 0.65rem;
-  color: #666;
+  color: var(--ink-soft);
   text-align: center;
 }
 
@@ -101,7 +101,7 @@
   margin-bottom: 6px;
   font-weight: 600;
   font-size: 0.75rem;
-  color: #666;
+  color: var(--ink-soft);
   text-align: center;
 }
 
@@ -114,7 +114,7 @@
 
 .calendarDay {
   aspect-ratio: 1;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--rule);
   border-radius: 4px;
   display: flex;
   flex-direction: column;
@@ -146,7 +146,7 @@
 
 .dayNumber {
   font-size: 0.75rem;
-  color: #333;
+  color: var(--ink);
 }
 
 .emptyDay {
@@ -174,14 +174,14 @@
 .scheduleFooter {
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--rule);
 }
 
 .footerTitle {
   margin: 0 0 15px 0;
   font-size: 0.95rem;
   font-weight: 600;
-  color: #333;
+  color: var(--ink);
   text-align: center;
 }
 
@@ -192,7 +192,7 @@
 }
 
 .scheduleCard {
-  background: #f8f9fa;
+  background: var(--paper);
   border: 1px solid;
   border-radius: 8px;
   padding: 12px;
@@ -200,7 +200,7 @@
 }
 
 .scheduleCard:hover {
-  background: white;
+  background: var(--paper-raised);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -221,12 +221,12 @@
 .scheduleName {
   font-weight: 600;
   font-size: 0.9rem;
-  color: #333;
+  color: var(--ink);
 }
 
 .scheduleSummary {
   font-size: 0.75rem;
-  color: #666;
+  color: var(--ink-soft);
   margin: 0 0 10px 0;
   line-height: 1.4;
 }

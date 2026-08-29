@@ -31,7 +31,7 @@
 }
 
 .updateTime {
-  color: #666;
+  color: var(--ink-soft);
   font-size: 0.85rem;
   font-family: var(--font-mono);
 }
@@ -39,7 +39,7 @@
 .loading {
   text-align: center;
   padding: var(--spacing-2xl);
-  color: #666;
+  color: var(--ink-soft);
   font-size: 1.1rem;
 }
 
@@ -66,8 +66,8 @@
 }
 
 .trainCard {
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
   border-radius: var(--radius-md);
   padding: var(--spacing-md);
   cursor: pointer;
@@ -122,7 +122,7 @@
 
 .trainRoute {
   font-size: 0.95rem;
-  color: #333;
+  color: var(--ink);
   margin-bottom: var(--spacing-sm);
   font-weight: 500;
 }
@@ -142,7 +142,7 @@
 }
 
 .trainNext {
-  color: #666;
+  color: var(--ink-soft);
   font-size: 0.85rem;
   margin-bottom: var(--spacing-xs);
 }
@@ -166,16 +166,16 @@
 }
 
 .upcomingCard {
-  background: #f8f8f8;
-  border: 1px solid #e0e0e0;
+  background: var(--paper);
+  border: 1px solid var(--rule);
   border-radius: var(--radius-sm);
   padding: var(--spacing-sm);
   transition: all var(--transition-fast);
 }
 
 .upcomingCard:hover {
-  background: white;
-  border-color: #ccc;
+  background: var(--paper-raised);
+  border-color: var(--rule-strong);
 }
 
 .upcomingHeader {
@@ -187,7 +187,7 @@
 
 .upcomingRoute {
   font-size: 0.85rem;
-  color: #555;
+  color: var(--ink-soft);
   margin-bottom: var(--spacing-xs);
 }
 
@@ -200,9 +200,9 @@
 .noTrains {
   text-align: center;
   padding: var(--spacing-2xl);
-  background: #f8f8f8;
+  background: var(--paper);
   border-radius: var(--radius-md);
-  color: #666;
+  color: var(--ink-soft);
 }
 
 .noTrainsIcon {

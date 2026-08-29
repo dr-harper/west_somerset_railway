@@ -1,6 +1,6 @@
 .activeTrains {
   padding: 1.5rem;
-  background: white;
+  background: var(--paper-raised);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -16,7 +16,7 @@
 .noTrains {
   padding: 2rem;
   text-align: center;
-  color: #666;
+  color: var(--ink-soft);
   font-size: 1rem;
 }
 
@@ -27,9 +27,9 @@
 
 .trainCard {
   padding: 1rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--rule);
   border-radius: 6px;
-  background: #fafafa;
+  background: var(--paper);
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -85,16 +85,16 @@
 .origin,
 .destination {
   font-weight: 600;
-  color: #333;
+  color: var(--ink);
 }
 
 .arrow {
-  color: #666;
+  color: var(--ink-soft);
 }
 
 .trainStatus {
   font-size: 0.875rem;
-  color: #666;
+  color: var(--ink-soft);
 }
 
 .location {
@@ -105,7 +105,7 @@
 
 .nextStop {
   margin-bottom: 0.25rem;
-  color: #555;
+  color: var(--ink-soft);
 }
 
 .delay {
