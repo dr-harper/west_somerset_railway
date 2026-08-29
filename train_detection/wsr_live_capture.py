@@ -5,9 +5,8 @@ YouTube Live streams on the "RailcamLive - WSR" channel. yt-dlp resolves
 each stream to an HLS manifest that OpenCV can read directly, so frames
 can be fed straight into a detection model.
 
-Requires: pip install yt-dlp opencv-python
-Note: yt-dlp warns it prefers a JavaScript runtime (deno) for YouTube
-extraction; the HLS formats used here resolve fine without one today.
+Requires: pip install yt-dlp opencv-python, and a JavaScript runtime for
+yt-dlp to solve YouTube's player challenge — Node is used here.
 
 Usage:
     from wsr_live_capture import open_stream, grab_frame, CAMERAS
@@ -100,7 +99,12 @@ def _format_table(camera: str, force: bool = False) -> dict[str, str]:
         if hit and not force and time.time() - hit[0] < CACHE_TTL_S:
             return hit[1]
 
-    options: dict = {'quiet': True}
+    # yt-dlp needs a JavaScript runtime to solve YouTube's player
+    # challenge, and enables only deno by default. Without one it warns
+    # that extraction is deprecated and that formats may be missing —
+    # which, on an eleven-hour unattended run, would mean discovering at
+    # dusk that the day produced nothing. Node is already present.
+    options: dict = {'quiet': True, 'js_runtimes': {'node': {}}}
     if COOKIES_FROM:
         options['cookiesfrombrowser'] = (COOKIES_FROM,)
 
