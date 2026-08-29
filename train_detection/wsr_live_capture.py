@@ -26,14 +26,29 @@ import time
 import cv2
 import yt_dlp
 
-# Verified live 28th August 2026
+# All eleven WSR cameras Railcam publish, verified live 29th August 2026.
+# Ordered along the line from the Bishops Lydeard end towards Minehead.
+# Second angles at Crowcombe, Watchet and Blue Anchor give a station two
+# independent views, which is what settles an ambiguous direction.
 CAMERAS = {
-    'minehead_station': 'k40FIAhyhjo',
-    'minehead_seaward_crossing': 'cO1MFjvfKUE',
-    'blue_anchor': 'oURn7l3gpr4',
-    'watchet_visitor_centre': 'lHPtw6tKigc',
-    'crowcombe_heathfield': 'ptn6Fnc5u08',
     'bishops_lydeard': 'hEa16bHxHMM',
+    'crowcombe_heathfield': 'ptn6Fnc5u08',
+    'crowcombe_heathfield_2': 'x-OipExeKQM',
+    'williton': '77rYzQYyQYQ',
+    'williton_2': 'YHILlgN9cFs',
+    'watchet_1': 'yCoeSJjUsDg',
+    'watchet_visitor_centre': 'lHPtw6tKigc',
+    'blue_anchor': 'oURn7l3gpr4',
+    'blue_anchor_2': 'CDO4ObH-O5k',
+    'minehead_seaward_crossing': 'cO1MFjvfKUE',
+    'minehead_station': 'k40FIAhyhjo',
+}
+
+# Cameras the detector is calibrated for. The rest stream fine but have no
+# zones or traced track yet, so they are captured for reference only.
+CALIBRATED = {
+    'bishops_lydeard', 'crowcombe_heathfield', 'watchet_visitor_centre',
+    'blue_anchor', 'minehead_seaward_crossing', 'minehead_station',
 }
 
 # HLS format ids: 231 = 854x480, 230 = 640x360, 232 = 1280x720

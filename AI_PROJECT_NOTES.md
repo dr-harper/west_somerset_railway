@@ -54,11 +54,15 @@ train_detection/          live webcam detection system (YOLO11 + zones)
   rather than floods; a challenge raises `BotChallenge` and the watcher
   then waits 15 minutes rather than retrying into it. If it still bites,
   set `WSR_COOKIES_FROM=chrome` to pass cookies from a signed-in browser.
-- Railcam publish TWELVE free WSR cameras on their own site (including
-  Williton, and second angles at Blue Anchor, Crowcombe, Watchet and
-  Minehead) versus the six on YouTube — but their content is copyright
-  and behind free registration, so that route needs their consent, not
-  scraping.
+- ELEVEN WSR cameras are on YouTube, not six: the original search was
+  simply too narrow. `CAMERAS` now lists them all; `CALIBRATED` marks the
+  six with zones, which is what the watcher runs against. Williton (a
+  station in the middle of the line, previously unwatched) and second
+  angles at Crowcombe, Watchet and Blue Anchor are the additions.
+  Reference frames for all eleven are in working_images/.
+- Railcam's own site carries the same cameras behind free registration,
+  but their content is copyright and reproduction needs written consent —
+  so the YouTube feeds they publish publicly remain the right route.
 - `detection_zones.py`: per-camera polygons (detect/approach/ignore),
   calibrated at 854×480 — recalibrate if a camera is repositioned.
 - `gala_watcher.py`: two-tier watcher (motion gate → YOLO11 episodes).
