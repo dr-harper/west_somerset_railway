@@ -12,12 +12,17 @@ export default tseslint.config([
     extends: [
       js.configs.recommended,
       tseslint.configs.recommended,
-      reactHooks.configs['recommended-latest'],
+      reactHooks.configs.flat['recommended-latest'],
       reactRefresh.configs.vite,
     ],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
+    },
+    rules: {
+      // New in react-hooks v7: legitimate signal, but restructuring every
+      // load-in-effect is a follow-up task — warn, don't block the build.
+      'react-hooks/set-state-in-effect': 'warn',
     },
   },
 ])

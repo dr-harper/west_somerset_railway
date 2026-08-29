@@ -7,16 +7,7 @@ export const ActiveTrains: React.FC = () => {
   const [activeTrains, setActiveTrains] = useState<Train[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadActiveTrains();
-    
-    // Update every 30 seconds
-    const interval = setInterval(loadActiveTrains, 30000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  const loadActiveTrains = async () => {
+  async function loadActiveTrains() {
     try {
       const trains = await trainService.getActiveTrains();
       setActiveTrains(trains.filter(t => t.status.state === 'Running'));
@@ -25,7 +16,16 @@ export const ActiveTrains: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    loadActiveTrains();
+    
+    // Update every 30 seconds
+    const interval = setInterval(loadActiveTrains, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const getLocationDisplay = (train: Train): string => {
     if (train.currentLocation?.at) {

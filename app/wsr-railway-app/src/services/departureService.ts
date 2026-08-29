@@ -14,7 +14,7 @@ export function getDeparturesForStation(
     
     if (stopAtStation && stopAtStation.departureTime) {
       // Determine destination based on direction
-      let destination = '';
+      let destination: string;
       const stationIndex = train.stops.findIndex(s => s.station.id === station.id);
       
       if (stationIndex < train.stops.length - 1) {

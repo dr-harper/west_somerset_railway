@@ -685,7 +685,7 @@ export function getStationByCode(code: StationCode): Station | null {
  * db.collection('realtime').doc('positions').doc(trainId)
  *   .onSnapshot((doc) => callback(doc.data()))
  */
-export function subscribeToTrainPosition(trainId: string, callback: (position: any) => void) {
+export function subscribeToTrainPosition(trainId: string, callback: (position: unknown) => void) {
   // Simulate real-time updates
   const position = FIRESTORE_REALTIME_POSITIONS[trainId as keyof typeof FIRESTORE_REALTIME_POSITIONS];
   if (position) {

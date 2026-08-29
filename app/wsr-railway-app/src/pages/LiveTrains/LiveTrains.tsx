@@ -12,13 +12,7 @@ export const LiveTrains: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedTrain, setSelectedTrain] = useState<Train | null>(null);
 
-  useEffect(() => {
-    loadData();
-    const interval = setInterval(loadData, 30000); // Update every 30 seconds
-    return () => clearInterval(interval);
-  }, []);
-
-  const loadData = async () => {
+  async function loadData() {
     try {
       const [allTrains, allStations] = await Promise.all([
         trainService.getActiveTrains(),
@@ -31,7 +25,13 @@ export const LiveTrains: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(loadData, 30000); // Update every 30 seconds
+    return () => clearInterval(interval);
+  }, []);
 
   const runningTrains = trains.filter(t => t.status.state === 'Running');
   const upcomingTrains = trains.filter(t => {

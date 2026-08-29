@@ -9,13 +9,7 @@ export const LiveJourneyTracker: React.FC = () => {
   const [upcomingDepartures, setUpcomingDepartures] = useState<Train[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadTrains();
-    const interval = setInterval(loadTrains, 30000); // Update every 30 seconds
-    return () => clearInterval(interval);
-  }, []);
-
-  const loadTrains = async () => {
+  async function loadTrains() {
     try {
       const trains = await trainService.getActiveTrains();
       const now = new Date();
@@ -48,7 +42,13 @@ export const LiveJourneyTracker: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    loadTrains();
+    const interval = setInterval(loadTrains, 30000); // Update every 30 seconds
+    return () => clearInterval(interval);
+  }, []);
 
   const getTrainProgress = (train: Train): { percentage: number; currentStop: string; nextStop: string; currentStopCode: string; nextStopCode: string } => {
     const currentTime = new Date().toTimeString().slice(0, 5);

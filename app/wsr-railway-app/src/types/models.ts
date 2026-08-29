@@ -151,7 +151,7 @@ export interface TrainUpdate {
   trainId: string;
   timestamp: Date;
   type: 'location' | 'delay' | 'cancellation' | 'platform_change';
-  data: any;
+  data: unknown;
 }
 
 // Schedule Templates (for generating daily services)

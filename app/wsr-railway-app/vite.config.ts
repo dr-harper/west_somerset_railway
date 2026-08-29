@@ -7,5 +7,16 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     base: env.BASE_PATH || '/',
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id: string) {
+            if (!id.includes('node_modules')) return
+            if (id.includes('leaflet')) return 'leaflet'
+            if (/[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/.test(id)) return 'react'
+          },
+        },
+      },
+    },
   }
 })
