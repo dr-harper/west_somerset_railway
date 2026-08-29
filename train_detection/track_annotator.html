@@ -449,6 +449,27 @@ const HINTS = {
   regions: 'Outline platforms (a train alongside one is calling, not passing) and anything that hides the track, so a train behind a post does not end its episode.',
 };
 
+function plural(count, noun) {
+  return `${count} ${noun}${count === 1 ? '' : 's'}`;
+}
+
+// What has been annotated for a camera, in the same terms for the status
+// line and the progress chips — so a platform drawn in one place is
+// visibly counted in the other.
+function summarise(entry) {
+  const parts = [];
+  const roads = (entry.tracks || []).filter(
+    t => t.rails && (t.rails.a || []).length > 1 && (t.rails.b || []).length > 1).length;
+  const regions = entry.regions || [];
+  const of = kind => regions.filter(r => r.kind === kind).length;
+  if (roads) parts.push(plural(roads, 'road'));
+  if (of('platform')) parts.push(plural(of('platform'), 'platform'));
+  if (of('occluder')) parts.push(plural(of('occluder'), 'occluder'));
+  const blocked = ((entry.mask_cells || {}).cells || []).length;
+  if (blocked) parts.push(`${blocked} blocked`);
+  return { parts, roads, regions: regions.length };
+}
+
 function updateStatus(narrow, sparse) {
   const entry = camera();
   const notes = [];
@@ -461,7 +482,12 @@ function updateStatus(narrow, sparse) {
     if (narrow > 1) notes.push('<span class="warn">rails converge — stop before they meet</span>');
     if (sparse) notes.push('<span class="warn">add more points to follow the curve</span>');
   } else {
-    notes.push(`${entry.regions.length} region(s)`);
+    const platforms = entry.regions.filter(r => r.kind === 'platform').length;
+    const occluders = entry.regions.filter(r => r.kind === 'occluder').length;
+    notes.push(entry.regions.length
+      ? [platforms && plural(platforms, 'platform'),
+         occluders && plural(occluders, 'occluder')].filter(Boolean).join(' · ')
+      : 'no regions yet');
   }
   statusEl.innerHTML = notes.join(' · ');
   saveState.textContent = dirty ? 'unsaved changes' : 'saved';
@@ -474,14 +500,10 @@ function buildProgress() {
   progressEl.innerHTML = '';
   CAMERAS.forEach(([id, label]) => {
     const entry = tracks[id] || {};
-    const roads = (entry.tracks || []).filter(t => t.rails && t.rails.a && t.rails.a.length > 1
-                                                   && t.rails.b && t.rails.b.length > 1).length;
-    const blocked = ((entry.mask_cells || {}).cells || []).length;
+    const { parts, roads } = summarise(entry);
     const chip = document.createElement('button');
     chip.className = 'chip' + (roads ? ' done' : '') + (id === cameraSelect.value ? ' current' : '');
-    chip.textContent = label
-      + (roads ? ` · ${roads} road${roads > 1 ? 's' : ''}` : '')
-      + (blocked ? ` · ${blocked} blocked` : '');
+    chip.textContent = parts.length ? `${label} · ${parts.join(' · ')}` : label;
     chip.onclick = () => { cameraSelect.value = id; switchCamera(); };
     progressEl.appendChild(chip);
   });
