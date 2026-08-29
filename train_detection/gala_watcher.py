@@ -33,10 +33,13 @@ from detection_zones import ZONES, classify, draw_zones
 from wsr_live_capture import CAMERAS, resolve_hls_url
 
 
-def grab_hires_still(camera: str, out_path: Path) -> None:
+def grab_hires_still(camera: str, out_path: Path, delay_s: float = 12.0) -> None:
     """Best-effort 1080p still for classification crops (runs in its own
-    thread; the continuous pipeline stays at 480p)."""
+    thread; the continuous pipeline stays at 480p). Waits a beat so
+    approach-zone episodes have the train close to camera, not a speck
+    in the distance (lesson from the 08:24 Blue Anchor grab, 29/8)."""
     try:
+        time.sleep(delay_s)
         url = resolve_hls_url(camera, format_spec='270/232/231')
         cap = cv2.VideoCapture(url)
         ok, frame = cap.read()
