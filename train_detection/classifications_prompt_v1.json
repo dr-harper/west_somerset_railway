@@ -1,0 +1,744 @@
+{
+ "2026-08-29T08:11:12": {
+  "traction": "diesel locomotive",
+  "livery": "dark green",
+  "confidence": 0.95,
+  "notes": "Small shunting locomotive, parked on a siding. Has yellow warning panels on the front.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T08:12:04": {
+  "traction": "diesel locomotive",
+  "livery": "maroon and cream",
+  "confidence": 0.7,
+  "notes": "The train consists of passenger coaches in a maroon and cream livery. A red locomotive is visible at the far end of the train. It appears to be a diesel locomotive or shunter, but its exact type is difficult to determine definitively from this image due to distance and resolution. No steam or exhaust is visible.",
+  "camera": "minehead_seaward_crossing"
+ },
+ "2026-08-29T08:24:17": {
+  "traction": "DMU",
+  "livery": "yellow",
+  "confidence": 0.95,
+  "notes": "The train appears to be a yellow DMU, possibly a Class 117 or similar, often used for departmental or inspection duties. It is approaching the station in the distance. No specific numbering or headboard is discernible from this view.",
+  "camera": "blue_anchor"
+ },
+ "2026-08-29T08:33:04": {
+  "traction": "steam locomotive",
+  "livery": "brown and cream",
+  "confidence": 0.8,
+  "notes": "Locomotive not visible in frame. Coaches are traditional hauled stock, likely BR Mark 1 type, in a classic chocolate and cream livery. One passenger visible looking out a window.",
+  "camera": "crowcombe_heathfield"
+ },
+ "2026-08-29T08:39:33": {
+  "traction": "steam locomotive",
+  "livery": "Dark Red/Brown",
+  "confidence": 0.85,
+  "notes": "Train on the West Somerset Railway, likely steam-hauled given the heritage context and visible coaches with numerous roof vents. The visible coach livery is a dark red/brown. A person is standing on the platform.",
+  "camera": "watchet_visitor_centre"
+ },
+ "2026-08-29T08:09:29": {
+  "traction": "diesel locomotive",
+  "livery": "blue and yellow",
+  "confidence": 1.0,
+  "notes": "Class 66 locomotive, numbered 66748. Features GB Railfreight livery with a yellow front.",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T08:57:41": {
+  "traction": "diesel locomotive",
+  "livery": "BR Green with yellow front panels",
+  "confidence": 0.95,
+  "notes": "Locomotive numbered DM65 (likely a preserved Class 33 'Crompton' diesel locomotive). The train is composed of heritage British Railways Mark 1 passenger coaches.",
+  "camera": "watchet_visitor_centre"
+ },
+ "2026-08-29T09:16:17": {
+  "traction": "steam locomotive",
+  "livery": "cream and dark brown",
+  "confidence": 0.5,
+  "notes": "The locomotive is not visible in the image. The livery described refers to the coaches, which are British Railways Mark 1 type. The train is stopped at Blue Anchor station on the West Somerset Railway.",
+  "camera": "blue_anchor"
+ },
+ "2026-08-29T09:27:22": {
+  "traction": "diesel locomotive",
+  "livery": "British Railways Chocolate and Cream (brown and cream) with grey roofs",
+  "confidence": 0.2,
+  "notes": "The train consists of multiple passenger coaches in British Railways 'Chocolate and Cream' livery with grey roofs. A person in a red top is leaning out of a window. The locomotive providing traction is not visible in the image, making the traction classification speculative.",
+  "camera": "crowcombe_heathfield"
+ },
+ "2026-08-29T09:27:50": {
+  "traction": "diesel locomotive",
+  "livery": "dark green",
+  "confidence": 5.0,
+  "notes": "Locomotive D7017 is visible. The coaches are in a cream and maroon livery.",
+  "camera": "minehead_seaward_crossing"
+ },
+ "2026-08-29T09:28:40": {
+  "traction": "steam locomotive",
+  "livery": "chocolate and cream coaches, dark green brake coach, black locomotive",
+  "confidence": 0.98,
+  "notes": "Steam locomotive partially visible at the far end pulling passenger coaches. The coaches display a mix of liveries, including BR chocolate and cream, and a dark green brake coach at the near end.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T09:44:43": {
+  "traction": "steam locomotive",
+  "livery": "dark green/black with GWR 'chocolate and cream' and BR 'maroon' coaches",
+  "confidence": 0.9,
+  "notes": "A heritage passenger train, with a steam locomotive at the far end, pulling a mix of GWR 'chocolate and cream' and BR 'maroon' coaches.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T09:48:31": {
+  "traction": "steam locomotive",
+  "livery": "Dark",
+  "confidence": 0.9,
+  "notes": "The locomotive appears very dark, possibly black or dark green, and is coupled to a train of crimson and cream passenger coaches.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T09:14:05": {
+  "traction": "diesel locomotive",
+  "livery": "green and cream/yellow",
+  "confidence": 1.0,
+  "notes": "Visible number D6575, headcode OK",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T09:48:51": {
+  "traction": "steam locomotive",
+  "livery": "dark",
+  "confidence": 1.0,
+  "notes": "Locomotive at the rear of a train with coaches of mixed liveries including dark blue/cream, maroon/cream, and grey/white.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T09:49:59": {
+  "traction": "steam locomotive",
+  "livery": "Black",
+  "confidence": 0.8,
+  "notes": "Visible smokebox and funnel, pulling multiple passenger coaches.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T09:51:32": {
+  "traction": "diesel locomotive",
+  "livery": "light blue",
+  "confidence": 1.0,
+  "notes": "Visible locomotive number D7017. The train consists of various goods wagons, including a 'Gunpowder Van' (GPV GW 105493) and other box vans, with a red brake van at the rear.",
+  "camera": "minehead_seaward_crossing"
+ },
+ "2026-08-29T09:51:57": {
+  "traction": "diesel locomotive",
+  "livery": "blue-green",
+  "confidence": 0.9,
+  "notes": "A blue-green diesel locomotive, D7017, is visible on the left. It is coupled to a train of goods wagons, including a 'GPV GUNPOWDER VAN' (G W 105493). A red brake van is visible at the very end of the train.",
+  "camera": "minehead_seaward_crossing"
+ },
+ "2026-08-29T09:53:21": {
+  "traction": "steam locomotive",
+  "livery": "Dark (locomotive), brown and cream (coaches)",
+  "confidence": 0.95,
+  "notes": "Passenger train consisting of several 'chocolate and cream' coaches pulled by a steam locomotive.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T10:00:45": {
+  "traction": "steam locomotive",
+  "livery": "dark",
+  "confidence": 0.95,
+  "notes": "Visible steam locomotive emitting exhaust, pulling a line of freight wagons. Prominent among them is a Great Western Railway (GWR) gunpowder van, numbered 105493, with 'GPV GUNPOWDER VAN' painted on its side. Further down the track, some red rolling stock is visible.",
+  "camera": "minehead_seaward_crossing"
+ },
+ "2026-08-29T10:01:28": {
+  "traction": "steam locomotive",
+  "livery": "cream and maroon",
+  "confidence": 0.9,
+  "notes": "Coaches are British Railways Mark 1 style. Steam/smoke is visible, indicating a steam locomotive at the front of the train (partially obscured). Train is at a station.",
+  "camera": "crowcombe_heathfield"
+ },
+ "2026-08-29T10:15:08": {
+  "traction": "diesel locomotive",
+  "livery": "green with yellow front",
+  "confidence": 0.95,
+  "notes": "Visible number D7017. The locomotive appears to be a Class 35 Hymek.",
+  "camera": "blue_anchor"
+ },
+ "2026-08-29T10:09:59": {
+  "traction": "steam locomotive",
+  "livery": "dark green",
+  "confidence": 0.95,
+  "notes": "Steam locomotive, appears to be a tank engine. Coaches are cream and brown (likely GWR chocolate and cream livery). A number, possibly '46' or '66', is visible on the side of the cab, but difficult to read clearly.",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T10:31:42": {
+  "traction": "DMU",
+  "livery": "dark green",
+  "confidence": 0.9,
+  "notes": "The visible vehicle is the rear coach of a passenger train, departing the station. No locomotive is visible. The coach has a window at the rear.",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T10:33:31": {
+  "traction": "DMU",
+  "livery": "dark green with cream/yellow end",
+  "confidence": 0.95,
+  "notes": "visible number 432 on the side of the coach end",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T10:34:59": {
+  "traction": "diesel locomotive",
+  "livery": "dark green",
+  "confidence": 0.1,
+  "notes": "The train consists of dark green coaches. The locomotive is not visible in the frame, so the traction type is an inference based on typical heritage railway operations for this type of rolling stock and the visible coaches not being a DMU. The visible end is a passenger coach, likely the rear coach, featuring a yellow end door.",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T10:36:37": {
+  "traction": "steam locomotive",
+  "livery": "dark green",
+  "confidence": 0.1,
+  "notes": "Visible is a passenger coach, likely a British Railways Mark 1, with the number M4340. The actual locomotive providing traction is not visible in the image. The visible coach is not a self-propelled unit (DMU).",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T10:36:58": {
+  "traction": "diesel locomotive",
+  "livery": "Dark green and cream with yellow end panel",
+  "confidence": 0.6,
+  "notes": "Only the rear coach of the train is visible. It features a yellow warning panel on the end. The coaches appear to be traditional British railway stock, likely hauled by a locomotive not visible in the frame.",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T10:39:39": {
+  "traction": "DMU",
+  "livery": "dark green",
+  "confidence": 0.95,
+  "notes": "Single coach DMU, unit number 'D30' visible on the end.",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T10:38:20": {
+  "traction": "steam locomotive",
+  "livery": "dark green",
+  "confidence": 0.95,
+  "notes": "The locomotive is pulling several passenger coaches. A headboard is visible on the front of the locomotive, but its text is not legible.",
+  "camera": "crowcombe_heathfield"
+ },
+ "2026-08-29T10:40:00": {
+  "traction": "diesel locomotive",
+  "livery": "dark green with yellow and black warning stripes",
+  "confidence": 0.95,
+  "notes": "The locomotive is dark green with prominent yellow and black striped ends. The number D1010 is visible on the side.",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T11:12:33": {
+  "traction": "diesel locomotive",
+  "livery": "Dark green with yellow warning panels",
+  "confidence": 0.98,
+  "notes": "Visible number D7017 (Class 35 Hymek), emitting heavy exhaust/vapor, yellow and black hazard stripes on the front.",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T11:20:28": {
+  "traction": "steam locomotive",
+  "livery": "cream and dark brown/maroon",
+  "confidence": 0.6,
+  "notes": "Locomotive not visible, but inferred from context of heritage railway and visible passenger coaches. The coaches are heritage passenger stock, likely British Railways Mk1 or similar, in a two-tone cream and dark brown/maroon livery. Many roof vents are visible on the coaches.",
+  "camera": "watchet_visitor_centre"
+ },
+ "2026-08-29T11:18:08": {
+  "traction": "DMU",
+  "livery": "faded green and cream",
+  "confidence": 0.9,
+  "notes": "Partial view of the end of a DMU, showing the roof and upper body. No visible numbers or headboards. The livery appears to be a faded heritage green/cream.",
+  "camera": "crowcombe_heathfield"
+ },
+ "2026-08-29T11:41:26": {
+  "traction": "steam locomotive",
+  "livery": "brown and cream",
+  "confidence": 0.95,
+  "notes": "The train consists of several coaches in a brown and cream livery, with at least one maroon coach visible. Steam/smoke is visible from the locomotive at the front of the train, confirming it is a steam locomotive.",
+  "camera": "blue_anchor"
+ },
+ "2026-08-29T11:14:11": {
+  "traction": "diesel locomotive",
+  "livery": "dark green with yellow and black chevrons",
+  "confidence": 1.0,
+  "notes": "The locomotive features a prominent yellow and black chevron warning panel on the front, typical of a shunter-type diesel locomotive. It is coupled to passenger coaches.",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T11:53:23": {
+  "traction": "diesel locomotive",
+  "livery": "Chocolate and Cream",
+  "confidence": 0.9,
+  "notes": "The traction unit (locomotive) is not visible in the image, hence the classification for traction is an assumption based on common heritage railway operations for hauled stock. The train consists of multiple passenger coaches, likely British Railways Mark 1 type, displaying a classic Chocolate and Cream livery.",
+  "camera": "minehead_seaward_crossing"
+ },
+ "2026-08-29T11:52:27": {
+  "traction": "diesel locomotive",
+  "livery": "dark green",
+  "confidence": 0.7,
+  "notes": "The train is stopped at the station platform. The locomotive is dark colored and appears to be a diesel based on its profile, with no visible steam or exhaust. It is hauling traditional passenger coaches. Specific details like numbers or headboards are not discernible due to distance and image quality.",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T12:01:53": {
+  "traction": "diesel locomotive",
+  "livery": "dark green with cream stripe and yellow front",
+  "confidence": 0.9,
+  "notes": "Headcode '6H', yellow warning panel, pulling passenger coaches",
+  "camera": "watchet_visitor_centre"
+ },
+ "2026-08-29T11:53:47": {
+  "traction": "diesel locomotive",
+  "livery": "red",
+  "confidence": 0.95,
+  "notes": "A red diesel shunter-type locomotive is visible on the left track, coupled to passenger coaches. Another similar red diesel is parked further down near the station building. The main passenger train at the platform has coaches in maroon and cream livery, but its locomotive is not visible.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T12:21:00": {
+  "traction": "diesel locomotive",
+  "livery": "reddish-brown and cream",
+  "confidence": 0.6,
+  "notes": "The train consists of British Railways Mark 1 type passenger coaches. The number W 4875 is visible on one coach. The locomotive pulling the train is not visible in the image frame, making its specific traction type uncertain.",
+  "camera": "blue_anchor"
+ },
+ "2026-08-29T11:54:46": {
+  "traction": "DMU",
+  "livery": "Cream and brown",
+  "confidence": 0.9,
+  "notes": "Train stopped at Bishops Lydeard station platform. The leading coach has a driver's cab, characteristic of a Diesel Multiple Unit. The coaches are painted in a heritage cream and brown livery.",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T12:33:26": {
+  "traction": "DMU",
+  "livery": "Chocolate and Cream",
+  "confidence": 0.95,
+  "notes": "The train consists of multiple coaches in a heritage livery, likely British Rail Chocolate and Cream. It appears to be a self-propelled Diesel Multiple Unit (DMU) rather than a locomotive-hauled train.",
+  "camera": "minehead_seaward_crossing"
+ },
+ "2026-08-29T12:38:59": {
+  "traction": "steam locomotive",
+  "livery": "dark green",
+  "confidence": 0.98,
+  "notes": "Steam locomotive with heavy steam exhaust, pulling a mixed consist of freight wagons (including a red brake van and a green open wagon) and passenger coaches. Two crew members are visible in the cab.",
+  "camera": "minehead_seaward_crossing"
+ },
+ "2026-08-29T12:51:20": {
+  "traction": "steam locomotive",
+  "livery": "dark green",
+  "confidence": 0.95,
+  "notes": "Steam locomotive emitting steam and smoke, pulling green passenger coaches.",
+  "camera": "blue_anchor"
+ },
+ "2026-08-29T12:18:07": {
+  "traction": "steam locomotive",
+  "livery": "black and red",
+  "confidence": 1.0,
+  "notes": "Visible number 7812 on the front. Emitting steam and smoke from the chimney.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T13:07:24": {
+  "traction": "diesel locomotive",
+  "livery": "yellow, cream, and dark green with cream stripe",
+  "confidence": 0.95,
+  "notes": "Class 33, number 65, visible text 'CLASS 33s 65 YEARS', coupled to brown and cream coaches.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T13:09:47": {
+  "traction": "N/A",
+  "livery": "N/A",
+  "confidence": 0.0,
+  "notes": "No train is visible in the image.",
+  "camera": "watchet_visitor_centre"
+ },
+ "2026-08-29T13:12:45": {
+  "traction": "steam locomotive",
+  "livery": "dark green and cream",
+  "confidence": 0.95,
+  "notes": "Visible steam/smoke from the locomotive. Coaches are dark green with a cream band. Many people are visible on the platform next to the train.",
+  "camera": "watchet_visitor_centre"
+ },
+ "2026-08-29T13:15:42": {
+  "traction": "diesel locomotive",
+  "livery": "dark green with yellow front and cream stripe",
+  "confidence": 0.95,
+  "notes": "Class 33 locomotive D6566 at the platform, pulling heritage coaches. A small green diesel shunter is also visible in the background.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T13:16:28": {
+  "traction": "diesel locomotive",
+  "livery": "Maroon and Cream",
+  "confidence": 0.7,
+  "notes": "Coaches are in classic BR Mk1 style. The locomotive is not visible, but based on the coach type and absence of visible steam or DMU cab characteristics, traction is inferred to be a diesel locomotive.",
+  "camera": "minehead_seaward_crossing"
+ },
+ "2026-08-29T13:29:38": {
+  "traction": "DMU",
+  "livery": "yellow",
+  "confidence": 0.95,
+  "notes": "A two-car DMU, likely a heritage unit, on the West Somerset Railway. No specific numbers or headboards are visible.",
+  "camera": "blue_anchor"
+ },
+ "2026-08-29T13:43:26": {
+  "traction": "steam locomotive",
+  "livery": "dark green",
+  "confidence": 0.95,
+  "notes": "Locomotive number 7812 is visible on the cab side. The coaches behind the locomotive are a mix of maroon and cream/brown.",
+  "camera": "crowcombe_heathfield"
+ },
+ "2026-08-29T13:54:58": {
+  "traction": "steam locomotive",
+  "livery": "cream and maroon",
+  "confidence": 0.6,
+  "notes": "The locomotive is not visible in the image. The train consists of traditional British Railways style passenger coaches with dome-shaped roof vents. No visible numbers or headboards.",
+  "camera": "watchet_visitor_centre"
+ },
+ "2026-08-29T13:13:05": {
+  "traction": "not visible",
+  "livery": "cream and dark brown",
+  "confidence": 0.9,
+  "notes": "Only a single passenger coach is visible, the locomotive is out of frame. The coach appears to be a heritage type, possibly British Railways Mark 1, in a cream and dark brown livery (often referred to as 'Chocolate and Cream'). The image is from the West Somerset Railway, a British heritage line.",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T14:11:33": {
+  "traction": "diesel locomotive",
+  "livery": "green",
+  "confidence": 1.0,
+  "notes": "The locomotive is a British Rail Class 35 'Hymek', numbered D7017. It is at a heritage railway.",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T14:14:13": {
+  "traction": "diesel locomotive",
+  "livery": "dark green",
+  "confidence": 0.98,
+  "notes": "The locomotive is numbered D7076 and appears to be a British Rail Class 35 Hymek. It has a headcode of 1Z77.",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T14:19:28": {
+  "traction": "diesel locomotive",
+  "livery": "green",
+  "confidence": 0.95,
+  "notes": "The locomotive is numbered D6707 and is painted in a heritage green livery, characteristic of early British Rail diesel locomotives. It is stopped at a station platform. There are white warning stripes on the front.",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T14:25:25": {
+  "traction": "diesel locomotive",
+  "livery": "green",
+  "confidence": 0.95,
+  "notes": "Visible headcode '6H' on the front. The train is on a curve.",
+  "camera": "watchet_visitor_centre"
+ },
+ "2026-08-29T14:33:20": {
+  "traction": "diesel locomotive",
+  "livery": "green",
+  "confidence": 0.98,
+  "notes": "Class 47 diesel locomotive with visible number D1661.",
+  "camera": "crowcombe_heathfield"
+ },
+ "2026-08-29T14:50:03": {
+  "traction": "steam locomotive",
+  "livery": "cream and dark green",
+  "confidence": 0.75,
+  "notes": "Passenger coaches of traditional British Railways Mark 1 style. The locomotive is not visible, therefore the traction type is inferred based on common operations on heritage railways. The livery features a cream/yellow upper half and a dark green lower half, separated by a thin red stripe.",
+  "camera": "blue_anchor"
+ },
+ "2026-08-29T14:20:14": {
+  "traction": "diesel locomotive",
+  "livery": "dark green",
+  "confidence": 0.95,
+  "notes": "The locomotive is numbered D6700, which is an original British Rail Class 37 number. It is on the West Somerset Railway.",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T15:02:20": {
+  "traction": "steam locomotive",
+  "livery": "Maroon and Cream",
+  "confidence": 0.7,
+  "notes": "Locomotive not visible in frame. Train consists of British Railways Mark 1 heritage passenger coaches, stabled in a siding. The traction type is inferred based on common heritage railway operations.",
+  "camera": "minehead_seaward_crossing"
+ },
+ "2026-08-29T14:53:50": {
+  "traction": "steam locomotive",
+  "livery": "green",
+  "confidence": 0.5,
+  "notes": "Only a single heritage passenger carriage is visible, not the locomotive. The traction type 'steam locomotive' is an inference based on the common operation of the West Somerset Railway, as the actual locomotive is out of frame or not clearly visible. The carriage itself is dark green.",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T15:03:33": {
+  "traction": "DMU",
+  "livery": "green with yellow ends",
+  "confidence": 0.95,
+  "notes": "A two-car Diesel Multiple Unit (DMU) is visible on the platform road (east). It features a prominent green livery with yellow warning panels on its front end. The number is not clearly legible from this distance.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T15:11:29": {
+  "traction": "diesel locomotive",
+  "livery": "green",
+  "confidence": 0.95,
+  "notes": "Green diesel locomotive with yellow front ends. Appears to be a British Class 33 locomotive. People are visible near the front.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T15:12:26": {
+  "traction": "diesel locomotive",
+  "livery": "green",
+  "confidence": 0.95,
+  "notes": "Class 37 locomotive, number D6706, with yellow front ends. People are visible near the front of the locomotive.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T15:05:53": {
+  "traction": "steam locomotive",
+  "livery": "dark green",
+  "confidence": 0.6,
+  "notes": "The locomotive is not visible in the frame; the visible portion is the leading dark green passenger carriage. This classification assumes a steam locomotive is hauling the heritage coaches, which is common on the West Somerset Railway, but the specific traction cannot be confirmed from the image alone.",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T15:13:02": {
+  "traction": "diesel locomotive",
+  "livery": "green with yellow warning panel",
+  "confidence": 0.95,
+  "notes": "British Rail green livery, prominent yellow warning panel on the front. Appears to be a Class 33.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T15:19:45": {
+  "traction": "diesel locomotive",
+  "livery": "BR Green with yellow front",
+  "confidence": 0.9,
+  "notes": "Visible number D7017",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T15:23:46": {
+  "traction": "diesel locomotive",
+  "livery": "green",
+  "confidence": 0.93,
+  "notes": "Class 33 'Hymek' diesel locomotive with 'HYMEK 65 YEARS' visible on the front. It is pulling brown and cream heritage coaches.",
+  "camera": "watchet_visitor_centre"
+ },
+ "2026-08-29T15:20:48": {
+  "traction": "diesel locomotive",
+  "livery": "green",
+  "confidence": 0.95,
+  "notes": "Class 33 diesel locomotive with yellow front.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T15:31:23": {
+  "traction": "steam locomotive",
+  "livery": "crimson and cream",
+  "confidence": 0.7,
+  "notes": "Coaches only, locomotive not visible. Train stabled on a goods siding.",
+  "camera": "minehead_seaward_crossing"
+ },
+ "2026-08-29T15:39:56": {
+  "traction": "diesel locomotive",
+  "livery": "green with yellow and black stripes",
+  "confidence": 0.95,
+  "notes": "The locomotive has prominent yellow and black chevron stripes on the front, typical of a British shunter or mainline locomotive's warning panel. The body is green.",
+  "camera": "crowcombe_heathfield"
+ },
+ "2026-08-29T15:47:34": {
+  "traction": "diesel locomotive",
+  "livery": "green/teal",
+  "confidence": 0.95,
+  "notes": "The locomotive appears to be a British Rail Class 33 'Crompton' type. The coaches are a mix, with some being brown/maroon with yellow window surrounds.",
+  "camera": "blue_anchor"
+ },
+ "2026-08-29T15:48:36": {
+  "traction": "diesel locomotive",
+  "livery": "dark green/brown and cream",
+  "confidence": 0.9,
+  "notes": "The train consists of a dark-colored locomotive pulling passenger coaches with a dark green/brown body and cream window bands. No specific numbers or headboards are visible.",
+  "camera": "blue_anchor"
+ },
+ "2026-08-29T15:13:22": {
+  "traction": "diesel locomotive",
+  "livery": "green",
+  "confidence": 0.3,
+  "notes": "The visible object is a traditional British Railways style passenger coach in a dark green livery. The locomotive providing traction is not visible in the frame. The classification of 'diesel locomotive' is an inference, as this type of coach is commonly hauled by both steam and diesel locomotives on heritage lines like the West Somerset Railway. It is unlikely to be a self-propelled Diesel Multiple Unit (DMU) based on its appearance, as no cab is visible.",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T15:59:30": {
+  "traction": "diesel locomotive",
+  "livery": "yellow and dark green",
+  "confidence": 0.95,
+  "notes": "The locomotive is numbered D1609. It is pulling a long line of goods wagons, including a 'GUNPOWDER VAN' and several brown vans, followed by a red open wagon and what appears to be a red coach at the rear.",
+  "camera": "minehead_seaward_crossing"
+ },
+ "2026-08-29T16:00:42": {
+  "traction": "steam locomotive",
+  "livery": "black",
+  "confidence": 0.9,
+  "notes": "Steam locomotive at the far end of the train, dark-colored (likely black) with visible exhaust. Coaches feature mixed liveries including maroon and cream, and dark green and cream.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T16:02:46": {
+  "traction": "steam locomotive",
+  "livery": "chocolate and cream coaches, dark green/black locomotive",
+  "confidence": 0.8,
+  "notes": "Coaches are in BR 'chocolate and cream' livery. The locomotive at the head of the train is largely obscured, but appears dark green or black. There is a visible white square panel on the side of the first coach.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T16:03:07": {
+  "traction": "steam locomotive",
+  "livery": "brown and cream",
+  "confidence": 0.9,
+  "notes": "Passenger train on the left track. The coaches are in British Railways Chocolate and Cream livery. A dark-colored steam locomotive is partially visible at the front of the train.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T16:03:38": {
+  "traction": "steam locomotive",
+  "livery": "chocolate and cream",
+  "confidence": 0.9,
+  "notes": "Passenger train with heritage coaches. The locomotive is mostly obscured by the station building and coaches.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T16:08:19": {
+  "traction": "steam locomotive",
+  "livery": "black",
+  "confidence": 0.85,
+  "notes": "Train consists of several passenger coaches behind the locomotive; one coach has 'C1' visible on its side.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T16:08:14": {
+  "traction": "steam locomotive",
+  "livery": "maroon and cream",
+  "confidence": 0.75,
+  "notes": "The locomotive is not visible in the image, but the train consists of traditional passenger coaches often hauled by steam locomotives on heritage lines. The coaches have a dark maroon body with a cream stripe below the windows.",
+  "camera": "watchet_visitor_centre"
+ },
+ "2026-08-29T16:16:44": {
+  "traction": "diesel locomotive",
+  "livery": "dark green and yellow",
+  "confidence": 1.0,
+  "notes": "The locomotive has a visible headcode \"1M62\" on its front yellow panel.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T16:36:15": {
+  "traction": "diesel locomotive",
+  "livery": "dark green with yellow detailing",
+  "confidence": 1.0,
+  "notes": "Two Class 37 diesel locomotives are visible, with the lead locomotive displaying number 37000. They are hauling passenger coaches.",
+  "camera": "minehead_seaward_crossing"
+ },
+ "2026-08-29T15:57:10": {
+  "traction": "diesel locomotive",
+  "livery": "dark green",
+  "confidence": 0.9,
+  "notes": "Train stopped at Bishops Lydeard station. The locomotive has an unreadable headboard.",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T16:48:46": {
+  "traction": "diesel locomotive",
+  "livery": "BR Green with yellow ends",
+  "confidence": 0.95,
+  "notes": "The locomotive is a Class 33 'Crompton' in British Rail green livery with yellow warning panels on the ends. It is pulling passenger coaches. No specific number is clearly visible on the locomotive.",
+  "camera": "blue_anchor"
+ },
+ "2026-08-29T16:49:20": {
+  "traction": "diesel locomotive",
+  "livery": "dark green with yellow stripe",
+  "confidence": 1.0,
+  "notes": "Two diesel locomotives, D7018 leading and D7017 coupled, pulling passenger coaches on a heritage line.",
+  "camera": "blue_anchor"
+ },
+ "2026-08-29T16:40:58": {
+  "traction": "diesel locomotive",
+  "livery": "dark green",
+  "confidence": 1.0,
+  "notes": "Locomotive number D 6575 with '65' in the headcode box. The livery is dark green with a cream stripe and yellow front.",
+  "camera": "crowcombe_heathfield"
+ },
+ "2026-08-29T17:06:11": {
+  "traction": "DMU",
+  "livery": "Green and Cream",
+  "confidence": 0.9,
+  "notes": "Standard DMU profile, no visible numbers or headboard.",
+  "camera": "watchet_visitor_centre"
+ },
+ "2026-08-29T17:30:02": {
+  "traction": "steam locomotive",
+  "livery": "dark green with red buffer beam",
+  "confidence": 0.95,
+  "notes": "Steam locomotive with visible exhaust, hauling passenger coaches. People are on the platform next to it.",
+  "camera": "watchet_visitor_centre"
+ },
+ "2026-08-29T17:15:38": {
+  "traction": "diesel locomotive",
+  "livery": "dark green",
+  "confidence": 0.95,
+  "notes": "The locomotive appears to be a British Rail Class 33 diesel, pulling a rake of coaches in a red and cream (often referred to as 'Blood and Custard') livery. No specific number is clearly visible on the locomotive.",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T17:50:23": {
+  "traction": "steam locomotive",
+  "livery": "cream and maroon",
+  "confidence": 0.95,
+  "notes": "Steam locomotive at the head of the train, producing visible exhaust. The train consists of traditional passenger coaches with a cream and maroon livery. The image context indicates this is on the West Somerset Railway.",
+  "camera": "blue_anchor"
+ },
+ "2026-08-29T17:39:22": {
+  "traction": "diesel locomotive",
+  "livery": "dark green with yellow front warning panel",
+  "confidence": 0.98,
+  "notes": "Locomotive D7017, a Class 35 Hymek. Features 'D<EG' logo on the side and a 'HYMEK 65 YEARS' headboard on the front. Exhaust is visible from the roof. The image refers to '1976 - 2026 50 YEARS OF PRESERVATION'.",
+  "camera": "crowcombe_heathfield"
+ },
+ "2026-08-29T18:02:38": {
+  "traction": "diesel locomotive",
+  "livery": "British Railways maroon and cream, and dark green/grey and cream",
+  "confidence": 0.5,
+  "notes": "Train consists of multiple heritage passenger coaches in two distinct liveries. The locomotive/traction unit is not visible in the frame, making the traction classification an assumption based on typical heritage railway operations and the coach type (not a DMU). Coaches appear to be British Railways Mk1 type.",
+  "camera": "minehead_seaward_crossing"
+ },
+ "2026-08-29T18:03:20": {
+  "traction": "steam locomotive",
+  "livery": "red",
+  "confidence": 0.9,
+  "notes": "Steam locomotive with a red body and black smokebox is visible at the far end of the train, partially obscured by coaches. The coaches are a mix of maroon and cream, and dark blue and cream. The last visible coach has 'CI. L.' markings.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T18:11:55": {
+  "traction": "diesel locomotive",
+  "livery": "green with yellow warning panel",
+  "confidence": 0.95,
+  "notes": "Number 65 visible on the front.",
+  "camera": "watchet_visitor_centre"
+ },
+ "2026-08-29T18:04:38": {
+  "traction": "diesel locomotive",
+  "livery": "dark green",
+  "confidence": 1.0,
+  "notes": "Two diesel locomotives coupled. The lead locomotive is D7018 in dark green with yellow stripes. The second locomotive is blue.",
+  "camera": "bishops_lydeard"
+ },
+ "2026-08-29T18:22:06": {
+  "traction": "steam locomotive",
+  "livery": "dark green",
+  "confidence": 0.95,
+  "notes": "Emitting steam/smoke; visible headboard on the front.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T18:30:30": {
+  "traction": "steam locomotive",
+  "livery": "green",
+  "confidence": 0.95,
+  "notes": "The locomotive is emitting a large amount of dark smoke. It appears to be double-headed with another steam locomotive behind it.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T18:31:59": {
+  "traction": "diesel locomotive",
+  "livery": "Maroon and cream",
+  "confidence": 0.5,
+  "notes": "Train consists of multiple passenger coaches with a maroon and cream livery. The locomotive pulling the coaches is almost entirely obscured at the front of the train, but no steam or exhaust is visible.",
+  "camera": "minehead_seaward_crossing"
+ },
+ "2026-08-29T18:45:47": {
+  "traction": "DMU",
+  "livery": "BR Green and Cream",
+  "confidence": 0.7,
+  "notes": "The train consists of passenger coaches in a two-tone livery. The upper half is cream/yellow, and the lower half is dark green, separated by a thin maroon stripe. No separate locomotive is visible, suggesting it is a Diesel Multiple Unit (DMU).",
+  "camera": "blue_anchor"
+ },
+ "2026-08-29T18:56:52": {
+  "traction": "steam locomotive",
+  "livery": "chocolate and cream",
+  "confidence": 0.7,
+  "notes": "The train consists of multiple passenger coaches stabled in a siding. No locomotive is visible in the frame; traction is an inference based on typical operations for these coach types on a British heritage railway. No visible numbers or headboards.",
+  "camera": "minehead_seaward_crossing"
+ },
+ "2026-08-29T18:57:34": {
+  "traction": "DMU",
+  "livery": "green",
+  "confidence": 0.9,
+  "notes": "Single DMU coach on the platform road, facing right. No visible numbering.",
+  "camera": "minehead_station"
+ },
+ "2026-08-29T18:57:59": {
+  "traction": "diesel locomotive",
+  "livery": "red and black",
+  "confidence": 0.8,
+  "notes": "Small shunter, predominantly red with black roof/chassis, partially obscured by the shed building on the right. Located in the 'shed roads' area.",
+  "camera": "minehead_station"
+ }
+}

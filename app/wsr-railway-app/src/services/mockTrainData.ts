@@ -2,9 +2,10 @@ import type { Train, Station, StationCode, TrainStop } from '../types/models';
 
 // Configuration flag to enable/disable test train
 // Set to true to show a train that's always running for testing
-// Set to false to only show real scheduled trains
-// You can toggle this to test the "No Services Running" warning on the home page
-const ENABLE_TEST_TRAIN = true;
+// Whether the test train appears is an operator setting, not a constant —
+// see services/settings.ts and the Settings tab in the control room. It
+// used to be a hardcoded `true` here, but nothing imported the list it
+// fed, so the flag had no effect either way.
 
 // Station data with coordinates and facilities
 export const mockStations: Station[] = [
@@ -162,10 +163,9 @@ function getTodayScheduleDate(): Date {
 }
 
 
-// Function to create test train if enabled
-function createTestTrain(): Train | null {
-  if (!ENABLE_TEST_TRAIN) return null;
-
+/** A synthetic service, running now, for exercising the live views on a
+ *  day with no trains. Always builds; callers decide whether to show it. */
+export function buildTestTrain(): Train {
   const now = new Date();
   const thirtyMinsAgo = new Date(now.getTime() - 30 * 60000);
   const baseTime = thirtyMinsAgo.toTimeString().slice(0, 5);
@@ -460,11 +460,9 @@ const baseTrains: Train[] = [
   }
 ];
 
-// Export the mock trains array, including test train if enabled
-export const mockTrains: Train[] = [
-  ...(createTestTrain() ? [createTestTrain()!] : []),
-  ...baseTrains
-];
+// Kept for reference data only; the live views build from the real
+// timetable in services/timetables.ts.
+export const mockTrains: Train[] = baseTrains;
 
 // Simulate some trains as currently running based on time
 export function updateTrainStatuses() {

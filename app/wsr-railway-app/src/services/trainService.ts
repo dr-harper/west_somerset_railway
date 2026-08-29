@@ -8,7 +8,8 @@ import type {
   Journey,
   JourneySegment
 } from '../types/models';
-import { mockStations } from './mockTrainData';
+import { buildTestTrain, mockStations } from './mockTrainData';
+import { getSetting } from './settings';
 import { getDayInfo, getSpecialEvent, timetableColors, timetableNames, timetableSummaries } from './calendarConfig';
 import { getTrainsForDate } from './timetables';
 import type { DayKind, TimetableType } from './calendarConfig';
@@ -60,6 +61,14 @@ export class TrainService {
     const trains = Array.from(this.trains.values()).filter(train => {
       return train.status.state === 'Running' || train.status.state === 'Scheduled';
     });
+    // Built fresh on each call rather than loaded once, so switching the
+    // setting takes effect on the next poll instead of needing a reload —
+    // and so its times stay relative to now rather than to page load.
+    if (getSetting('testTrain')) {
+      const test = buildTestTrain();
+      this.calculateCurrentLocation(test);
+      trains.push(test);
+    }
     return Promise.resolve(trains);
   }
 

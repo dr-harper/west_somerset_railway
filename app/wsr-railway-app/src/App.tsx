@@ -12,6 +12,7 @@ import { AdminOverview } from './pages/Admin/AdminOverview';
 import { AdminEvents } from './pages/Admin/AdminEvents';
 import { AdminTrains } from './pages/Admin/AdminTrains';
 import { AdminCameras } from './pages/Admin/AdminCameras';
+import { AdminSettings } from './pages/Admin/AdminSettings';
 
 function App() {
   // Get the base path from Vite's configuration
@@ -34,6 +35,7 @@ function App() {
               <Route path="trains" element={<AdminTrains />} />
               <Route path="episodes" element={<Navigate to="/admin/events" replace />} />
               <Route path="cameras" element={<AdminCameras />} />
+              <Route path="settings" element={<AdminSettings />} />
             </Route>
             {/* the verify page moved under /admin; keep old links working */}
             <Route path="/verify" element={<Navigate to="/admin/verify" replace />} />

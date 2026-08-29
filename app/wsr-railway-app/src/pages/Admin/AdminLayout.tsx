@@ -8,6 +8,7 @@ const SECTIONS = [
   { to: '/admin/trains', label: 'Trains' },
   { to: '/admin/cameras', label: 'Cameras' },
   { to: '/admin/verify', label: 'Verify' },
+  { to: '/admin/settings', label: 'Settings' },
 ];
 
 export const AdminLayout: React.FC = () => (
