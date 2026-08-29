@@ -18,6 +18,9 @@ Usage:
     ok, frame = cap.read()
 """
 
+import threading
+import time
+
 import cv2
 import yt_dlp
 
@@ -35,17 +38,46 @@ CAMERAS = {
 DEFAULT_FORMAT = '231/230/229'
 
 
-def resolve_hls_url(camera: str, format_spec: str = DEFAULT_FORMAT) -> str:
-    """Resolve a camera name (or raw YouTube id) to its current HLS URL.
+# One extraction returns every rendition, so cache the whole format table
+# per camera. Resolving once per camera per CACHE_TTL_S — instead of once
+# per stream open — keeps request volume low enough to avoid YouTube's
+# bot challenge (which we tripped on 29/8 at ~110 resolves in a day).
+CACHE_TTL_S = 3 * 3600
+_cache: dict[str, tuple[float, dict[str, str]]] = {}
+_cache_lock = threading.Lock()
 
-    HLS URLs expire after a few hours, so resolve rather than cache them.
-    """
+
+def _format_table(camera: str, force: bool = False) -> dict[str, str]:
+    """{format_id: url} for a camera, cached until the URLs near expiry."""
     video_id = CAMERAS.get(camera, camera)
-    options = {'quiet': True, 'format': format_spec}
-    with yt_dlp.YoutubeDL(options) as ydl:
+    with _cache_lock:
+        hit = _cache.get(video_id)
+        if hit and not force and time.time() - hit[0] < CACHE_TTL_S:
+            return hit[1]
+    with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
         info = ydl.extract_info(
             f'https://www.youtube.com/watch?v={video_id}', download=False)
-    return info['url']
+    table = {f['format_id']: f['url'] for f in info.get('formats', [])
+             if f.get('url')}
+    with _cache_lock:
+        _cache[video_id] = (time.time(), table)
+    return table
+
+
+def resolve_hls_url(camera: str, format_spec: str = DEFAULT_FORMAT,
+                    force: bool = False) -> str:
+    """Resolve a camera to a stream URL, preferring cached format tables.
+
+    format_spec is a '/'-separated preference list of format ids, e.g.
+    '231/230/229' (480p, then 360p, then 240p).
+    """
+    table = _format_table(camera, force=force)
+    for fmt in format_spec.split('/'):
+        if fmt in table:
+            return table[fmt]
+    if not force:  # stale cache missing the format — re-extract once
+        return resolve_hls_url(camera, format_spec, force=True)
+    raise RuntimeError(f'no format from {format_spec} available for {camera}')
 
 
 def open_stream(camera: str, format_spec: str = DEFAULT_FORMAT) -> cv2.VideoCapture:
