@@ -1,88 +1,71 @@
-# Product Requirements Document (PRD)
+# West Somerset Railway Train Detection — PRD
 
-## Project Overview
-
-**Project Name:** West Somerset Railway Train Detection System  
-**Author:** Michael  
-**Date:** 2024-06-01  
-**Version:** 1.0
+**Author:** Michael
+**Version:** 2.0 — 28th August 2026 (supersedes the June 2024 draft, which
+described a trackside sensor system that was never pursued)
 
 ## Objective
 
-Develop an automated train detection system for the West Somerset Railway that enhances safety, improves scheduling accuracy, and provides real-time data to operators.
+Detect, classify, and log train movements on the West Somerset Railway using
+the six public Railcam webcams, and fuse those observations with the scraped
+2026 timetable to give the WSR timetable web app genuine live train data —
+something no comparable heritage railway app offers.
 
-## Background
+## What exists (as of this version)
 
-The West Somerset Railway currently relies on manual train detection methods which are prone to human error and delays. An automated system will leverage modern sensor technology and machine learning to provide reliable and timely train presence information.
+| Component | File | Status |
+| --- | --- | --- |
+| Live stream capture (six cameras, HLS via YouTube Live) | `wsr_live_capture.py` | Working |
+| Per-camera detection zones (detect / approach / ignore) | `detection_zones.py` | Calibrated at 854×480 |
+| Two-tier watcher: motion gate → YOLO11 episodes | `gala_watcher.py` | Dry-run verified; first full run 29th Aug gala |
+| Simple interval poller (superseded by the watcher) | `live_poller.py` | Kept for reference |
+| Timetable data (scraped from the official WSR calendar) | `../route_data/timetable_2026/` | 59 running days + calendar |
+| Web app consuming the timetable | `../app/wsr-railway-app/` | Live on real 2026 data |
 
-## Features
+## Architecture
 
-| Feature ID | Feature Description                           | Priority | Notes                             |
-| ---------- | --------------------------------------------- | -------- | --------------------------------- |
-| F1         | Real-time train detection using sensors       | High     | Use infrared and pressure sensors |
-| F2         | Alert system for unexpected train presence    | High     | Notifications via SMS and app     |
-| F3         | Data logging for train movements              | Medium   | Store data for 1 year             |
-| F4         | Integration with existing scheduling software | Medium   | API-based integration             |
-| F5         | User interface for monitoring and control     | Low      | Web-based dashboard               |
+```
+YouTube Live (6 cams, up to 1080p30)
+   └─ tier 1: 480p stream, zone-masked motion gate (~2 Hz, ~7% of one core idle)
+        └─ tier 2 (gate open): YOLO11 confirm → episode tracking (~1 Hz)
+             ├─ episodes.jsonl  (enter/exit, zones, direction, confidence)
+             ├─ captures/       (keyframes, 2 fps clip, one 1080p still)
+             └─ [next] classification + timetable matching
+```
 
-## User Stories
+Design principle: **compute ramps down, not up**. Idle cost is six 480p
+decodes; inference only runs while something moves; classification runs once
+per episode, not per frame. The target end-state runs on a Raspberry Pi or a
+small VPS.
 
-1. **As a railway operator,** I want to receive immediate alerts when a train enters a restricted area, so I can take prompt safety measures.  
-2. **As a maintenance engineer,** I want access to historical train movement data, so I can analyze patterns and schedule maintenance effectively.  
-3. **As a scheduler,** I want the system to integrate with our existing scheduling software, so train timings are updated automatically.
+## Roadmap
 
-## Technical Requirements
+1. **Episode corpus** — capture the 29th August gala (busiest day of the
+   year) end to end. Validate direction vectors against known services.
+2. **Classification** — per-episode traction type (steam / diesel / DMU) and
+   livery from the 1080p still, via a vision LLM with structured output
+   (`classify_trains.py`). Later: distil to a small local classifier using
+   timetable-auto-labelled crops.
+3. **Timetable matching** — join episodes to scheduled services
+   (`episode_analysis.py`); an unmatched confirmed episode is the
+   special-train alert.
+4. **App integration** — feed matched events to the web app so "live trains"
+   reflects reality rather than simulation (backend choice pending).
 
-- Sensors must detect trains within a 10-meter range with 99% accuracy.  
-- System latency must not exceed 2 seconds for detection alerts.  
-- Data storage must comply with data protection regulations.  
-- System uptime must be 99.9% annually.
+## Constraints and courtesies
 
-## Constraints
+- The streams are Railcam UK's; personal-project use is reasonable, but ask
+  before anything public-facing. Do not hammer: one stream per camera.
+- Cameras can be repositioned by their operators; zones need a periodic
+  reference-frame check.
+- No safety claims: this is an enthusiast data project, not railway
+  signalling infrastructure.
 
-- Limited budget of $50,000 for initial deployment.  
-- Installation must not disrupt current railway operations.  
-- System must operate in outdoor conditions, including rain and fog.
+## Success metrics
 
-## Success Metrics
-
-| Metric             | Target         | Measurement Method      |
-| ------------------ | -------------- | ----------------------- |
-| Detection Accuracy | ≥ 99%          | Sensor validation tests |
-| Alert Latency      | ≤ 2 seconds    | System logs             |
-| System Uptime      | ≥ 99.9%        | Monitoring reports      |
-| User Satisfaction  | ≥ 90% positive | User surveys            |
-
-## Timeline
-
-| Phase             | Start Date | End Date   | Deliverables                    |
-| ----------------- | ---------- | ---------- | ------------------------------- |
-| Requirements      | 2024-06-01 | 2024-06-15 | Finalized PRD                   |
-| Design            | 2024-06-16 | 2024-07-01 | System architecture, UI mockups |
-| Development       | 2024-07-02 | 2024-08-15 | Sensor integration, backend     |
-| Testing           | 2024-08-16 | 2024-09-01 | System testing, bug fixes       |
-| Deployment        | 2024-09-02 | 2024-09-10 | Live system rollout             |
-| Review & Feedback | 2024-09-11 | 2024-09-20 | Post-deployment review          |
-
-## Stakeholders
-
-| Role              | Name    | Contact             | Responsibility               |
-| ----------------- | ------- | ------------------- | ---------------------------- |
-| Project Manager   | Michael | michael@example.com | Overall project coordination |
-| Railway Operator  | Sarah   | sarah@example.com   | End-user, safety monitoring  |
-| Maintenance Lead  | John    | john@example.com    | System maintenance           |
-| Software Engineer | Emily   | emily@example.com   | Development and integration  |
-
-## Risks and Mitigations
-
-| Risk                            | Impact | Likelihood | Mitigation Strategy                  |
-| ------------------------------- | ------ | ---------- | ------------------------------------ |
-| Sensor failure in harsh weather | High   | Medium     | Use weatherproof sensors, redundancy |
-| Budget overrun                  | Medium | Low        | Regular budget reviews, contingency  |
-| Integration delays              | High   | Medium     | Early API development and testing    |
-
-## Appendices
-
-- Sensor specifications document  
-- Data protection compliance guidelines  
-- User interface wireframes
+| Metric | Target |
+| --- | --- |
+| Timetabled gala services detected at covered stations | ≥ 90% |
+| False episodes per camera per day (moving-train false positives) | ≤ 2 |
+| Traction classification accuracy vs timetable ground truth | ≥ 95% |
+| Idle CPU (whole watcher, six cameras) | ≤ 10% of one core |
