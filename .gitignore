@@ -19,3 +19,5 @@ train_detection/working_images/
 
 # Model weights (downloaded on demand by ultralytics)
 *.pt
+app/wsr-railway-app/.env.local
+app/wsr-railway-app/public/captures

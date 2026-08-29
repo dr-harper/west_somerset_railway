@@ -6,6 +6,7 @@ import { Footer } from './components/Layout/Footer';
 import { Home } from './pages/Home/Home';
 import { LiveTrains } from './pages/LiveTrains/LiveTrains';
 import { JourneyPlanner } from './pages/JourneyPlanner/JourneyPlanner';
+import { VerifyPage } from './pages/Verify/VerifyPage';
 
 function App() {
   // Get the base path from Vite's configuration
@@ -21,6 +22,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/live-trains" element={<LiveTrains />} />
             <Route path="/journey-planner" element={<JourneyPlanner />} />
+            <Route path="/verify" element={<VerifyPage />} />
           </Routes>
         </main>
 

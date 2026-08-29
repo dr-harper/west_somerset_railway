@@ -23,8 +23,8 @@ from datetime import datetime
 from pathlib import Path
 from statistics import median
 
-from train_tracker import (CAMERA_NODES, CAMERA_OFFSET_MIN, LINE, SEGMENTS,
-                           _hhmm, load_runs, observation_of, scheduled_at)
+from train_tracker import (LINE, SEGMENTS, _hhmm, _station_coords, interpolate,
+                           load_runs, observation_of, position_at, scheduled_at)
 
 HERE = Path(__file__).parent
 
@@ -39,6 +39,8 @@ OCCUPANCY_MERGE_MIN = 15.0   # repeat sightings at one camera = one occupancy
 MATCH_TOLERANCE_MIN = 22.0   # movement vs booked run
 MAX_PLAUSIBLE_DELAY_MIN = 35.0
 MAX_PLAUSIBLE_EARLY_MIN = 6.0   # trains do not leave before their booked time
+STALE_AFTER_MIN = 20.0          # an unscheduled movement unseen this long is lost:
+                                # extrapolating further invents a position
 EARLY_PENALTY = 3.0
 
 
@@ -266,3 +268,96 @@ if __name__ == '__main__':
               f"{str(m['avg_mph']) + 'mph':<8} {tag}")
         for o in m['observations']:
             print(f"      {o['at']} {o['camera']}")
+
+
+# --------------------------------------------------------------------------
+# Position — works for scheduled and unscheduled movements alike
+# --------------------------------------------------------------------------
+
+def movement_position(movement: dict, when: datetime, date_key: str) -> dict | None:
+    """Where a movement is at `when`.
+
+    A scheduled movement rides its booked timeline shifted by the delay it
+    was last measured at. An unscheduled one has no timetable to lean on,
+    so its position is extrapolated from its own observed speed — which is
+    the whole point of tracking movements rather than runs.
+    """
+    clock = when.hour * 60 + when.minute + when.second / 60
+    chain = movement.get('_chain')
+    if not chain:
+        return None
+    first, last = chain[0], chain[-1]
+
+    scheduled = movement.get('scheduled')
+    if scheduled:
+        for run in load_runs(date_key):
+            if _hhmm(run['timeline'][0][1]) != scheduled['booked_departure']:
+                continue
+            tracked = {'_run': run, 'delay_min': scheduled['delay_end_min']}
+            return position_at(tracked, when)
+
+    # unscheduled: extrapolate along the line at the movement's own speed,
+    # but only briefly — with no timetable to fall back on, a movement not
+    # seen for a while has simply been lost
+    speed = movement.get('avg_mph')
+    if not speed or clock < first['clock']:
+        return None
+    since_seen = clock - last['clock']
+    if not (0 <= since_seen <= STALE_AFTER_MIN):
+        return None
+    elapsed_h = since_seen / 60
+    travelled = speed * elapsed_h
+    heading = 1 if movement['direction'] == 'northbound' else -1
+    index = LINE.index(last['station'])
+    remaining = travelled
+    while 0 <= index + heading < len(LINE):
+        a, b = LINE[index], LINE[index + heading]
+        seg = SEGMENTS.get((a, b)) or SEGMENTS.get((b, a))
+        hop = (seg['length_m'] / 1609.34) if seg else 0.0
+        if remaining <= hop or hop == 0:
+            fraction = (remaining / hop) if hop else 0.0
+            return {'state': 'running (unscheduled)', 'at': None,
+                    'segment': [a, b], 'progress': round(fraction, 3),
+                    'coords': interpolate(a, b, fraction),
+                    'next': b, 'eta': None, 'extrapolated': True}
+        remaining -= hop
+        index += heading
+    terminus = LINE[0 if heading < 0 else -1]
+    return {'state': 'reached terminus (unscheduled)', 'at': terminus,
+            'segment': None, 'progress': 1.0,
+            'coords': _station_coords(terminus), 'next': None, 'eta': None,
+            'extrapolated': True}
+
+
+def live(episodes: list[dict], when: datetime | None = None,
+         date_key: str = '2026-08-29') -> list[dict]:
+    """Every movement currently on the line, scheduled or not."""
+    when = when or datetime.now()
+    movements = build_movements(episodes)
+    annotated = annotate(movements, date_key)
+    out = []
+    for movement, record in zip(movements, annotated):
+        record['_chain'] = movement['_chain']
+        position = movement_position(record, when, date_key)
+        if not position or position['state'].startswith('arrived'):
+            continue
+        record.pop('_chain', None)
+        record['position'] = position
+        record['confident'] = movement['sightings'] >= 2
+        out.append(record)
+
+    # two movements matching one booked run are fragments of the same
+    # train that failed to chain — keep the better-corroborated fragment
+    best_for_run: dict[str, dict] = {}
+    unscheduled = []
+    for record in out:
+        s = record.get('scheduled')
+        if not s:
+            unscheduled.append(record)
+            continue
+        key = s['booked_departure'] + s['serviceType']
+        incumbent = best_for_run.get(key)
+        if incumbent is None or record['sightings'] > incumbent['sightings']:
+            best_for_run[key] = record
+    return sorted(unscheduled + list(best_for_run.values()),
+                  key=lambda r: r['first_seen'])
