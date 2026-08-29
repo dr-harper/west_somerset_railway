@@ -1,3 +1,4 @@
+import { TreePine } from 'lucide-react';
 import React, { useState, useMemo } from 'react';
 import styles from './TabbedSchedules.module.css';
 import { serviceCalendar, toDateKey } from '../../services/calendarConfig';
@@ -118,7 +119,7 @@ export const TabbedSchedules: React.FC<TabbedSchedulesProps> = ({ selectedDate =
             <h3 className={styles.timetableTitle}>{schedule.name}</h3>
           </div>
           <div className={styles.christmasNotice}>
-            <h4>🎄 Christmas Services - Coming Soon!</h4>
+            <h4><TreePine size={18} aria-hidden /> Christmas Services - Coming Soon!</h4>
             <p>
               We will be running our festive services on the days marked green in the calendar. 
               Please check back on our website for further information which will be released later in the year.

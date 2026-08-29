@@ -1,3 +1,4 @@
+import { TrainFront } from 'lucide-react';
 import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -64,7 +65,7 @@ const createTrainIcon = (serviceType: string) => {
         color: white;
         font-size: 10px;
         font-weight: bold;
-      ">🚂</div>
+      "><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3.1V7a4 4 0 0 0 8 0V3.1"/><path d="m9 15-1-1"/><path d="m15 15 1-1"/><path d="M9 19c-2.8 0-5-2.2-5-5v-4a8 8 0 0 1 16 0v4c0 2.8-2.2 5-5 5Z"/><path d="m8 19-2 3"/><path d="m16 19 2 3"/></svg></div>
     `,
     iconSize: [26, 26],
     iconAnchor: [13, 13],
@@ -139,7 +140,7 @@ export const TrackMap: React.FC<TrackMapProps> = ({ stations, trains = [] }) => 
           </div>
           {runningTrains.length > 0 && (
             <div className={styles.legendItem}>
-              <div className={styles.trainMarker}>🚂</div>
+              <div className={styles.trainMarker}><TrainFront size={12} aria-hidden /></div>
               <span>Train</span>
             </div>
           )}

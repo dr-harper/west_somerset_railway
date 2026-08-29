@@ -1,3 +1,4 @@
+import { TrainFront } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import type { Train } from '../../types/models';
@@ -152,7 +153,7 @@ export const LiveJourneyTracker: React.FC = () => {
     return (
       <div className={styles.tracker}>
         <div className={styles.noTrains}>
-          <span className={styles.icon}>🚂</span>
+          <TrainFront className={styles.icon} size={28} aria-hidden />
           No trains currently running. Services operate from 10:00 to 18:00.
         </div>
       </div>

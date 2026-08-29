@@ -1,3 +1,4 @@
+import { CalendarDays, Flag } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { DepartureBoard } from '../../components/DepartureBoard/DepartureBoard';
 import { StationSelector } from '../../components/StationSelector/StationSelector';
@@ -135,7 +136,7 @@ export const Home: React.FC = () => {
             alignItems: 'center',
             gap: '12px'
           }}>
-            <span style={{ fontSize: '24px' }}>🗓️</span>
+            <CalendarDays size={24} aria-hidden />
             <div>
               <strong style={{ color: 'var(--chocolate)', fontFamily: 'var(--font-display)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Timetable Not Yet Published</strong>
               <p style={{ margin: '4px 0 0 0', color: 'var(--ink-soft)' }}>
@@ -157,7 +158,7 @@ export const Home: React.FC = () => {
             alignItems: 'center',
             gap: '12px'
           }}>
-            <span style={{ fontSize: '24px' }}>🚩</span>
+            <Flag size={24} aria-hidden />
             <div>
               <strong style={{ color: 'var(--signal-red)', fontFamily: 'var(--font-display)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>No Services Running Today</strong>
               <p style={{ margin: '4px 0 0 0', color: 'var(--ink-soft)' }}>

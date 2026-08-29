@@ -1,3 +1,4 @@
+import { TrainFront } from 'lucide-react';
 import React from 'react';
 import type { Train, TrainStop } from '../../types/models';
 import styles from './JourneyTimeline.module.css';
@@ -129,7 +130,7 @@ export const JourneyTimeline: React.FC<JourneyTimelineProps> = ({ train, current
                 {isAtStation && (
                   <div className={styles.currentStatus}>
                     <span className={styles.trainLocation}>
-                      🚂 Train at platform
+                      <TrainFront size={15} aria-hidden /> Train at platform
                     </span>
                   </div>
                 )}

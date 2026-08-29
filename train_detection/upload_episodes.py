@@ -83,6 +83,17 @@ def episode_document(episode: dict, movement: dict | None) -> dict:
         'drift_px': episode.get('drift_px'),
         'keyframe': (episode.get('keyframes') or [None])[0],
         'hires': episode.get('hires'),
+        # Boxes travel as data beside the clean still, so the overlay can be
+        # turned off to read a running number underneath — and so a
+        # classifier is given the photograph, not the annotation. Keyed by
+        # image, and matched to whichever still the UI shows: the hi-res
+        # one where there is one, since that is the clean copy.
+        'boxes': next(
+            ({**boxes, 'image': name}
+             for name, boxes in (episode.get('boxes') or {}).items()
+             if name in (episode.get('hires'),
+                         (episode.get('keyframes') or [None])[0])),
+            None),
         'clip': episode.get('clip'),
 
         # --- the system's claim, for a human to confirm or correct ---

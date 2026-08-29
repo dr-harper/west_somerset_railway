@@ -32,6 +32,25 @@ export interface EpisodeClaim {
   corroborating_sightings: number | null;
 }
 
+export interface EpisodeDetection {
+  box: [number, number, number, number];
+  conf: number;
+  zone: string | null;
+}
+
+/**
+ * Detection boxes recorded beside the still rather than drawn into it, so
+ * the overlay can be lifted to read what is underneath. Absent on stills
+ * captured before the pipeline stopped burning them in.
+ */
+export interface EpisodeBoxes {
+  /** Which still the coordinates were measured against. */
+  image?: string;
+  width: number;
+  height: number;
+  detections: EpisodeDetection[];
+}
+
 export interface Episode {
   id: string;
   camera: string;
@@ -43,6 +62,7 @@ export interface Episode {
   peak_conf: number | null;
   keyframe: string | null;
   hires: string | null;
+  boxes?: EpisodeBoxes | null;
   claim: EpisodeClaim;
   status: VerificationStatus;
   verification: {

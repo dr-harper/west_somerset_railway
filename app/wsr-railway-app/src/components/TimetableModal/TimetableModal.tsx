@@ -1,3 +1,4 @@
+import { X } from 'lucide-react';
 import React from 'react';
 import styles from './TimetableModal.module.css';
 import type { Train } from '../../types/models';
@@ -86,8 +87,8 @@ export const TimetableModal: React.FC<TimetableModalProps> = ({
             />
             <h2 className={styles.modalTitle}>{timetableName} - Full Timetable</h2>
           </div>
-          <button className={styles.closeButton} onClick={onClose}>
-            ✕
+          <button className={styles.closeButton} onClick={onClose} aria-label="Close">
+            <X size={18} aria-hidden />
           </button>
         </div>
         

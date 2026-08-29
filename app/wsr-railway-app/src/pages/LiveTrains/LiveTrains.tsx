@@ -1,3 +1,4 @@
+import { MapPin, TrainFront } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { RouteMap } from '../../components/RouteMap/RouteMap';
@@ -122,7 +123,7 @@ export const LiveTrains: React.FC = () => {
                   </div>
                   
                   <div className={styles.trainLocation}>
-                    <span className={styles.locationIcon}>📍</span>
+                    <MapPin className={styles.locationIcon} size={15} aria-hidden />
                     {getTrainLocation(train)}
                   </div>
                   
@@ -169,7 +170,7 @@ export const LiveTrains: React.FC = () => {
 
         {runningTrains.length === 0 && upcomingTrains.length === 0 && (
           <div className={styles.noTrains}>
-            <span className={styles.noTrainsIcon}>🚂</span>
+            <TrainFront className={styles.noTrainsIcon} size={32} aria-hidden />
             <p>No trains currently running or scheduled to depart soon.</p>
             <p>Services typically operate from 10:00 to 18:00.</p>
           </div>

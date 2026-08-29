@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { captureUrl } from '../../services/captures';
+import { AnnotatedStill } from './AnnotatedStill';
 import { cameraName } from '../../services/cameras';
 import { claimText } from '../../services/episodeText';
 import type { Episode } from '../../utils/firestore/episodes';
@@ -28,7 +29,7 @@ export const EpisodeDrawer: React.FC<Props> = ({ episode, onClose, footer }) => 
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const still = captureUrl(episode.hires) ?? captureUrl(episode.keyframe);
+  const stills = [captureUrl(episode.hires), captureUrl(episode.keyframe)];
   const duration =
     episode.t_exit
       ? Math.round(
@@ -53,15 +54,11 @@ export const EpisodeDrawer: React.FC<Props> = ({ episode, onClose, footer }) => 
           <button className={styles.action} onClick={onClose}>Close</button>
         </div>
 
-        {still ? (
-          <img
-            className={styles.drawerImage}
-            src={still}
-            alt={`Detection at ${cameraName(episode.camera)}`}
-          />
-        ) : (
-          <p className={styles.muted}>No still was saved for this detection.</p>
-        )}
+        <AnnotatedStill
+          sources={stills}
+          alt={`Detection at ${cameraName(episode.camera)}`}
+          boxes={episode.boxes}
+        />
 
         <dl className={styles.details}>
           <dt>Reading</dt><dd>{claimText(episode)}</dd>

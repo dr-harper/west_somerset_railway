@@ -29,7 +29,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from detection_zones import ZONES, classify, draw_zones
+from detection_zones import ZONES, classify
 from track_geometry import (corridor_mask, direction_of_motion, exclusion_mask,
                             minehead_end_known, project, regions_of)
 from wsr_live_capture import CAMERAS, BotChallenge, resolve_hls_url
@@ -285,7 +285,7 @@ class CameraWorker(threading.Thread):
         if entry:
             # the frame where the train first appeared, not where we noticed
             path = CAPTURE_DIR / f'{stamp()}_{self.camera}_entry.jpg'
-            cv2.imwrite(str(path), draw_zones(entry[1], self.camera))
+            cv2.imwrite(str(path), entry[1])          # clean, as above
             self.episode['entry_frame'] = path.name
         hires_path = CAPTURE_DIR / f'{stamp()}_{self.camera}_hires.jpg'
         self.episode['hires'] = hires_path.name
@@ -302,16 +302,23 @@ class CameraWorker(threading.Thread):
                 ep['zones'].append(d['zone'])
         if best['conf'] > ep['peak_conf'] + 0.1 or keyframe:
             ep['peak_conf'] = max(ep['peak_conf'], best['conf'])
-            out = draw_zones(frame, self.camera)
-            for d in detections:
-                x1, y1, x2, y2 = d['box']
-                cv2.rectangle(out, (x1, y1), (x2, y2), (60, 220, 255), 2)
-                cv2.putText(out, f"train {d['conf']} -> {d['zone']}",
-                            (x1, max(14, y1 - 6)), cv2.FONT_HERSHEY_SIMPLEX,
-                            0.42, (60, 220, 255), 1, cv2.LINE_AA)
+            # The still is written clean and the boxes recorded beside it.
+            # Burning the overlay into the pixels made it permanent: it
+            # could not be turned off to read a running number underneath,
+            # and it was baked into the only copy, so a later classifier
+            # saw the annotation as part of the photograph.
             path = CAPTURE_DIR / f'{stamp()}_{self.camera}_key.jpg'
-            cv2.imwrite(str(path), out)
+            cv2.imwrite(str(path), frame)
             ep['keyframes'].append(path.name)
+            height, width = frame.shape[:2]
+            ep.setdefault('boxes', {})[path.name] = {
+                'width': width,
+                'height': height,
+                'detections': [
+                    {'box': list(d['box']), 'conf': d['conf'], 'zone': d['zone']}
+                    for d in detections
+                ],
+            }
         ep['peak_conf'] = max(ep['peak_conf'], best['conf'])
         if len(ep['clip_frames']) < 300:   # cap clip memory on long dwells
             ep['clip_frames'].append(frame)

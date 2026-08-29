@@ -86,12 +86,48 @@ def classify_episode(episode: dict, captures_dir: Path = HERE / 'captures') -> d
     return {**episode, 'classification': result.model_dump()}
 
 
-if __name__ == '__main__':
+OUT_PATH = HERE / 'classifications.json'
+
+
+def main() -> None:
+    import argparse
+
     from episode_analysis import load_episodes
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--limit', type=int, help='classify only the first N')
+    parser.add_argument('--date', help='only this date_key')
+    args = parser.parse_args()
+
     episodes = load_episodes()
-    print(f'{len(episodes)} episodes to classify')
-    for ep in episodes:
-        out = classify_episode(ep)
-        c = out['classification']
-        print(ep['t_enter'], ep['camera'], '->',
-              json.dumps(c) if c else 'no image available')
+    if args.date:
+        episodes = [e for e in episodes if e['t_enter'].startswith(args.date)]
+    if args.limit:
+        episodes = episodes[:args.limit]
+
+    # Resume rather than re-ask: a rerun after a failure should cost only
+    # the episodes that have not been answered yet.
+    done = json.loads(OUT_PATH.read_text()) if OUT_PATH.exists() else {}
+    todo = [e for e in episodes if e['t_enter'] not in done]
+    print(f'{len(episodes)} episodes, {len(done)} already classified, '
+          f'{len(todo)} to do')
+
+    for index, episode in enumerate(todo, 1):
+        try:
+            result = classify_episode(episode)['classification']
+        except Exception as error:               # one bad still must not
+            print(f'  {episode["t_enter"]} failed: {str(error)[:90]}')
+            continue                             # end the whole run
+        if result is None:
+            continue
+        done[episode['t_enter']] = {**result, 'camera': episode['camera']}
+        print(f"[{index}/{len(todo)}] {episode['t_enter']} {episode['camera']} "
+              f"-> {result['traction']} {result.get('livery', '')} "
+              f"{result.get('notes', '')[:60]}")
+        OUT_PATH.write_text(json.dumps(done, indent=1))
+
+    print(f'\nwrote {len(done)} classifications to {OUT_PATH.name}')
+
+
+if __name__ == '__main__':
+    main()

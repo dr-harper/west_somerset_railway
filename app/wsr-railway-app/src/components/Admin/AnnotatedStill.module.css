@@ -1,0 +1,60 @@
+.figure { margin: 0; }
+
+.frame {
+  position: relative;
+  line-height: 0;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--paper-deep);
+}
+
+.image { display: block; width: 100%; height: auto; }
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Brass reads clearly over both the cream platforms and the dark stock,
+   which a single flat colour does not. */
+.box {
+  fill: none;
+  stroke: var(--brass-bright);
+  stroke-width: 2;
+  paint-order: stroke;
+}
+
+.label {
+  fill: var(--brass-bright);
+  font-family: var(--font-display);
+  font-size: 13px;
+  paint-order: stroke;
+  stroke: rgba(0, 0, 0, 0.65);
+  stroke-width: 3;
+}
+
+.toggle,
+.noBoxes {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--spacing-xs);
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.toggle {
+  padding: 4px 9px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--paper-raised);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.toggle:hover { border-color: var(--chocolate); color: var(--ink); }
+.toggle:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }

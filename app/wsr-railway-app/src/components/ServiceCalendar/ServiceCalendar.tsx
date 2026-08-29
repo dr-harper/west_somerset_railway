@@ -1,3 +1,4 @@
+import { Sparkles } from 'lucide-react';
 import React, { useState, useMemo } from 'react';
 import styles from './ServiceCalendar.module.css';
 import { serviceCalendar, toDateKey, getTimetableType, timetableColors, specialEvents, timetableNames, timetableSummaries } from '../../services/calendarConfig';
@@ -184,7 +185,7 @@ export const ServiceCalendar: React.FC<ServiceCalendarProps> = ({
           )}
           {specialEvent && (
             <div className={styles.specialEventIndicator} title={specialEvent}>
-              ✨
+              <Sparkles size={11} aria-hidden />
             </div>
           )}
         </div>
