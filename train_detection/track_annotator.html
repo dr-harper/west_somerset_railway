@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>WSR track annotator</title>
 <style>
   :root {
@@ -32,6 +33,23 @@
   button.danger { background: var(--signal-red); color: var(--paper); border-color: transparent; }
   .canvasWrap { position: relative; line-height: 0; border: 1px solid var(--rule); }
   canvas { width: 100%; height: auto; cursor: crosshair; touch-action: none; }
+  /* A fingertip hides the rail it is aiming at, so show a magnified inset
+     of the area under the touch while placing or dragging a point. */
+  #loupe {
+    position: absolute; top: 8px; right: 8px; width: 140px; height: 140px;
+    border: 2px solid var(--brass); border-radius: 50%; overflow: hidden;
+    display: none; background: #111; pointer-events: none; z-index: 5;
+  }
+  #loupe.visible { display: block; }
+  #loupe canvas { width: 100%; height: 100%; }
+  @media (max-width: 700px) {
+    main { padding: 10px; }
+    .row { gap: 8px; }
+    select, button { padding: 10px 12px; font-size: 15px; flex: 1 1 auto; }
+    #save { flex-basis: 100%; }
+    textarea { display: none; }
+    #loupe { width: 116px; height: 116px; }
+  }
   .hint { color: var(--ink-soft); font-size: .9rem; margin: 10px 0; }
   textarea {
     width: 100%; height: 150px; font-family: ui-monospace, monospace;
@@ -67,7 +85,10 @@
     is what makes speed measurable. Drag a point to nudge it.
   </p>
 
-  <div class="canvasWrap"><canvas id="canvas" width="854" height="480"></canvas></div>
+  <div class="canvasWrap">
+    <canvas id="canvas" width="854" height="480"></canvas>
+    <div id="loupe"><canvas id="loupeCanvas" width="140" height="140"></canvas></div>
+  </div>
 
   <p class="hint">Saved file: <code>camera_tracks.json</code></p>
   <textarea id="output" readonly></textarea>
@@ -87,6 +108,31 @@ const output = document.getElementById('output');
 let tracks = {};
 let image = new Image();
 let dragging = null;
+const loupe = document.getElementById('loupe');
+const loupeCanvas = document.getElementById('loupeCanvas');
+const loupeCtx = loupeCanvas.getContext('2d');
+const LOUPE_ZOOM = 4;
+
+function showLoupe(position) {
+  const size = loupeCanvas.width / LOUPE_ZOOM;
+  loupeCtx.fillStyle = '#111';
+  loupeCtx.fillRect(0, 0, loupeCanvas.width, loupeCanvas.height);
+  loupeCtx.imageSmoothingEnabled = false;
+  loupeCtx.drawImage(canvas,
+    position[0] - size / 2, position[1] - size / 2, size, size,
+    0, 0, loupeCanvas.width, loupeCanvas.height);
+  // crosshair marking the exact pixel the point will land on
+  loupeCtx.strokeStyle = 'rgba(255,180,58,.9)';
+  loupeCtx.lineWidth = 1;
+  const mid = loupeCanvas.width / 2;
+  loupeCtx.beginPath();
+  loupeCtx.moveTo(mid - 10, mid); loupeCtx.lineTo(mid + 10, mid);
+  loupeCtx.moveTo(mid, mid - 10); loupeCtx.lineTo(mid, mid + 10);
+  loupeCtx.stroke();
+  loupe.classList.add('visible');
+}
+
+function hideLoupe() { loupe.classList.remove('visible'); }
 
 CAMERAS.forEach(name => {
   const option = document.createElement('option');
@@ -237,18 +283,25 @@ function draw() {
 }
 
 canvas.addEventListener('pointerdown', event => {
+  canvas.setPointerCapture(event.pointerId);
   const position = toCanvas(event);
-  const near = nearestPoint(position);
+  // a fingertip is blunter than a mouse, so allow a wider grab radius
+  const radius = event.pointerType === 'touch' ? 26 : 12;
+  const near = nearestPoint(position, radius);
   if (near) { dragging = near.index; }
-  else { current().points.push(position); }
+  else { current().points.push(position); dragging = current().points.length - 1; }
   draw();
+  showLoupe(position);
 });
 canvas.addEventListener('pointermove', event => {
   if (dragging === null) return;
-  current().points[dragging] = toCanvas(event);
+  const position = toCanvas(event);
+  current().points[dragging] = position;
   draw();
+  showLoupe(position);
 });
-window.addEventListener('pointerup', () => { dragging = null; });
+window.addEventListener('pointerup', () => { dragging = null; hideLoupe(); });
+window.addEventListener('pointercancel', () => { dragging = null; hideLoupe(); });
 
 document.getElementById('undo').onclick = () => { track().rails[railSelect.value].pop(); draw(); };
 document.getElementById('clear').onclick = () => { track().rails[railSelect.value] = []; draw(); };

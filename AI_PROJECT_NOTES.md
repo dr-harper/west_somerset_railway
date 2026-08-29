@@ -72,8 +72,10 @@ train_detection/          live webcam detection system (YOLO11 + zones)
   1.435 m, so the pixel gap between them gives metres-per-pixel at every
   depth. From that comes direction (local tangent), position along the
   track (arc length), and speed in mph from a single camera. Trace with
-  `python3 serve_annotator.py --port 8090`, then open the annotator and
-  do rail A and rail B for each camera; traces live in
+  `python3 serve_annotator.py --lan`, which prints a phone-reachable URL
+  (tracing rails by touch is far easier than by trackpad — there is a
+  magnifier under the finger for precision). Do rail A and rail B for
+  each camera; traces live in
   `camera_tracks.json` (854x480 image space, each rail ordered from the
   Bishops Lydeard end towards Minehead). Bishops Lydeard is traced; the
   other five are not yet.
