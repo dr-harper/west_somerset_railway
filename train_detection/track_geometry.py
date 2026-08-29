@@ -108,6 +108,30 @@ def exclusion_mask(camera: str, width: int, height: int):
     return mask
 
 
+def trace_runs_to_minehead(camera: str) -> bool:
+    """Whether the rails were traced towards Minehead or away from it.
+
+    The tangent of a traced centreline follows a train's real motion far
+    more closely than a hand-estimated vector — measured against the 29/8
+    episodes the mean margin is 0.93 against 0.76, and at Blue Anchor 1.00
+    against 0.44. What it cannot supply is the sign, which depends only on
+    which end the tracing started from. At Minehead the camera looks out
+    of the terminus, so 'towards Minehead' is towards the camera, and that
+    trace runs the other way.
+    """
+    end = (TRACKS.get(camera) or {}).get('minehead_end', 'end')
+    return end != 'start'
+
+
+def minehead_end_known(camera: str) -> bool:
+    """Whether the trace direction has been established for this camera.
+
+    Unset means the axis is trusted but the sign is not, so direction has
+    to come from the order of stations a movement visits instead.
+    """
+    return 'minehead_end' in (TRACKS.get(camera) or {})
+
+
 def corridor_mask(camera: str, width: int, height: int,
                   gauges: float = 3.0):
     """Where a train can appear, taken from the traced rails.
@@ -288,6 +312,8 @@ def project_onto(camera: str, name: str, point) -> dict | None:
         if best is None or distance < best['offset_px']:
             span = math.dist(a, b)
             tangent = ((b[0] - a[0]) / span, (b[1] - a[1]) / span) if span else (0.0, 0.0)
+            if not trace_runs_to_minehead(camera):
+                tangent = (-tangent[0], -tangent[1])
             gauge = samples[i]['gauge_px'] + t * (samples[i + 1]['gauge_px'] - samples[i]['gauge_px'])
             reliable = gauge >= MIN_RELIABLE_GAUGE_PX
             best = {

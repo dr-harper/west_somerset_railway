@@ -86,3 +86,49 @@ def test_block_out_does_not_hide_the_running_line(camera):
     if total:
         assert hits / total <= 0.10, (
             f'{camera}: block-out covers {hits / total:.0%} of the running line')
+
+
+# --- direction ----------------------------------------------------------
+
+VALIDATED = {c: v for c, v in NORTHBOUND_VECTORS.items() if v != (0.0, 0.0)}
+
+
+@pytest.mark.parametrize('camera', sorted(VALIDATED))
+def test_trace_orientation_matches_the_validated_vector(camera):
+    """minehead_end must agree with the vector checked against real trains."""
+    if not tg.tracks_of(camera):
+        pytest.skip('not traced')
+    samples = tg.centreline(camera, 'running line')
+    if not samples or len(samples) < 2:
+        pytest.skip('no running line')
+    a, b = samples[0]['point'], samples[-1]['point']
+    chord = (b[0] - a[0], b[1] - a[1])
+    vector = VALIDATED[camera]
+    towards = (chord[0] * vector[0] + chord[1] * vector[1]) > 0
+    assert tg.trace_runs_to_minehead(camera) == towards, (
+        f'{camera}: minehead_end disagrees with the validated vector')
+
+
+@pytest.mark.parametrize('camera', sorted(VALIDATED))
+def test_local_tangent_points_northbound(camera):
+    """The oriented tangent must not be more than 90deg from the vector.
+
+    Beyond that the sign flips and every direction call inverts — the bug
+    this whole flag exists to prevent.
+    """
+    if not tg.minehead_end_known(camera):
+        pytest.skip('orientation not established')
+    placed = tg.project(camera, (427, 240))
+    if not placed:
+        pytest.skip('nothing to project onto')
+    tx, ty = placed['tangent_to_minehead']
+    vx, vy = VALIDATED[camera]
+    assert tx * vx + ty * vy > 0, f'{camera}: tangent points the wrong way'
+
+
+def test_unknown_orientation_is_not_silently_assumed():
+    """A camera with no minehead_end must report unknown, not a default."""
+    untraced = [c for c in CAMERAS if not tg.minehead_end_known(c)]
+    assert untraced, 'expected some cameras still awaiting orientation'
+    for camera in untraced:
+        assert tg.trace_runs_to_minehead(camera) is True  # the safe default

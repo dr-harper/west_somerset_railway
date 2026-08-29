@@ -518,7 +518,8 @@
     18,
     48
    ]
-  }
+  },
+  "minehead_end": "end"
  },
  "crowcombe_heathfield": {
   "tracks": [
@@ -1114,7 +1115,8 @@
     522,
     555
    ]
-  }
+  },
+  "minehead_end": "end"
  },
  "watchet_visitor_centre": {
   "tracks": [
@@ -2320,7 +2322,8 @@
     240,
     241
    ]
-  }
+  },
+  "minehead_end": "end"
  },
  "minehead_seaward_crossing": {
   "tracks": [
@@ -2695,7 +2698,8 @@
     183,
     182
    ]
-  }
+  },
+  "minehead_end": "end"
  },
  "minehead_station": {
   "tracks": [
@@ -2837,7 +2841,8 @@
     461,
     493
    ]
-  }
+  },
+  "minehead_end": "start"
  },
  "crowcombe_heathfield_2": {
   "tracks": [],

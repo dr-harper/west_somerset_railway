@@ -30,7 +30,8 @@ import cv2
 import numpy as np
 
 from detection_zones import ZONES, classify, draw_zones
-from track_geometry import corridor_mask, exclusion_mask, project, regions_of
+from track_geometry import (corridor_mask, direction_of_motion, exclusion_mask,
+                            minehead_end_known, project, regions_of)
 from wsr_live_capture import CAMERAS, BotChallenge, resolve_hls_url
 
 
@@ -338,18 +339,26 @@ class CameraWorker(threading.Thread):
             (t0, (x0, y0)), (t1, (x1, y1)) = centroids[0], centroids[-1]
             drift = (x1 - x0, y1 - y0)
             ep['drift_px'] = drift
-            # A camera with no validated vector gets no guess. The tangent
-            # of the traced centreline gives the right axis but not
-            # reliably the right sign — at Minehead it points the opposite
-            # way — and a confidently reversed direction is worse than
-            # none. Movement chaining recovers it from station order.
-            nvec = NORTHBOUND_VECTORS.get(self.camera)
+            # Prefer the traced rails: their local tangent follows a real
+            # train's drift far more closely than a hand-estimated vector
+            # (mean margin 0.93 against 0.76 over the 29/8 episodes, and
+            # 1.00 against 0.44 at Blue Anchor). The hand vector remains
+            # the authority on sign, so the tangent is only trusted where
+            # the trace's Minehead end has been established.
             magnitude = (drift[0] ** 2 + drift[1] ** 2) ** 0.5
-            if not nvec or magnitude < 30:
+            nvec = NORTHBOUND_VECTORS.get(self.camera)
+            if magnitude < 30:
                 ep['direction'] = 'unclear'
-            else:
+            elif minehead_end_known(self.camera):
+                ep['direction'] = direction_of_motion(
+                    self.camera, centroids[-1][1], drift)
+            elif nvec:
                 dot = drift[0] * nvec[0] + drift[1] * nvec[1]
                 ep['direction'] = 'northbound' if dot > 0 else 'southbound'
+            else:
+                # Axis known, sign not. A confidently reversed direction is
+                # worse than none; chaining recovers it from station order.
+                ep['direction'] = 'unclear'
         else:
             ep['direction'] = 'unclear'
         # low-fps clip for review / future training data
