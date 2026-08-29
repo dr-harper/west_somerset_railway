@@ -260,3 +260,39 @@ class TestRegions:
     def test_a_camera_without_regions_is_fine(self):
         assert tg.regions_of('flat') == []
         assert tg.in_region('flat', (400, 250), 'exclude') is None
+
+
+class TestExclusionMask:
+    """Painted cells and polygons combine into one mask for the gate."""
+
+    def teardown_method(self):
+        tg.TRACKS.pop('painted', None)
+
+    def test_painted_cells_become_mask(self):
+        tg.TRACKS['painted'] = {
+            'mask_cells': {'grid': [4, 2], 'cells': [0]},   # top-left quarter-ish
+        }
+        mask = tg.exclusion_mask('painted', 400, 200)
+        assert mask[50, 50] == 255, 'inside the painted cell'
+        assert mask[150, 350] == 0, 'far from it'
+
+    def test_polygons_and_cells_combine(self):
+        tg.TRACKS['painted'] = {
+            'mask_cells': {'grid': [4, 2], 'cells': [0]},
+            'regions': [{'name': 'road', 'kind': 'exclude',
+                         'points': [[600, 300], [800, 300], [800, 400], [600, 400]]}],
+        }
+        mask = tg.exclusion_mask('painted', 854, 480)
+        assert mask[50, 50] == 255, 'painted cell'
+        assert mask[350, 700] == 255, 'polygon region'
+
+    def test_nothing_annotated_masks_nothing(self):
+        tg.TRACKS['painted'] = {}
+        assert tg.exclusion_mask('painted', 100, 100).max() == 0
+
+    def test_mask_scales_to_the_requested_size(self):
+        tg.TRACKS['painted'] = {'mask_cells': {'grid': [2, 2], 'cells': [0]}}
+        small = tg.exclusion_mask('painted', 100, 100)
+        large = tg.exclusion_mask('painted', 800, 800)
+        # the same quarter is blocked whatever the resolution
+        assert small.mean() == pytest.approx(large.mean(), abs=5)

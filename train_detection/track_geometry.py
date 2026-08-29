@@ -34,6 +34,8 @@ track_annotator.html.
 
 import json
 import math
+
+import cv2
 from pathlib import Path
 
 HERE = Path(__file__).parent
@@ -74,6 +76,36 @@ def regions_of(camera: str, kind: str | None = None) -> list[dict]:
             'points': [tuple(p) for p in points],
         })
     return out
+
+
+def exclusion_mask(camera: str, width: int, height: int):
+    """Binary mask of everything the motion gate should ignore.
+
+    Combines polygon 'exclude' regions with cells painted on the coarse
+    grid. Painting is the practical route — an exclusion is 'that whole
+    corner of the view', not a shape worth drawing corner by corner.
+    """
+    import numpy as np
+
+    mask = np.zeros((height, width), np.uint8)
+    scale_x, scale_y = width / 854, height / 480
+    for region in regions_of(camera, 'exclude'):
+        pts = np.array([[p[0] * scale_x, p[1] * scale_y]
+                        for p in region['points']], np.int32)
+        cv2.fillPoly(mask, [pts], 255)
+
+    painted = (TRACKS.get(camera) or {}).get('mask_cells') or {}
+    cells = painted.get('cells') or []
+    if cells:
+        grid_w, grid_h = painted.get('grid', [32, 18])
+        cell_w, cell_h = width / grid_w, height / grid_h
+        for cell in cells:
+            col, row = cell % grid_w, cell // grid_w
+            cv2.rectangle(mask,
+                          (int(col * cell_w), int(row * cell_h)),
+                          (int((col + 1) * cell_w), int((row + 1) * cell_h)),
+                          255, -1)
+    return mask
 
 
 def in_region(camera: str, point, kind: str) -> str | None:

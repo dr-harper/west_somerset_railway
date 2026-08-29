@@ -70,8 +70,13 @@
     <select id="camera"></select>
     <select id="mode">
       <option value="rails">Trace rails</option>
-      <option value="regions">Mark regions</option>
+      <option value="paint">Block out areas</option>
+      <option value="regions">Mark regions (polygon)</option>
     </select>
+    <span id="paintTools" style="display:none">
+      <button id="paintErase">Erase: off</button>
+      <button id="paintClear" class="danger">Clear blocks</button>
+    </span>
     <select id="trackSelect"></select>
     <button id="addTrack">+ Add</button>
     <select id="rail">
@@ -96,7 +101,10 @@
   </div>
 
   <p class="hint">
-    Trace <strong>both rails of every track in view</strong>, each with
+    <strong>Block out areas</strong> is the quickest win: switch to it and
+    drag over anything that moves but is never a train — platforms with
+    people, roads, car parks, waving trees. Those areas cost 95% of our
+    wasted work. Otherwise, trace <strong>both rails of every track in view</strong>, each with
     several points so curves are followed properly, starting from whichever
     end is nearer Bishops Lydeard. Add a track for each running line, loop,
     siding and shed road — that is how a detection gets attributed to the
@@ -134,6 +142,38 @@ const loupeCtx = loupeCanvas.getContext('2d');
 const LOUPE_ZOOM = 4;
 // matches MIN_RELIABLE_GAUGE_PX in track_geometry.py
 const MIN_GAUGE = 14;
+// Painting resolution. The motion mask itself is coarse, so a fine
+// polygon would be false precision — a grid you can drag over is both
+// easier and honest about what the gate can actually resolve.
+const PAINT_W = 32, PAINT_H = 18;
+let erasing = false;
+
+function paintCells() {
+  const entry = camera();
+  if (!entry.mask_cells) entry.mask_cells = { grid: [PAINT_W, PAINT_H], cells: [] };
+  return entry.mask_cells;
+}
+
+function cellAt(position) {
+  const col = Math.floor(position[0] / (canvas.width / PAINT_W));
+  const row = Math.floor(position[1] / (canvas.height / PAINT_H));
+  if (col < 0 || row < 0 || col >= PAINT_W || row >= PAINT_H) return null;
+  return row * PAINT_W + col;
+}
+
+function paintAt(position) {
+  const cell = cellAt(position);
+  if (cell === null) return;
+  const store = paintCells();
+  const index = store.cells.indexOf(cell);
+  if (erasing) {
+    if (index >= 0) store.cells.splice(index, 1);
+  } else if (index < 0) {
+    store.cells.push(cell);
+  }
+}
+
+function isPaintMode() { return modeSelect.value === 'paint'; }
 
 function showLoupe(position) {
   const size = loupeCanvas.width / LOUPE_ZOOM;
@@ -240,9 +280,19 @@ function current() {
 }
 
 function refreshTrackList() {
-  railSelect.style.display = isRegionMode() ? 'none' : '';
-  kindSelect.style.display = isRegionMode() ? 'none' : '';
+  const paint = isPaintMode();
+  document.getElementById('paintTools').style.display = paint ? '' : 'none';
+  trackSelect.style.display = paint ? 'none' : '';
+  document.getElementById('addTrack').style.display = paint ? 'none' : '';
+  railSelect.style.display = (isRegionMode() || paint) ? 'none' : '';
+  kindSelect.style.display = (isRegionMode() || paint) ? 'none' : '';
   regionKindSelect.style.display = isRegionMode() ? '' : 'none';
+  if (paint) {
+    const n = (camera().mask_cells || {}).cells?.length || 0;
+    status.textContent = `${n} of ${PAINT_W * PAINT_H} cells blocked — drag to paint`;
+    status.classList.remove('warn');
+    return;
+  }
   if (isRegionMode()) {
     const regions = regionList();
     const chosen = Math.min(Number(trackSelect.value) || 0, regions.length - 1);
@@ -338,7 +388,29 @@ function draw() {
   } else {
     ctx.fillStyle = '#222'; ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
-  // regions first, so rails sit on top of them
+  // painted blocks first: the areas the motion gate must ignore
+  const painted = (camera().mask_cells || {}).cells || [];
+  if (painted.length) {
+    const cw = canvas.width / PAINT_W, ch = canvas.height / PAINT_H;
+    ctx.fillStyle = 'rgba(220,60,60,.42)';
+    painted.forEach(cell => {
+      const col = cell % PAINT_W, row = Math.floor(cell / PAINT_W);
+      ctx.fillRect(col * cw, row * ch, cw, ch);
+    });
+  }
+  if (isPaintMode()) {
+    const cw = canvas.width / PAINT_W, ch = canvas.height / PAINT_H;
+    ctx.strokeStyle = 'rgba(250,244,230,.18)';
+    ctx.lineWidth = 1;
+    for (let c = 1; c < PAINT_W; c++) {
+      ctx.beginPath(); ctx.moveTo(c * cw, 0); ctx.lineTo(c * cw, canvas.height); ctx.stroke();
+    }
+    for (let r = 1; r < PAINT_H; r++) {
+      ctx.beginPath(); ctx.moveTo(0, r * ch); ctx.lineTo(canvas.width, r * ch); ctx.stroke();
+    }
+  }
+
+  // regions next, so rails sit on top of them
   regionList().forEach(region => {
     const points = region.points || [];
     if (points.length < 2) return;
@@ -452,6 +524,7 @@ function draw() {
 canvas.addEventListener('pointerdown', event => {
   canvas.setPointerCapture(event.pointerId);
   const position = toCanvas(event);
+  if (isPaintMode()) { dragging = 'paint'; paintAt(position); draw(); return; }
   // a fingertip is blunter than a mouse, so allow a wider grab radius
   const radius = event.pointerType === 'touch' ? 26 : 12;
   const near = nearestPoint(position, radius);
@@ -463,6 +536,7 @@ canvas.addEventListener('pointerdown', event => {
 canvas.addEventListener('pointermove', event => {
   if (dragging === null) return;
   const position = toCanvas(event);
+  if (dragging === 'paint') { paintAt(position); draw(); return; }
   current().points[dragging] = position;
   draw();
   showLoupe(position);
@@ -473,6 +547,13 @@ window.addEventListener('pointercancel', () => { dragging = null; hideLoupe(); }
 document.getElementById('undo').onclick = () => { track().rails[railSelect.value].pop(); refreshTrackList(); draw(); };
 document.getElementById('clear').onclick = () => { track().rails[railSelect.value] = []; refreshTrackList(); draw(); };
 modeSelect.onchange = () => { trackSelect.value = '0'; refreshTrackList(); draw(); };
+document.getElementById('paintErase').onclick = event => {
+  erasing = !erasing;
+  event.target.textContent = `Erase: ${erasing ? 'on' : 'off'}`;
+};
+document.getElementById('paintClear').onclick = () => {
+  paintCells().cells = []; draw();
+};
 regionKindSelect.onchange = () => {
   const region = activeRegion();
   if (region) { region.kind = regionKindSelect.value; region.name = regionKindSelect.value; }

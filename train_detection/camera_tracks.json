@@ -54,7 +54,292 @@
     }
    }
   ],
-  "anchors": []
+  "anchors": [],
+  "regions": []
+ },
+ "crowcombe_heathfield": {
+  "tracks": [
+   {
+    "name": "running line",
+    "kind": "running",
+    "rails": {
+     "a": [
+      [
+       362,
+       479
+      ],
+      [
+       276,
+       383
+      ],
+      [
+       187,
+       264
+      ],
+      [
+       139,
+       190
+      ]
+     ],
+     "b": [
+      [
+       462,
+       478
+      ],
+      [
+       337,
+       374
+      ],
+      [
+       262,
+       303
+      ],
+      [
+       193,
+       233
+      ],
+      [
+       154,
+       193
+      ]
+     ]
+    }
+   },
+   {
+    "name": "line 2",
+    "kind": "running",
+    "rails": {
+     "a": [
+      [
+       605,
+       477
+      ],
+      [
+       474,
+       402
+      ],
+      [
+       329,
+       308
+      ],
+      [
+       211,
+       226
+      ],
+      [
+       161,
+       186
+      ]
+     ],
+     "b": [
+      [
+       724,
+       480
+      ],
+      [
+       465,
+       354
+      ],
+      [
+       314,
+       271
+      ],
+      [
+       194,
+       200
+      ],
+      [
+       170,
+       184
+      ]
+     ]
+    }
+   }
+  ],
+  "anchors": [],
+  "regions": []
+ },
+ "watchet_visitor_centre": {
+  "tracks": [
+   {
+    "name": "running line",
+    "kind": "running",
+    "rails": {
+     "a": [
+      [
+       720,
+       348
+      ],
+      [
+       693,
+       383
+      ],
+      [
+       682,
+       413
+      ],
+      [
+       679,
+       447
+      ],
+      [
+       684,
+       480
+      ]
+     ],
+     "b": [
+      [
+       767,
+       301
+      ],
+      [
+       700,
+       326
+      ],
+      [
+       651,
+       364
+      ],
+      [
+       618,
+       408
+      ],
+      [
+       602,
+       449
+      ],
+      [
+       597,
+       479
+      ]
+     ]
+    }
+   }
+  ],
+  "anchors": [],
+  "regions": []
+ },
+ "blue_anchor": {
+  "tracks": [
+   {
+    "name": "running line",
+    "kind": "running",
+    "rails": {
+     "a": [
+      [
+       790,
+       479
+      ],
+      [
+       410,
+       233
+      ]
+     ],
+     "b": [
+      [
+       852,
+       453
+      ],
+      [
+       448,
+       235
+      ]
+     ]
+    }
+   },
+   {
+    "name": "line 2",
+    "kind": "running",
+    "rails": {
+     "a": [
+      [
+       556,
+       479
+      ],
+      [
+       353,
+       237
+      ]
+     ],
+     "b": [
+      [
+       655,
+       478
+      ],
+      [
+       379,
+       236
+      ]
+     ]
+    }
+   }
+  ],
+  "anchors": [],
+  "regions": []
+ },
+ "minehead_seaward_crossing": {
+  "tracks": [
+   {
+    "name": "running line",
+    "kind": "running",
+    "rails": {
+     "a": [
+      [
+       657,
+       185
+      ],
+      [
+       125,
+       477
+      ]
+     ],
+     "b": [
+      [
+       658,
+       179
+      ],
+      [
+       16,
+       475
+      ]
+     ]
+    }
+   }
+  ],
+  "anchors": [],
+  "regions": []
+ },
+ "minehead_station": {
+  "tracks": [
+   {
+    "name": "running line",
+    "kind": "running",
+    "rails": {
+     "a": [
+      [
+       699,
+       477
+      ],
+      [
+       428,
+       205
+      ]
+     ],
+     "b": [
+      [
+       606,
+       479
+      ],
+      [
+       431,
+       220
+      ]
+     ]
+    }
+   }
+  ],
+  "anchors": [],
+  "regions": []
  },
  "_note": "Track centrelines in 854x480 image space, ordered from the Bishops Lydeard end towards Minehead. Traced with track_annotator.html."
 }

@@ -30,7 +30,7 @@ import cv2
 import numpy as np
 
 from detection_zones import ZONES, classify, draw_zones
-from track_geometry import regions_of
+from track_geometry import exclusion_mask, regions_of
 from wsr_live_capture import CAMERAS, BotChallenge, resolve_hls_url
 
 
@@ -176,15 +176,15 @@ class CameraWorker(threading.Thread):
             if kind in ('detect', 'approach'):
                 pts = (np.array(poly, np.float32) * SCALE).astype(np.int32)
                 cv2.fillPoly(mask, [pts], 255)
-        excluded = 0
-        for region in regions_of(self.camera, 'exclude'):
-            pts = (np.array(region['points'], np.float32) * SCALE).astype(np.int32)
-            cv2.fillPoly(mask, [pts], 0)
-            excluded += 1
-        if excluded:
+        blocked = exclusion_mask(self.camera, PROC_W, PROC_H)
+        before = int((mask > 0).sum())
+        mask[blocked > 0] = 0
+        after = int((mask > 0).sum())
+        if before and after < before:
             self.log_queue.put(('info', {
                 'ts': now_iso(), 'camera': self.camera,
-                'message': f'{excluded} exclusion region(s) applied to motion mask'}))
+                'message': f'motion mask reduced {before} -> {after} px '
+                           f'({100 * (before - after) // before}% blocked)'}))
         return mask
 
     def _connect(self):
