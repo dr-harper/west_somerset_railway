@@ -23,7 +23,7 @@ import json
 import queue
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import cv2
@@ -33,11 +33,13 @@ from detection_zones import ZONES, classify, draw_zones
 from wsr_live_capture import CAMERAS, resolve_hls_url
 
 
-def grab_hires_still(camera: str, out_path: Path, delay_s: float = 12.0) -> None:
+def grab_hires_still(camera: str, out_path: Path, delay_s: float = 4.0) -> None:
     """Best-effort 1080p still for classification crops (runs in its own
-    thread; the continuous pipeline stays at 480p). Waits a beat so
-    approach-zone episodes have the train close to camera, not a speck
-    in the distance (lesson from the 08:24 Blue Anchor grab, 29/8)."""
+    thread; the continuous pipeline stays at 480p). Waits a short beat so
+    approach-zone episodes have the train close to camera rather than a
+    speck in the distance, but not so long that only coaches remain: at
+    line speed every second of delay is another 11 m of train past the
+    lens, and 12s put the locomotive 134 m gone."""
     try:
         time.sleep(delay_s)
         url = resolve_hls_url(camera, format_spec='270/232/231')
@@ -66,6 +68,9 @@ MOTION_FRACTION = 0.02         # fraction of zone mask that must change
 MOTION_CONSECUTIVE = 3         # samples needed to open the gate
 GLOBAL_JUMP_FRACTION = 0.35    # whole-frame change => exposure/camera jump
 CANDIDATE_TIMEOUT_S = 6        # YOLO tries before a gate is called false
+BACKFILL_STEP_S = 1.0          # how coarsely to rewind through the buffer
+BACKFILL_CONF = 0.35           # a train entering frame scores lower than one
+                               # filling it, so accept less when rewinding
 EPISODE_GONE_S = 10            # no train for this long closes the episode
 BACKGROUND_ALPHA = 0.05        # background adaption rate when idle
 URL_REFRESH_S = 4 * 3600       # HLS URLs expire after ~6h; refresh early
@@ -187,8 +192,35 @@ class CameraWorker(threading.Thread):
 
     # --- tier 2: episodes ------------------------------------------------
 
+    def _backfill_entry(self, trigger_time):
+        """Rewind through buffered frames to find the true first appearance.
+
+        The gate needs 1.5s of sustained motion and YOLO then runs once a
+        second, so by the time an episode opens the locomotive is already
+        well into — often through — the frame. The frames from before the
+        trigger are still in the buffer, so walk back through them and find
+        the earliest one that still shows a train. That recovers both an
+        honest entry time, which matters for measuring delay, and a
+        keyframe showing the front of the train rather than its coaches.
+        """
+        earlier = [(ft, f) for ft, f in self.frame_buffer if ft < trigger_time]
+        if not earlier:
+            return None
+        earliest = None
+        checked = trigger_time
+        for ft, frame in sorted(earlier, key=lambda item: item[0], reverse=True):
+            if checked - ft < BACKFILL_STEP_S:
+                continue
+            checked = ft
+            if not self._detect(frame, conf=BACKFILL_CONF):
+                break          # train not yet in view: we have gone back far enough
+            earliest = (ft, frame)
+        return earliest
+
     def _start_episode(self, t, detections, frame):
         self.stats['episodes'] += 1
+        entry = self._backfill_entry(t)
+        entry_offset = round(t - entry[0], 1) if entry else 0.0
         self.episode = {
             'camera': self.camera,
             't_enter': now_iso(),
@@ -197,7 +229,13 @@ class CameraWorker(threading.Thread):
             'peak_conf': 0.0,
             'keyframes': [],
             'clip_frames': [f for (ft, f) in self.frame_buffer if t - ft <= 6],
+            'entry_backfilled_s': entry_offset,
         }
+        if entry:
+            # the frame where the train first appeared, not where we noticed
+            path = CAPTURE_DIR / f'{stamp()}_{self.camera}_entry.jpg'
+            cv2.imwrite(str(path), draw_zones(entry[1], self.camera))
+            self.episode['entry_frame'] = path.name
         hires_path = CAPTURE_DIR / f'{stamp()}_{self.camera}_hires.jpg'
         self.episode['hires'] = hires_path.name
         threading.Thread(target=grab_hires_still,
@@ -238,6 +276,13 @@ class CameraWorker(threading.Thread):
                       for t, c in centroids]
         clip_frames = ep.pop('clip_frames')
         ep['t_exit'] = now_iso()
+        offset = ep.pop('entry_backfilled_s', 0.0)
+        if offset:
+            entered = datetime.fromisoformat(ep['t_enter'])
+            ep['t_noticed'] = ep['t_enter']
+            ep['t_enter'] = (entered - timedelta(seconds=offset)).isoformat(
+                timespec='seconds')
+            ep['entry_backfilled_s'] = offset
         ep['n_observations'] = len(centroids)
         if len(centroids) >= 2:
             (t0, (x0, y0)), (t1, (x1, y1)) = centroids[0], centroids[-1]
@@ -346,13 +391,13 @@ class CameraWorker(threading.Thread):
                 time.sleep(backoff)
                 backoff = min(backoff * 2, 120)
 
-    def _detect(self, frame):
+    def _detect(self, frame, conf: float = 0.5):
         detections = []
-        for conf, box, centre in self.detector.trains(frame):
+        for confidence, box, centre in self.detector.trains(frame):
             zone = classify(self.camera, centre)
             kind = next((k for n, k, _ in ZONES[self.camera] if n == zone), None)
-            if kind in ('detect', 'approach') and conf >= 0.5:
-                detections.append({'conf': conf, 'box': box,
+            if kind in ('detect', 'approach') and confidence >= conf:
+                detections.append({'conf': confidence, 'box': box,
                                    'centre': centre, 'zone': zone})
         return detections
 
