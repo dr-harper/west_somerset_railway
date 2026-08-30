@@ -155,9 +155,9 @@
  {
   "id": "minehead_seaward_crossing",
   "name": "Seaward Crossing",
-  "station": "DUN",
-  "stationName": "Dunster",
-  "lineIndex": 9,
+  "station": "MIN",
+  "stationName": "Minehead",
+  "lineIndex": 10,
   "videoId": "cO1MFjvfKUE",
   "directionValidated": true,
   "annotation": {

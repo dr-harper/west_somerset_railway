@@ -48,9 +48,16 @@ CAMERA_NODES = {
     'blue_anchor': 'BA',
     'blue_anchor_2': 'BA',
     'minehead_station': 'MIN',
-    'minehead_seaward_crossing': 'DUN',  # observes the Dunster–Minehead approach
+    # Seaward Crossing sits on the throat of Minehead, not out at Dunster.
+    # Mapping it to DUN meant its sightings could only be matched against
+    # services that call there — 5 of 11 northbound workings on 30/8 run
+    # straight past — so the rest chained nowhere and were reported as
+    # unscheduled. Measured against 16 paired sightings on 29/8 the median
+    # gap to a Minehead station sighting is -0.8 min, so it is effectively
+    # the same place and needs no offset.
+    'minehead_seaward_crossing': 'MIN',
 }
-CAMERA_OFFSET_MIN = {'minehead_seaward_crossing': 5.0}  # ~5 min after Dunster
+CAMERA_OFFSET_MIN: dict[str, float] = {}
 
 ASSIGN_WINDOW_MIN = 35      # a run may be considered for a sighting this far off
 CONSISTENCY_SPREAD_MIN = 9  # observations of one run should agree within this
