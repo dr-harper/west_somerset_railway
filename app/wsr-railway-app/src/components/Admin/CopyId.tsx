@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Check, Copy } from 'lucide-react';
 import styles from './CopyId.module.css';
 
@@ -31,31 +31,77 @@ function shorten(id: string): string {
   return id.replace(/^\d{8}T?_?/, '');
 }
 
+/**
+ * Put text on the clipboard, whatever the page is served over.
+ *
+ * navigator.clipboard exists only in a secure context, and the control
+ * room is reached over plain HTTP on the local network — so on the device
+ * it is most used from, the modern API is simply absent. execCommand is
+ * deprecated but works there, and is the reason this has a fallback at
+ * all rather than a button that silently does nothing.
+ */
+async function copyText(text: string): Promise<boolean> {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // fall through to the older route
+    }
+  }
+  const holder = document.createElement('textarea');
+  holder.value = text;
+  // Off-screen rather than hidden: a display:none element cannot be
+  // selected, and the selection is what execCommand copies.
+  holder.style.position = 'fixed';
+  holder.style.left = '-9999px';
+  holder.setAttribute('readonly', '');
+  document.body.appendChild(holder);
+  try {
+    holder.select();
+    holder.setSelectionRange(0, text.length);
+    return document.execCommand('copy');
+  } catch {
+    return false;
+  } finally {
+    document.body.removeChild(holder);
+  }
+}
+
 export const CopyId: React.FC<Props> = ({ id, short = false, label }) => {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const text = useRef<HTMLElement>(null);
 
   const copy = async (event: React.MouseEvent) => {
     event.stopPropagation();
-    try {
-      await navigator.clipboard.writeText(id);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
-    } catch {
-      // Clipboard access can be refused; the id is on screen regardless.
+    const done = await copyText(id);
+    setState(done ? 'copied' : 'failed');
+    if (!done && text.current) {
+      // Neither route was allowed. Select the id instead so the keyboard
+      // shortcut works — a button that reports failure and leaves you to
+      // retype a 25-character id has not helped.
+      const range = document.createRange();
+      range.selectNodeContents(text.current);
+      const selection = window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
     }
+    window.setTimeout(() => setState('idle'), done ? 1500 : 4000);
   };
 
   return (
     <button
       type="button"
-      className={styles.chip}
+      className={`${styles.chip} ${state === 'failed' ? styles.failed : ''}`}
       onClick={copy}
-      title={`Copy ${id}`}
+      title={state === 'failed' ? id : `Copy ${id}`}
       aria-label={`Copy identifier ${id}`}
     >
       {label && <span className={styles.label}>{label}</span>}
-      <code className={styles.id}>{short ? shorten(id) : id}</code>
-      {copied ? <Check size={12} aria-hidden /> : <Copy size={12} aria-hidden />}
+      <code className={styles.id} ref={text}>
+        {state === 'failed' ? id : short ? shorten(id) : id}
+      </code>
+      {state === 'copied' ? <Check size={12} aria-hidden /> : <Copy size={12} aria-hidden />}
     </button>
   );
 };

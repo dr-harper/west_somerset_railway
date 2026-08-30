@@ -36,3 +36,11 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* A copy that could not happen shows the full id instead, so it can be
+   selected by hand rather than leaving the button doing nothing. */
+.failed {
+  border-color: var(--signal-red);
+  color: var(--ink);
+  user-select: all;
+}

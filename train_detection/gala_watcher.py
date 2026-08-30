@@ -23,6 +23,7 @@ import json
 import queue
 import threading
 import time
+from collections import deque
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -96,6 +97,19 @@ CLIP_FOURCC = 'avc1'
 # what following motion and stitching a train together both need.
 DENSE_FPS = 25
 DENSE_MAX_FRAMES = 500          # 20s, enough for any single passage
+
+# Dense recording starts when the gate confirms a train, by which time the
+# locomotive has often already gone through: episode 164144_watchet_1 was
+# noticed at 16:41:54 and backfilled ten seconds, so its dense clip opens
+# on the coaches. A rolling pre-roll fixes that the way a high-speed
+# camera does — always recording, only ever keeping the recent past.
+#
+# Held as JPEG rather than raw frames: eight seconds of raw 854x480 is
+# 150MB a camera and there are eleven of them, where encoded it is nearer
+# 6MB. Ten a second is well short of the stream's 25 but is five times what
+# the gate samples at, and enough to catch a locomotive entering frame.
+PREROLL_FPS = 10
+PREROLL_SECONDS = 8
 SNAPSHOT_EVERY_S = 60          # recent still per camera, for the control room
 
 # Image-space unit vector meaning "travelling northbound (towards Minehead)".
@@ -177,6 +191,9 @@ class CameraWorker(threading.Thread):
         self.last_train_time = 0.0
         self.episode = None
         self.frame_buffer = []         # (t, frame) rolling ~30s at 2 Hz
+        # (t, jpeg) at PREROLL_FPS, so an episode can begin before it was noticed
+        self.preroll: deque = deque(maxlen=PREROLL_FPS * PREROLL_SECONDS)
+        self.last_preroll = 0.0
         self.heartbeat = time.time()
         self.last_motion_cells: list[int] = []
         self.last_snapshot = 0.0
@@ -316,6 +333,26 @@ class CameraWorker(threading.Thread):
             DENSE_FPS, (STREAM_W, STREAM_H))
         self.dense_path = dense_path
         self.dense_count = 0
+        # Everything from just before the train was noticed, so the clip
+        # opens on the locomotive arriving rather than on its coaches.
+        # Each pre-roll frame is held for its real duration: it was
+        # sampled at PREROLL_FPS and the file is written at DENSE_FPS, so
+        # writing them one-for-one would play those seconds two and a half
+        # times too fast and make any timing taken from the clip wrong.
+        hold = DENSE_FPS / PREROLL_FPS
+        owed = 0.0
+        for when, encoded in list(self.preroll):
+            if t - when > PREROLL_SECONDS:
+                continue
+            earlier = cv2.imdecode(encoded, cv2.IMREAD_COLOR)
+            if earlier is None:
+                continue
+            owed += hold
+            while owed >= 1:
+                self.dense_writer.write(earlier)
+                self.dense_count += 1
+                owed -= 1
+        self.episode_preroll_frames = self.dense_count
 
         if entry:
             # the frame where the train first appeared, not where we noticed
@@ -425,6 +462,8 @@ class CameraWorker(threading.Thread):
             if self.dense_count >= 10:
                 ep['dense_clip'] = self.dense_path.name
                 ep['dense_frames_kept'] = self.dense_count
+                ep['dense_preroll_frames'] = getattr(
+                    self, 'episode_preroll_frames', 0)
             elif self.dense_path.exists():
                 self.dense_path.unlink()      # too short to be worth keeping
         self.log_queue.put(('episode', ep))
@@ -454,7 +493,8 @@ class CameraWorker(threading.Thread):
                          and self.dense_writer is not None
                          and self.dense_count < DENSE_MAX_FRAMES)
                 due = t - last_motion_check >= MOTION_SAMPLE_S
-                if not due and not dense:
+                preroll_due = t - self.last_preroll >= 1.0 / PREROLL_FPS
+                if not due and not dense and not preroll_due:
                     continue
                 ok, frame = self.cap.retrieve()
                 if not ok:
@@ -462,6 +502,14 @@ class CameraWorker(threading.Thread):
                 if dense:
                     self.dense_writer.write(frame)
                     self.dense_count += 1
+                elif preroll_due:
+                    # Only while no episode is running: once one is, the
+                    # frames are going to the clip anyway.
+                    self.last_preroll = t
+                    ok, encoded = cv2.imencode(
+                        '.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+                    if ok:
+                        self.preroll.append((t, encoded))
                 if not due:
                     continue
                 last_motion_check = t
