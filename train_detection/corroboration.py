@@ -116,17 +116,25 @@ def corroborate(episodes: list[dict]) -> dict[str, dict]:
         start, end = span(episode)
         mine = roads(episode)
         comparable = comparable_pair(camera, partner)
-        match = None
+        # Several partner episodes can overlap when two trains are about,
+        # so take the best rather than the first: same road before any
+        # road, then the one closest in time. Matching the first overlap
+        # would pair a train with whichever of the two happened to be
+        # earlier in the file.
+        candidates = []
         crossed = False
         for other in theirs:
             their_start, their_end = span(other)
             if not (their_start <= end and start <= their_end):
                 continue
-            if comparable and mine and roads(other) and not (mine & roads(other)):
+            same_road = bool(mine and roads(other) and (mine & roads(other)))
+            if comparable and mine and roads(other) and not same_road:
                 crossed = True      # both busy, but on different roads
                 continue
-            match = other
-            break
+            gap = abs((their_start - start).total_seconds())
+            candidates.append((not same_road, gap, other))
+        candidates.sort(key=lambda c: (c[0], c[1]))
+        match = candidates[0][2] if candidates else None
         verdicts[episode_id(episode)] = {
             'checkable': True,
             'corroborated': match is not None,

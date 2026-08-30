@@ -246,3 +246,36 @@ def test_road_disagreement_is_ignored_where_the_names_differ():
          't_exit': '2026-08-30T10:01:30', 'zones': ['running line']},
     ]
     assert all(v['corroborated'] for v in corroborate(episodes).values())
+
+
+def test_the_closer_partner_wins_when_two_trains_overlap():
+    """With two trains about, pair each with the right one.
+
+    Taking the first overlapping partner episode paired a train with
+    whichever happened to come earlier in the file rather than the one it
+    actually matches.
+    """
+    from corroboration import corroborate, episode_id
+
+    mine = {'camera': 'williton', 't_enter': '2026-08-30T10:05:00',
+            't_exit': '2026-08-30T10:06:00', 'zones': ['running line']}
+    early = {'camera': 'williton_2', 't_enter': '2026-08-30T10:00:00',
+             't_exit': '2026-08-30T10:10:00', 'zones': ['running line']}
+    close = {'camera': 'williton_2', 't_enter': '2026-08-30T10:05:10',
+             't_exit': '2026-08-30T10:05:50', 'zones': ['running line']}
+    verdicts = corroborate([mine, early, close])
+    assert verdicts[episode_id(mine)]['partner_episode'] == episode_id(close)
+
+
+def test_same_road_beats_merely_closer():
+    """A train on the same road is the match, even if another is nearer."""
+    from corroboration import corroborate, episode_id
+
+    mine = {'camera': 'williton', 't_enter': '2026-08-30T10:05:00',
+            't_exit': '2026-08-30T10:06:00', 'zones': ['running line']}
+    other_road = {'camera': 'williton_2', 't_enter': '2026-08-30T10:05:05',
+                  't_exit': '2026-08-30T10:05:55', 'zones': ['loop']}
+    same_road = {'camera': 'williton_2', 't_enter': '2026-08-30T10:05:40',
+                 't_exit': '2026-08-30T10:06:30', 'zones': ['running line']}
+    verdicts = corroborate([mine, other_road, same_road])
+    assert verdicts[episode_id(mine)]['partner_episode'] == episode_id(same_road)

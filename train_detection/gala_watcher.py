@@ -20,6 +20,7 @@ Usage:
 
 import argparse
 import json
+import math
 import queue
 import threading
 import time
@@ -349,6 +350,7 @@ class CameraWorker(threading.Thread):
             'centroids': [],
             'peak_conf': 0.0,
             'keyframes': [],
+            'most_in_frame': 0,
             'clip_frames': [f for (ft, f) in self.frame_buffer if t - ft <= 6],
             'entry_backfilled_s': entry_offset,
         }
@@ -395,8 +397,21 @@ class CameraWorker(threading.Thread):
 
     def _observe(self, t, detections, frame, keyframe=False):
         ep = self.episode
-        best = max(detections, key=lambda d: d['conf'])
+        # Follow one train, not whichever is most confident this second.
+        # A scene can hold two — Williton is a crossing place and had a
+        # train on each road five times on 30/8 — and taking the highest
+        # score each time makes the tracked point teleport between them:
+        # jumps of 300 to 557 px against a typical step of one or two. The
+        # drift computed from that is meaningless, and at Bishops Lydeard
+        # it produced a confident 'northbound' out of nothing.
+        previous = ep['centroids'][-1][1] if ep['centroids'] else None
+        if previous is None:
+            best = max(detections, key=lambda d: d['conf'])
+        else:
+            best = min(detections,
+                       key=lambda d: math.dist(d['centre'], previous))
         ep['centroids'].append((t, best['centre']))
+        ep['most_in_frame'] = max(ep.get('most_in_frame', 0), len(detections))
         for d in detections:
             if d['zone'] and d['zone'] not in ep['zones']:
                 ep['zones'].append(d['zone'])
@@ -442,6 +457,15 @@ class CameraWorker(threading.Thread):
                 timespec='seconds')
             ep['entry_backfilled_s'] = offset
         ep['n_observations'] = len(centroids)
+        # Nearest-neighbour keeps the track on one train while both are in
+        # view, but not when the followed train leaves and the other is
+        # picked up. A remaining jump means the path is two trains stitched
+        # together, and nothing measured along it can be trusted.
+        steps = [math.dist(a[1], b[1]) for a, b in zip(centroids, centroids[1:])]
+        if steps:
+            typical = sorted(steps)[len(steps) // 2]
+            ep['path_jumps'] = sum(
+                1 for s in steps if s > max(60.0, typical * 6))
         if len(centroids) >= 2:
             (t0, (x0, y0)), (t1, (x1, y1)) = centroids[0], centroids[-1]
             drift = (x1 - x0, y1 - y0)
@@ -454,7 +478,8 @@ class CameraWorker(threading.Thread):
             # the trace's Minehead end has been established.
             magnitude = (drift[0] ** 2 + drift[1] ** 2) ** 0.5
             nvec = NORTHBOUND_VECTORS.get(self.camera)
-            if self.camera in UNRELIABLE_DRIFT_CAMERAS or magnitude < 30:
+            if (ep.get('path_jumps') or self.camera in UNRELIABLE_DRIFT_CAMERAS
+                    or magnitude < 30):
                 # A confidently wrong direction is worse than none: it
                 # stops the sighting chaining, because a candidate whose
                 # direction contradicts the heading is rejected outright.
