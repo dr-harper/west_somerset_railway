@@ -63,6 +63,11 @@ export interface Episode {
   keyframe: string | null;
   hires: string | null;
   boxes?: EpisodeBoxes | null;
+  /** Low-rate clip for review — a frame every few seconds. */
+  clip?: string | null;
+  /** Stream-rate clip of the passage, where the watcher captured one. */
+  dense_clip?: string | null;
+  dense_frames?: number | null;
   claim: EpisodeClaim;
   status: VerificationStatus;
   verification: {

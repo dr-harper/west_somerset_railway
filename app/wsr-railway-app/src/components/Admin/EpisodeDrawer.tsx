@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { captureUrl } from '../../services/captures';
 import { AnnotatedStill } from './AnnotatedStill';
+import { EpisodeClip } from './EpisodeClip';
 import { cameraName } from '../../services/cameras';
 import { claimText } from '../../services/episodeText';
 import type { Episode } from '../../utils/firestore/episodes';
@@ -58,6 +59,12 @@ export const EpisodeDrawer: React.FC<Props> = ({ episode, onClose, footer }) => 
           sources={stills}
           alt={`Detection at ${cameraName(episode.camera)}`}
           boxes={episode.boxes}
+        />
+
+        <EpisodeClip
+          clip={episode.clip}
+          denseClip={episode.dense_clip}
+          denseFrames={episode.dense_frames}
         />
 
         <dl className={styles.details}>

@@ -95,6 +95,11 @@ def episode_document(episode: dict, movement: dict | None) -> dict:
                          (episode.get('keyframes') or [None])[0])),
             None),
         'clip': episode.get('clip'),
+        # The stream-rate clip, where there is one: 25fps of the passage
+        # rather than a frame every five seconds, which is what makes a
+        # detection judgeable by eye.
+        'dense_clip': episode.get('dense_clip'),
+        'dense_frames': episode.get('dense_frames_kept'),
 
         # --- the system's claim, for a human to confirm or correct ---
         'claim': {

@@ -1,0 +1,59 @@
+.wrap {
+  margin-top: var(--spacing-sm);
+}
+
+.video {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--board-black);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  margin-top: var(--spacing-xs);
+}
+
+.pick {
+  padding: 3px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: transparent;
+  font: inherit;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.pick:hover {
+  border-color: var(--chocolate);
+  color: var(--ink);
+}
+
+.pick:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+.pickOn {
+  background: var(--chocolate);
+  border-color: var(--chocolate);
+  color: var(--paper);
+}
+
+.note,
+.none {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+
+.none {
+  margin: var(--spacing-sm) 0 0;
+}

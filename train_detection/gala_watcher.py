@@ -84,6 +84,9 @@ EPISODE_GONE_S = 10            # no train for this long closes the episode
 BACKGROUND_ALPHA = 0.05        # background adaption rate when idle
 URL_REFRESH_S = 4 * 3600       # HLS URLs expire after ~6h; refresh early
 CLIP_FPS = 2
+# H.264, not the 'mp4v' MPEG-4 Part 2 OpenCV defaults to: browsers cannot
+# decode the latter, so the clips played nowhere but a desktop player.
+CLIP_FOURCC = 'avc1'
 # While a train is actually in view, keep every frame the decoder hands
 # us. Sampling at 2Hz sounds dense but works out at roughly one frame
 # every five seconds of real time once inference and stream reads are
@@ -309,7 +312,7 @@ class CameraWorker(threading.Thread):
         # in an episode at once.
         dense_path = CAPTURE_DIR / f'{stamp()}_{self.camera}_dense.mp4'
         self.dense_writer = cv2.VideoWriter(
-            str(dense_path), cv2.VideoWriter_fourcc(*'mp4v'),
+            str(dense_path), cv2.VideoWriter_fourcc(*'avc1'),
             DENSE_FPS, (STREAM_W, STREAM_H))
         self.dense_path = dense_path
         self.dense_count = 0
@@ -407,7 +410,7 @@ class CameraWorker(threading.Thread):
         if clip_frames:
             path = CAPTURE_DIR / f"{stamp()}_{self.camera}_clip.mp4"
             writer = cv2.VideoWriter(str(path),
-                                     cv2.VideoWriter_fourcc(*'mp4v'),
+                                     cv2.VideoWriter_fourcc(*'avc1'),
                                      CLIP_FPS, (STREAM_W, STREAM_H))
             for f in clip_frames:
                 writer.write(f)
