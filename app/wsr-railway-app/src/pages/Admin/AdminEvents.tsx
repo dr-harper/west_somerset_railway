@@ -26,6 +26,7 @@ export const AdminEvents: React.FC = () => {
   const [filter, setFilter] = useState<VerificationStatus | 'all'>('all');
   const [camera, setCamera] = useState('all');
   const [view, setView] = useState<'stills' | 'table'>('stills');
+  const [day, setDay] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Episode | null>(null);
 
@@ -40,20 +41,34 @@ export const AdminEvents: React.FC = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  const seenCameras = useMemo(
-    () => [...new Set(episodes.map(e => e.camera))],
+  // Every day that has data, newest first. Without this the page loaded
+  // every episode ever recorded and laid two days over each other on a
+  // ribbon plotted by time of day, so yesterday's 10:15 sat on top of
+  // today's.
+  const days = useMemo(
+    () => [...new Set(episodes.map(e => e.date_key))].sort().reverse(),
     [episodes]
+  );
+  const showing = day || days[0] || '';
+  const onDay = useMemo(
+    () => episodes.filter(e => e.date_key === showing),
+    [episodes, showing]
+  );
+
+  const seenCameras = useMemo(
+    () => [...new Set(onDay.map(e => e.camera))],
+    [onDay]
   );
   const orphans = useMemo(() => unknownCameras(seenCameras), [seenCameras]);
 
   const shown = useMemo(
     () =>
-      episodes.filter(
+      onDay.filter(
         e =>
           (filter === 'all' || e.status === filter) &&
           (camera === 'all' || e.camera === camera)
       ),
-    [episodes, filter, camera]
+    [onDay, filter, camera]
   );
 
   if (!isFirebaseConfigured) {
@@ -81,6 +96,16 @@ export const AdminEvents: React.FC = () => {
             </button>
           ))}
         </div>
+        <select
+          className={styles.select}
+          value={showing}
+          onChange={event => setDay(event.target.value)}
+          aria-label="Day"
+        >
+          {days.map(d => (
+            <option key={d} value={d}>{d}</option>
+          ))}
+        </select>
         <select
           className={styles.select}
           value={camera}

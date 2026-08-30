@@ -40,20 +40,26 @@ export const AdminOverview: React.FC = () => {
   }, []);
 
   const summary = useMemo(() => {
-    const count = (predicate: (e: Episode) => boolean) =>
-      episodes.filter(predicate).length;
+    // The latest day only. Counting every episode ever recorded while
+    // labelling the panel with the most recent date said "the day at
+    // 2026-08-30" above a total that included the 29th as well.
     const sorted = [...episodes].sort((a, b) => b.t_enter.localeCompare(a.t_enter));
+    const latest = sorted[0]?.date_key ?? null;
+    const today = latest ? episodes.filter(e => e.date_key === latest) : episodes;
+    const count = (predicate: (e: Episode) => boolean) =>
+      today.filter(predicate).length;
     const reviewed = count(
       e => e.status === 'confirmed' || e.status === 'rejected' || e.status === 'corrected'
     );
     return {
-      total: episodes.length,
+      total: today.length,
       unverified: count(e => e.status === 'unverified'),
       reviewed,
       scheduled: count(e => e.claim?.kind === 'scheduled'),
       latest: sorted[0]?.t_enter ?? null,
-      day: sorted[0]?.date_key ?? null,
-      camerasReporting: new Set(episodes.map(e => e.camera)).size,
+      day: latest,
+      camerasReporting: new Set(today.map(e => e.camera)).size,
+      episodesToday: today,
     };
   }, [episodes]);
 
@@ -116,7 +122,7 @@ export const AdminOverview: React.FC = () => {
         <h2>{summary.day ? `The day at ${summary.day}` : 'The day'}</h2>
         <Link className={styles.action} to="/admin/events">Every detection</Link>
       </div>
-      <DetectionRibbon episodes={episodes} />
+      <DetectionRibbon episodes={summary.episodesToday} />
 
       <div className={styles.panel}>
         <div className={styles.panelHead}>
