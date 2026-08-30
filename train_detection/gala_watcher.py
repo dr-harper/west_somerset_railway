@@ -32,6 +32,7 @@ import numpy as np
 from detection_zones import ZONES, classify
 from track_geometry import (corridor_mask, direction_of_motion, exclusion_mask,
                             minehead_end_known, project, regions_of)
+from live_snapshots import write_snapshot
 from wsr_live_capture import CAMERAS, BotChallenge, resolve_hls_url
 
 
@@ -83,6 +84,7 @@ EPISODE_GONE_S = 10            # no train for this long closes the episode
 BACKGROUND_ALPHA = 0.05        # background adaption rate when idle
 URL_REFRESH_S = 4 * 3600       # HLS URLs expire after ~6h; refresh early
 CLIP_FPS = 2
+SNAPSHOT_EVERY_S = 60          # recent still per camera, for the control room
 
 # Image-space unit vector meaning "travelling northbound (towards Minehead)".
 # Validated 29/8 against timetable-confirmed movements: Bishops Lydeard,
@@ -158,6 +160,7 @@ class CameraWorker(threading.Thread):
         self.frame_buffer = []         # (t, frame) rolling ~30s at 2 Hz
         self.heartbeat = time.time()
         self.last_motion_cells: list[int] = []
+        self.last_snapshot = 0.0
         self.stats = {'gates': 0, 'false_gates': 0, 'episodes': 0,
                       'reconnects': 0, 'jumps': 0, 'challenges': 0}
 
@@ -405,6 +408,12 @@ class CameraWorker(threading.Thread):
                     raise RuntimeError('retrieve failed')
 
                 self.frame_buffer.append((t, frame))
+                # A recent still per camera for the control room. The frame
+                # is already decoded, so this costs a JPEG encode a minute
+                # and saves opening the stream again from elsewhere.
+                if t - self.last_snapshot > SNAPSHOT_EVERY_S:
+                    self.last_snapshot = t
+                    write_snapshot(self.camera, frame)
                 self.frame_buffer = [(ft, f) for ft, f in self.frame_buffer
                                      if t - ft <= 12]
 

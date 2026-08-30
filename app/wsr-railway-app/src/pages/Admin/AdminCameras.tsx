@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { isFirebaseConfigured } from '../../firebase';
+import { CameraLive } from '../../components/Admin/CameraLive';
 import { CAMERAS } from '../../services/cameras';
 import { fetchEpisodes, type Episode } from '../../utils/firestore/episodes';
 import styles from './Admin.module.css';
@@ -33,6 +34,7 @@ const EMPTY: CameraStats = {
 export const AdminCameras: React.FC = () => {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [loading, setLoading] = useState(true);
+  const [live, setLive] = useState(true);
 
   useEffect(() => {
     if (!isFirebaseConfigured) {
@@ -65,6 +67,7 @@ export const AdminCameras: React.FC = () => {
     return stats;
   }, [episodes]);
 
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   const ready = CAMERAS.filter(c => c.annotation.ready).length;
   const oriented = CAMERAS.filter(c => c.annotation.orientationKnown).length;
 
@@ -89,6 +92,17 @@ export const AdminCameras: React.FC = () => {
         </div>
       </div>
 
+      <div className={styles.filterRow}>
+        <div className={styles.chips}>
+          <button
+            className={`${styles.chip} ${live ? styles.chipOn : ''}`}
+            onClick={() => setLive(value => !value)}
+          >
+            {live ? 'Hide live views' : 'Show live views'}
+          </button>
+        </div>
+      </div>
+
       <p className={styles.muted}>
         Ordered along the line, Bishops Lydeard end first. Setup comes from the
         hand annotations; activity is what the detector logged, not a health
@@ -104,6 +118,13 @@ export const AdminCameras: React.FC = () => {
               key={camera.id}
               className={`${styles.cameraCard} ${note.ready ? '' : styles.cameraQuiet}`}
             >
+              {live && (
+                <CameraLive
+                  camera={camera}
+                  liveUrl={`${base}/reference/live_${camera.id}.jpg`}
+                  posterUrl={`${base}/reference/cam_${camera.id}.jpg`}
+                />
+              )}
               <div className={styles.cameraHead}>
                 <span className={styles.cameraName}>{camera.name}</span>
                 <span className={styles.cameraMile}>{camera.station ?? '—'}</span>
