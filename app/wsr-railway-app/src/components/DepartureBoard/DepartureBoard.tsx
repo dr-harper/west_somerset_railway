@@ -2,11 +2,15 @@ import React, { useCallback, useState, useEffect } from 'react';
 import type { DepartureBoard as DepartureBoardType, Departure, StationCode, Train } from '../../types/models';
 import { trainService } from '../../services/trainService';
 import { JourneyTimeline } from '../JourneyTimeline/JourneyTimeline';
+import { useSightings } from '../../hooks/useSightings';
+import { toDateKey } from '../../services/calendarConfig';
 import styles from './DepartureBoard.module.css';
 
 interface DepartureBoardProps {
   stationCode: StationCode | null;
   stationName?: string;
+  /** The day being shown, so sightings come from that day and no other. */
+  selectedDate?: Date;
 }
 
 // Split-flap cell group: each character remounts (and re-flips) when it changes
@@ -35,12 +39,14 @@ const Flap: React.FC<{ text: string; wide?: boolean }> = ({ text, wide }) => {
 
 export const DepartureBoard: React.FC<DepartureBoardProps> = ({ 
   stationCode,
-  stationName 
+  stationName,
+  selectedDate
 }) => {
   const [departureBoard, setDepartureBoard] = useState<DepartureBoardType | null>(null);
   const [loading, setLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [expandedTrainId, setExpandedTrainId] = useState<string | null>(null);
+  const sightings = useSightings(selectedDate ? toDateKey(selectedDate) : undefined);
   const [expandedTrain, setExpandedTrain] = useState<Train | null>(null);
 
   useEffect(() => {
@@ -196,7 +202,7 @@ export const DepartureBoard: React.FC<DepartureBoardProps> = ({
                 {expandedTrainId === departure.trainId && expandedTrain && (
                   <tr className={styles.expandedRow}>
                     <td colSpan={5} className={styles.expandedContent}>
-                      <JourneyTimeline train={expandedTrain} selectedStation={stationName} />
+                      <JourneyTimeline train={expandedTrain} selectedStation={stationName} sightings={sightings} />
                     </td>
                   </tr>
                 )}

@@ -194,6 +194,7 @@ export const Home: React.FC = () => {
             <DepartureBoard
               stationCode={selectedStationCode}
               stationName={selectedStation?.name}
+              selectedDate={selectedDate}
             />
           )}
         </div>

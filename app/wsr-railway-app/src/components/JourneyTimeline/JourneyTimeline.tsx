@@ -1,16 +1,27 @@
 import { TrainFront } from 'lucide-react';
 import React from 'react';
 import type { Train, TrainStop } from '../../types/models';
+import { SeenAt } from '../SeenAt/SeenAt';
+import { sightingFor, type Sighting } from '../../services/sightings';
+import { CAMERAS } from '../../services/cameras';
 import styles from './JourneyTimeline.module.css';
 
 interface JourneyTimelineProps {
   train: Train;
   currentTime?: string;
   selectedStation?: string;
+  /** Today's camera sightings, so each call can show what was observed. */
+  sightings?: Sighting[];
 }
 
-export const JourneyTimeline: React.FC<JourneyTimelineProps> = ({ train, currentTime, selectedStation }) => {
+export const JourneyTimeline: React.FC<JourneyTimelineProps> = ({ train, currentTime, selectedStation, sightings = [] }) => {
   const now = currentTime || new Date().toTimeString().slice(0, 5);
+  // Stations that have a camera at all, not stations that happen to have
+  // been seen today: a camera that has seen nothing yet should say so,
+  // which is different from a station nobody is watching.
+  const watched = new Set(
+    CAMERAS.map(camera => camera.station).filter(Boolean) as string[]
+  );
   
   const getStopStatus = (stop: TrainStop): 'passed' | 'current' | 'upcoming' => {
     if (stop.status === 'Departed') return 'passed';
@@ -133,6 +144,21 @@ export const JourneyTimeline: React.FC<JourneyTimelineProps> = ({ train, current
                       <TrainFront size={15} aria-hidden /> Train at platform
                     </span>
                   </div>
+                )}
+
+                {/* Only where a camera watches: a stop with no camera has
+                    nothing to say, and "not seen" would read as a fault
+                    rather than an absence of coverage. */}
+                {watched.has(stop.stationCode) && (
+                  <SeenAt
+                    sighting={sightingFor(
+                      sightings,
+                      stop.stationCode,
+                      stop.scheduledDeparture ?? stop.scheduledArrival
+                    )}
+                    booked={stop.scheduledDeparture ?? stop.scheduledArrival}
+                    stationName={stop.stationName}
+                  />
                 )}
               </div>
             </div>

@@ -1,0 +1,85 @@
+.seen,
+.unseen {
+  margin: var(--spacing-sm) 0 0;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-left: 3px solid var(--brunswick);
+  background: var(--paper-raised);
+  border-radius: 0 3px 3px 0;
+  font-size: 0.88rem;
+}
+
+/* Nothing seen is a legitimate answer, not a failure — it reads quieter
+   than a sighting rather than looking like an error. */
+.unseen {
+  border-left-color: var(--rule);
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.headline {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin: 0;
+  color: var(--ink);
+}
+
+.headline strong {
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.muted {
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+
+.detail {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 5px 0 0;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.detail span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.toggle {
+  padding: 2px 9px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: transparent;
+  font: inherit;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.toggle:hover {
+  border-color: var(--chocolate);
+  color: var(--ink);
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+.still {
+  display: block;
+  width: 100%;
+  max-width: 520px;
+  margin-top: var(--spacing-sm);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+}
