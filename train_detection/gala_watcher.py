@@ -109,7 +109,7 @@ DENSE_MAX_FRAMES = 500          # 20s, enough for any single passage
 # 6MB. Ten a second is well short of the stream's 25 but is five times what
 # the gate samples at, and enough to catch a locomotive entering frame.
 PREROLL_FPS = 10
-PREROLL_SECONDS = 8
+PREROLL_SECONDS = 25
 SNAPSHOT_EVERY_S = 60          # recent still per camera, for the control room
 
 # Image-space unit vector meaning "travelling northbound (towards Minehead)".
@@ -288,28 +288,41 @@ class CameraWorker(threading.Thread):
     # --- tier 2: episodes ------------------------------------------------
 
     def _backfill_entry(self, trigger_time):
-        """Rewind through buffered frames to find the true first appearance.
+        """Rewind to the frame where the train first appeared.
 
         The gate needs 1.5s of sustained motion and YOLO then runs once a
-        second, so by the time an episode opens the locomotive is already
-        well into — often through — the frame. The frames from before the
-        trigger are still in the buffer, so walk back through them and find
-        the earliest one that still shows a train. That recovers both an
-        honest entry time, which matters for measuring delay, and a
-        keyframe showing the front of the train rather than its coaches.
+        second, so by the time an episode opens the locomotive is often
+        already through the frame. Walking back recovers an honest entry
+        time, which is what delay is measured from, and a still showing
+        the front of the train rather than its coaches.
+
+        This reads the pre-roll rather than the 2Hz frame buffer. That
+        buffer held twelve seconds, and on 30/8 one hundred and forty-four
+        of one hundred and eighty-nine backfills came back at exactly ten
+        seconds — they were hitting the end of it, not finding the train.
+        Every one of those entry times was a floor, and since a floor that
+        is too late makes a train look later than it ran, every delay
+        measured from them was overstated. The pre-roll reaches
+        PREROLL_SECONDS back at PREROLL_FPS, so the search now ends when
+        the train genuinely is not there.
         """
-        earlier = [(ft, f) for ft, f in self.frame_buffer if ft < trigger_time]
+        earlier = [(when, encoded) for when, encoded in list(self.preroll)
+                   if when < trigger_time]
         if not earlier:
             return None
         earliest = None
         checked = trigger_time
-        for ft, frame in sorted(earlier, key=lambda item: item[0], reverse=True):
-            if checked - ft < BACKFILL_STEP_S:
+        for when, encoded in sorted(earlier, key=lambda item: item[0],
+                                    reverse=True):
+            if checked - when < BACKFILL_STEP_S:
                 continue
-            checked = ft
+            checked = when
+            frame = cv2.imdecode(encoded, cv2.IMREAD_COLOR)
+            if frame is None:
+                continue
             if not self._detect(frame, conf=BACKFILL_CONF):
-                break          # train not yet in view: we have gone back far enough
-            earliest = (ft, frame)
+                break      # train not yet in view: we have gone back far enough
+            earliest = (when, frame)
         return earliest
 
     def _start_episode(self, t, detections, frame):
