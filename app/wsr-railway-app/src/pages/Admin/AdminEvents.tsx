@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { DetectionRibbon } from '../../components/Admin/DetectionRibbon';
 import { EpisodeDrawer } from '../../components/Admin/EpisodeDrawer';
+import { CopyId } from '../../components/Admin/CopyId';
 import { isFirebaseConfigured } from '../../firebase';
 import { captureUrl } from '../../services/captures';
 import { claimText } from '../../services/episodeText';
@@ -132,6 +133,7 @@ export const AdminEvents: React.FC = () => {
                 key={episode.id}
                 className={styles.still}
                 onClick={() => setSelected(episode)}
+                title={episode.id}
               >
                 {src ? (
                   <img src={src} alt="" loading="lazy" className={styles.stillImage} />
@@ -167,6 +169,7 @@ export const AdminEvents: React.FC = () => {
               <th>Reading</th>
               <th>Confidence</th>
               <th>Status</th>
+              <th>ID</th>
             </tr>
           </thead>
           <tbody>
@@ -187,6 +190,9 @@ export const AdminEvents: React.FC = () => {
                   <span className={`${styles.badge} ${styles[episode.status] ?? ''}`}>
                     {episode.status}
                   </span>
+                </td>
+                <td onClick={event => event.stopPropagation()}>
+                  <CopyId id={episode.id} short />
                 </td>
               </tr>
             ))}

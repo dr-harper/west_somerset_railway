@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { isFirebaseConfigured } from '../../firebase';
 import { cameraName } from '../../services/cameras';
+import { CopyId } from '../../components/Admin/CopyId';
 import { delayLabel } from '../../services/episodeText';
 import {
   fetchMovements,
@@ -49,6 +50,7 @@ const MovementRow: React.FC<{ movement: Movement }> = ({ movement }) => (
       ) : (
         <span className={`${styles.badge} ${styles.corrected}`}>unscheduled</span>
       )}
+      <CopyId id={movement.id} short />
     </div>
 
     {/* Where it was seen, in order — the evidence behind the claim. */}

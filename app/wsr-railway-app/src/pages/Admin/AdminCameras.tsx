@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { isFirebaseConfigured } from '../../firebase';
 import { CameraLive } from '../../components/Admin/CameraLive';
 import { CAMERAS } from '../../services/cameras';
+import { CopyId } from '../../components/Admin/CopyId';
 import { fetchEpisodes, type Episode } from '../../utils/firestore/episodes';
 import styles from './Admin.module.css';
 
@@ -150,6 +151,7 @@ export const AdminCameras: React.FC = () => {
               </div>
 
               <div className={styles.setupRow}>
+                <CopyId id={camera.id} />
                 <span className={note.roads ? styles.setupOn : styles.setupOff}>
                   {note.roads || 'no'} road{note.roads === 1 ? '' : 's'}
                 </span>

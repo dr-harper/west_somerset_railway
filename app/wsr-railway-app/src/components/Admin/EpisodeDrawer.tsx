@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { captureUrl } from '../../services/captures';
 import { AnnotatedStill } from './AnnotatedStill';
 import { EpisodeClip } from './EpisodeClip';
+import { CopyId } from './CopyId';
 import { cameraName } from '../../services/cameras';
 import { claimText } from '../../services/episodeText';
 import type { Episode } from '../../utils/firestore/episodes';
@@ -54,6 +55,8 @@ export const EpisodeDrawer: React.FC<Props> = ({ episode, onClose, footer }) => 
           </h2>
           <button className={styles.action} onClick={onClose}>Close</button>
         </div>
+
+        <CopyId id={episode.id} label="episode" />
 
         <AnnotatedStill
           sources={stills}
