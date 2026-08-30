@@ -104,7 +104,14 @@ NORTHBOUND_VECTORS = {
 # directions: at Watchet on 29/8 northbound trains drifted strongly left
 # while southbound ones drifted strongly down, so no single vector fits.
 # Direction for these comes from the order of stations a movement visits.
-UNRELIABLE_DRIFT_CAMERAS = {'watchet_visitor_centre'}
+# Bishops Lydeard joins Watchet on the evidence of audit_directions.py,
+# which checks labels against the locomotive the classifier read and the
+# working the timetable gives it — evidence owing nothing to drift. Both
+# checkable sightings there were labelled backwards, and two nearly
+# parallel drifts, (-311,+140) and (-349,+243), belong to workings in
+# opposite directions. No single vector separates those, so drift at this
+# camera cannot decide direction and the movement's station order must.
+UNRELIABLE_DRIFT_CAMERAS = {'watchet_visitor_centre', 'bishops_lydeard'}
 
 
 def now_iso() -> str:
@@ -357,7 +364,10 @@ class CameraWorker(threading.Thread):
             # the trace's Minehead end has been established.
             magnitude = (drift[0] ** 2 + drift[1] ** 2) ** 0.5
             nvec = NORTHBOUND_VECTORS.get(self.camera)
-            if magnitude < 30:
+            if self.camera in UNRELIABLE_DRIFT_CAMERAS or magnitude < 30:
+                # A confidently wrong direction is worse than none: it
+                # stops the sighting chaining, because a candidate whose
+                # direction contradicts the heading is rejected outright.
                 ep['direction'] = 'unclear'
             elif minehead_end_known(self.camera):
                 ep['direction'] = direction_of_motion(

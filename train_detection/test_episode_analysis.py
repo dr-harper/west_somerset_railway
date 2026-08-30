@@ -21,9 +21,23 @@ class TestGalaDayMatching:
         assert m['match_gap_min'] == 1.5
 
     def test_direction_must_agree(self):
-        # at 10:16 there is a 10:15 NB call; a southbound episode must not take it
-        m = match_episode(episode('bishops_lydeard', '2026-08-29T10:16:30', 'southbound'))
+        # A southbound episode must not take a northbound call. Checked at
+        # Blue Anchor rather than Bishops Lydeard, because drift there is
+        # trusted — see UNRELIABLE_DRIFT_CAMERAS and the test below.
+        m = match_episode(episode('blue_anchor', '2026-08-29T10:45:00', 'southbound'))
         assert m['match'] is None or m['match']['direction'] == 'southbound'
+
+    def test_unreliable_cameras_ignore_their_own_direction(self):
+        # Bishops Lydeard labels direction backwards: audit_directions.py
+        # checked both sightings there where the classifier read a running
+        # number and the timetable gave that engine a working, and both
+        # were the wrong way round. Its label must therefore not veto an
+        # otherwise good match.
+        from gala_watcher import UNRELIABLE_DRIFT_CAMERAS
+        assert 'bishops_lydeard' in UNRELIABLE_DRIFT_CAMERAS
+        m = match_episode(episode('bishops_lydeard', '2026-08-29T10:16:30', 'southbound'))
+        assert m['match'] is not None
+        assert m['match']['time'] == '10:15'
 
     def test_unclear_direction_still_matches(self):
         m = match_episode(episode('minehead_station', '2026-08-29T11:33:00', 'unclear'))
