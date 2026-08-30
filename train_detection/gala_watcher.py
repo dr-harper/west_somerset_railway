@@ -84,6 +84,15 @@ EPISODE_GONE_S = 10            # no train for this long closes the episode
 BACKGROUND_ALPHA = 0.05        # background adaption rate when idle
 URL_REFRESH_S = 4 * 3600       # HLS URLs expire after ~6h; refresh early
 CLIP_FPS = 2
+# While a train is actually in view, keep every frame the decoder hands
+# us. Sampling at 2Hz sounds dense but works out at roughly one frame
+# every five seconds of real time once inference and stream reads are
+# accounted for, and a train at 20mph covers 45m in that gap — too far
+# apart for optical flow to find a match or for two frames to share any
+# overlap. At stream rate the same train moves 0.36m a frame, which is
+# what following motion and stitching a train together both need.
+DENSE_FPS = 25
+DENSE_MAX_FRAMES = 500          # 20s, enough for any single passage
 SNAPSHOT_EVERY_S = 60          # recent still per camera, for the control room
 
 # Image-space unit vector meaning "travelling northbound (towards Minehead)".
@@ -168,6 +177,9 @@ class CameraWorker(threading.Thread):
         self.heartbeat = time.time()
         self.last_motion_cells: list[int] = []
         self.last_snapshot = 0.0
+        self.dense_writer = None
+        self.dense_path = None
+        self.dense_count = 0
         self.stats = {'gates': 0, 'false_gates': 0, 'episodes': 0,
                       'reconnects': 0, 'jumps': 0, 'challenges': 0}
 
@@ -292,6 +304,16 @@ class CameraWorker(threading.Thread):
             'clip_frames': [f for (ft, f) in self.frame_buffer if t - ft <= 6],
             'entry_backfilled_s': entry_offset,
         }
+        # Stream-rate frames go straight to disk rather than into memory:
+        # 500 raw frames is 600MB per camera, and several cameras can be
+        # in an episode at once.
+        dense_path = CAPTURE_DIR / f'{stamp()}_{self.camera}_dense.mp4'
+        self.dense_writer = cv2.VideoWriter(
+            str(dense_path), cv2.VideoWriter_fourcc(*'mp4v'),
+            DENSE_FPS, (STREAM_W, STREAM_H))
+        self.dense_path = dense_path
+        self.dense_count = 0
+
         if entry:
             # the frame where the train first appeared, not where we noticed
             path = CAPTURE_DIR / f'{stamp()}_{self.camera}_entry.jpg'
@@ -391,6 +413,17 @@ class CameraWorker(threading.Thread):
                 writer.write(f)
             writer.release()
             ep['clip'] = path.name
+
+        # The dense clip is what motion work reads: written at the rate it
+        # was sampled, so timings taken from it are real.
+        if self.dense_writer is not None:
+            self.dense_writer.release()
+            self.dense_writer = None
+            if self.dense_count >= 10:
+                ep['dense_clip'] = self.dense_path.name
+                ep['dense_frames_kept'] = self.dense_count
+            elif self.dense_path.exists():
+                self.dense_path.unlink()      # too short to be worth keeping
         self.log_queue.put(('episode', ep))
 
     # --- main loop -------------------------------------------------------
@@ -410,12 +443,25 @@ class CameraWorker(threading.Thread):
                     raise RuntimeError('stream read failed')
                 self.heartbeat = time.time()
                 t = time.time()
-                if t - last_motion_check < MOTION_SAMPLE_S:
+                # Decode every frame while an episode is running, and only
+                # every MOTION_SAMPLE_S otherwise. The frames are already
+                # being grabbed either way; this only decides whether they
+                # are decoded and kept.
+                dense = (self.state == 'ACTIVE' and self.episode is not None
+                         and self.dense_writer is not None
+                         and self.dense_count < DENSE_MAX_FRAMES)
+                due = t - last_motion_check >= MOTION_SAMPLE_S
+                if not due and not dense:
                     continue
-                last_motion_check = t
                 ok, frame = self.cap.retrieve()
                 if not ok:
                     raise RuntimeError('retrieve failed')
+                if dense:
+                    self.dense_writer.write(frame)
+                    self.dense_count += 1
+                if not due:
+                    continue
+                last_motion_check = t
 
                 self.frame_buffer.append((t, frame))
                 # A recent still per camera for the control room. The frame
