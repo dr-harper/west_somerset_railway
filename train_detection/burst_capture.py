@@ -34,6 +34,10 @@ OUT_DIR = HERE / 'bursts'
 
 BURST_FRAMES = 120          # about five seconds at stream rate
 MOVING_THRESHOLD = 1.5      # mean absolute change across a short probe
+# Pixels per frame the train must shift to count as passing rather than
+# standing. At 25fps a train at 15mph moves several pixels a frame; a
+# stabled one measured 0.0-0.4 across sixteen bursts.
+MIN_TRAIN_DRIFT_PX = 1.5
 PROBE_FRAMES = 25
 
 
@@ -49,6 +53,32 @@ def probe(cap) -> tuple[list, float]:
         return frames, 0.0
     change = float(cv2.absdiff(frames[0], frames[-1]).mean())
     return frames, change
+
+
+def train_is_moving(frames: list, box) -> float:
+    """Pixels per frame the train itself shifted, by phase correlation.
+
+    Gross scene change is not enough to tell a passing train from a
+    standing one: these are PTZ cameras, and a zoom or pan moves every
+    pixel in the picture while the train sits still. All sixteen bursts
+    taken on the first attempt caught stationary trains for exactly that
+    reason. Correlating the train's own region against itself measures
+    what the train did, not what the camera did.
+    """
+    x1, y1, x2, y2 = box
+    shifts = []
+    for a, b in zip(frames, frames[1:]):
+        left = cv2.cvtColor(a[y1:y2, x1:x2], cv2.COLOR_BGR2GRAY).astype('float32')
+        right = cv2.cvtColor(b[y1:y2, x1:x2], cv2.COLOR_BGR2GRAY).astype('float32')
+        if left.size == 0 or right.size == 0:
+            continue
+        (dx, _), _ = cv2.phaseCorrelate(left, right)
+        # A PTZ move shows as one huge jump; the median ignores it.
+        shifts.append(abs(dx))
+    if not shifts:
+        return 0.0
+    shifts.sort()
+    return shifts[len(shifts) // 2]
 
 
 def main() -> None:
@@ -79,8 +109,13 @@ def main() -> None:
 
             # Both conditions: something moved, and it is a train. Either
             # alone gives crowds on a platform or a rake standing still.
-            moving = change >= MOVING_THRESHOLD
             trains = detector.trains(frames[-1], conf=0.45)
+            drift = 0.0
+            if trains:
+                _, box, _ = max(trains, key=lambda t: (t[1][2] - t[1][0])
+                                * (t[1][3] - t[1][1]))
+                drift = train_is_moving(frames, box)
+            moving = drift >= MIN_TRAIN_DRIFT_PX
             if moving and trains:
                 burst = list(frames)
                 while len(burst) < BURST_FRAMES:
@@ -95,10 +130,12 @@ def main() -> None:
                                  'frames': burst}, handle)
                 captured += 1
                 print(f'{datetime.now():%H:%M:%S} captured {len(burst)} frames '
-                      f'-> {path.name} (change {change:.1f})', flush=True)
+                      f'-> {path.name} (train drift {drift:.1f} px/frame)',
+                      flush=True)
             else:
                 print(f'{datetime.now():%H:%M:%S} change {change:4.1f}, '
-                      f'{"train" if trains else "no train"} — skipped', flush=True)
+                      f'{"train" if trains else "no train"}, '
+                      f'drift {drift:4.1f} px/frame — skipped', flush=True)
             cap.release()
         except Exception as error:
             print(f'{datetime.now():%H:%M:%S} {str(error)[:80]}', flush=True)
