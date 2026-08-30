@@ -32,6 +32,7 @@ import cv2
 import numpy as np
 
 from detection_zones import ZONES, classify
+from tracking import Detection as TrackDetection, TrainTracker
 from track_geometry import (corridor_mask, direction_of_motion, exclusion_mask,
                             minehead_end_known, project, regions_of)
 from live_snapshots import write_snapshot
@@ -215,6 +216,9 @@ class CameraWorker(threading.Thread):
         self.dense_writer = None
         self.dense_path = None
         self.dense_count = 0
+        # ByteTrack, one instance per camera: the detector is shared, only
+        # the association is not.
+        self.tracker = TrainTracker()
         self.stats = {'gates': 0, 'false_gates': 0, 'episodes': 0,
                       'reconnects': 0, 'jumps': 0, 'challenges': 0}
 
@@ -341,6 +345,7 @@ class CameraWorker(threading.Thread):
 
     def _start_episode(self, t, detections, frame):
         self.stats['episodes'] += 1
+        self.tracker.reset()
         entry = self._backfill_entry(t)
         entry_offset = round(t - entry[0], 1) if entry else 0.0
         self.episode = {
@@ -397,6 +402,18 @@ class CameraWorker(threading.Thread):
 
     def _observe(self, t, detections, frame, keyframe=False):
         ep = self.episode
+        # Follow every train separately. The single path below stays for
+        # now — movement chaining still reads it — but the tracks are what
+        # tell two trains apart.
+        try:
+            self.tracker.update(t, [
+                TrackDetection(box=tuple(d['box']), conf=d['conf'],
+                               centre=tuple(d['centre']), zone=d.get('zone'))
+                for d in detections])
+        except Exception as error:      # tracking must never lose an episode
+            self.log_queue.put(('info', {
+                'ts': now_iso(), 'camera': self.camera,
+                'message': f'tracker: {str(error)[:120]}'}))
         # Follow one train, not whichever is most confident this second.
         # A scene can hold two — Williton is a crossing place and had a
         # train on each road five times on 30/8 — and taking the highest
@@ -519,6 +536,35 @@ class CameraWorker(threading.Thread):
                     self, 'episode_preroll_frames', 0)
             elif self.dense_path.exists():
                 self.dense_path.unlink()      # too short to be worth keeping
+        # What the tracker made of it: one entry per train rather than one
+        # per camera visit. A track that never moved is a standing rake or
+        # a fixed object the detector likes the look of, and is recorded as
+        # such rather than counted as traffic.
+        try:
+            tracks = []
+            for track in self.tracker.substantial():
+                start = track.path[0]
+                finish = track.path[-1]
+                shifted = math.dist(start[1:], finish[1:])
+                tracks.append({
+                    'id': track.track_id,
+                    't_enter': datetime.fromtimestamp(track.first_seen).isoformat(
+                        timespec='seconds'),
+                    't_exit': datetime.fromtimestamp(track.last_seen).isoformat(
+                        timespec='seconds'),
+                    'observations': len(track.path),
+                    'peak_conf': round(track.peak_conf, 3),
+                    'zones': track.zones,
+                    'drift_px': [finish[1] - start[1], finish[2] - start[2]],
+                    'moved': shifted >= 40,
+                    'path': [[round(p[0] - track.first_seen, 1), p[1], p[2]]
+                             for p in track.path],
+                })
+            ep['tracks'] = tracks
+            ep['trains_moving'] = sum(1 for t in tracks if t['moved'])
+        except Exception:
+            ep['tracks'] = []
+
         self.log_queue.put(('episode', ep))
 
     # --- main loop -------------------------------------------------------
