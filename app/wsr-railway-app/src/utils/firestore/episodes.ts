@@ -68,6 +68,14 @@ export interface Episode {
   /** Stream-rate clip of the passage, where the watcher captured one. */
   dense_clip?: string | null;
   dense_frames?: number | null;
+  /** Whether the second camera on the same rails saw this too. */
+  corroboration?: {
+    checkable: boolean;
+    reason?: string;
+    corroborated?: boolean;
+    partner?: string;
+    partner_episode?: string | null;
+  } | null;
   claim: EpisodeClaim;
   status: VerificationStatus;
   verification: {

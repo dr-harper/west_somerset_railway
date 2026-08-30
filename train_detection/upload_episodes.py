@@ -67,7 +67,8 @@ def movement_id(record: dict, date_key: str) -> str:
             f"_{record['from']}_{record['to']}")
 
 
-def episode_document(episode: dict, movement: dict | None) -> dict:
+def episode_document(episode: dict, movement: dict | None,
+                     corroboration: dict | None = None) -> dict:
     """One Firestore document: what was detected, and what we think it was."""
     scheduled = (movement or {}).get('scheduled')
     return {
@@ -111,6 +112,11 @@ def episode_document(episode: dict, movement: dict | None) -> dict:
             'corroborating_sightings': (movement or {}).get('sightings'),
         },
 
+        # Whether the second camera watching the same rails saw it too.
+        # Independent of any human, and the signal that shows a camera
+        # detecting things its partner cannot see.
+        'corroboration': corroboration,
+
         'uploaded_at': datetime.now().isoformat(timespec='seconds'),
     }
 
@@ -153,7 +159,11 @@ def main() -> None:
             claim_for[obs['episode']['t_enter']] = {**record,
                                                     'sightings': movement['sightings']}
 
-    documents = [(episode_id(e), episode_document(e, claim_for.get(e['t_enter'])))
+    from corroboration import corroborate
+    verdicts = corroborate(episodes)
+    documents = [(episode_id(e),
+                  episode_document(e, claim_for.get(e['t_enter']),
+                                   verdicts.get(episode_id(e))))
                  for e in episodes]
     scheduled = sum(1 for _, d in documents if d['claim']['kind'] == 'scheduled')
     print(f'{len(documents)} episodes '

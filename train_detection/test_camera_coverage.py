@@ -177,3 +177,72 @@ def test_exclusions_reject_detections_not_just_motion():
     # detection centre, not merely a motion mask.
     ys, xs = np.nonzero(mask)
     assert mask[ys[0], xs[0]] > 0
+
+
+# --- corroboration ------------------------------------------------------
+
+def test_corroboration_needs_a_partner_that_is_awake():
+    """A silent partner is not disagreement.
+
+    Crowcombe 2 has no traced track and detects nothing, which would score
+    Crowcombe 1 at zero confirmed if absence were read as contradiction.
+    """
+    from corroboration import corroborate
+
+    episodes = [
+        {'camera': 'crowcombe_heathfield', 't_enter': '2026-08-30T10:00:00',
+         't_exit': '2026-08-30T10:00:30', 'zones': ['platform roads']},
+    ]
+    verdict = next(iter(corroborate(episodes).values()))
+    assert verdict['checkable'] is False
+    assert 'saw nothing' in verdict['reason']
+
+
+def test_two_trains_crossing_are_not_confirmation():
+    """Williton is a crossing place, so overlap in time is not enough.
+
+    One train stands in the loop while another runs through. Both cameras
+    have a train in view at the same moment and they are different trains.
+    """
+    from corroboration import corroborate
+
+    episodes = [
+        {'camera': 'williton', 't_enter': '2026-08-30T10:00:00',
+         't_exit': '2026-08-30T10:02:00', 'zones': ['running line']},
+        {'camera': 'williton_2', 't_enter': '2026-08-30T10:00:30',
+         't_exit': '2026-08-30T10:01:30', 'zones': ['loop']},
+    ]
+    verdicts = corroborate(episodes)
+    assert all(v['checkable'] for v in verdicts.values())
+    assert not any(v['corroborated'] for v in verdicts.values())
+    assert all(v['other_road'] for v in verdicts.values())
+
+
+def test_the_same_train_on_the_same_road_is_confirmation():
+    from corroboration import corroborate
+
+    episodes = [
+        {'camera': 'williton', 't_enter': '2026-08-30T10:00:00',
+         't_exit': '2026-08-30T10:02:00', 'zones': ['running line']},
+        {'camera': 'williton_2', 't_enter': '2026-08-30T10:00:30',
+         't_exit': '2026-08-30T10:01:30', 'zones': ['running line']},
+    ]
+    assert all(v['corroborated'] for v in corroborate(episodes).values())
+
+
+def test_road_disagreement_is_ignored_where_the_names_differ():
+    """Blue Anchor's cameras share no road vocabulary at all.
+
+    One carries hand-drawn zone names, the other traced road names, so
+    comparing them rejected every pairing and scored a healthy camera at
+    zero confirmed.
+    """
+    from corroboration import corroborate
+
+    episodes = [
+        {'camera': 'blue_anchor', 't_enter': '2026-08-30T10:00:00',
+         't_exit': '2026-08-30T10:02:00', 'zones': ['level crossing']},
+        {'camera': 'blue_anchor_2', 't_enter': '2026-08-30T10:00:30',
+         't_exit': '2026-08-30T10:01:30', 'zones': ['running line']},
+    ]
+    assert all(v['corroborated'] for v in corroborate(episodes).values())

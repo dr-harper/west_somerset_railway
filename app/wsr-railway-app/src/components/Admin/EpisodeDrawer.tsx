@@ -85,6 +85,15 @@ export const EpisodeDrawer: React.FC<Props> = ({ episode, onClose, footer }) => 
           <dd>
             {episode.claim?.corroborating_sightings ?? 1} camera
             {(episode.claim?.corroborating_sightings ?? 1) === 1 ? '' : 's'}
+            {' along the line'}
+          </dd>
+          <dt>Second view</dt>
+          <dd>
+            {!episode.corroboration?.checkable
+              ? (episode.corroboration?.reason ?? 'no second camera here')
+              : episode.corroboration.corroborated
+                ? `confirmed by ${cameraName(episode.corroboration.partner ?? '')}`
+                : `not seen by ${cameraName(episode.corroboration.partner ?? '')}, which was watching`}
           </dd>
           <dt>Status</dt><dd>{episode.status}</dd>
           {episode.verification?.notes && (
