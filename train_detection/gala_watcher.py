@@ -182,6 +182,8 @@ class CameraWorker(threading.Thread):
         self.log_queue = log_queue
         self.dry_run = dry_run
         self.mask = self._build_mask()
+        # Painted exclusions, kept for rejecting detections as well as motion
+        self.blocked_mask = exclusion_mask(self.camera, PROC_W, PROC_H)
         self.background = None
         self.cap = None
         self.url_time = 0.0
@@ -593,9 +595,21 @@ class CameraWorker(threading.Thread):
     def _detect(self, frame, conf: float = 0.5):
         detections = []
         zones = ZONES.get(self.camera)
+        # The block-out gated motion but not detections, so a static
+        # structure inside a zone kept producing trains: the roof in the
+        # foreground at Williton 2 accounted for 95 of that camera's 111
+        # detections on 30/8, at up to 0.82 confidence, and projected onto
+        # the loop at 0.83 gauges — close enough that geometry alone can
+        # never reject it.
+        blocked = self.blocked_mask
         for confidence, box, centre in self.detector.trains(frame):
             if confidence < conf:
                 continue
+            if blocked is not None:
+                cx = min(blocked.shape[1] - 1, max(0, int(centre[0] * SCALE)))
+                cy = min(blocked.shape[0] - 1, max(0, int(centre[1] * SCALE)))
+                if blocked[cy, cx] > 0:
+                    continue
             if zones:
                 zone = classify(self.camera, centre)
                 kind = next((k for n, k, _ in zones if n == zone), None)

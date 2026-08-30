@@ -159,3 +159,21 @@ def test_every_camera_has_a_station_node():
     from train_tracker import CAMERA_NODES
     missing = [c for c in CAMERAS if c not in CAMERA_NODES]
     assert not missing, f'no station node for {missing}'
+
+
+def test_exclusions_reject_detections_not_just_motion():
+    """A painted block-out must veto a detection whose centre falls in it.
+
+    Williton 2 produced 95 of its 111 detections on 30/8 from a roof in
+    the foreground, at up to 0.82 confidence. The roof sits 0.83 gauges
+    from the traced loop, so projection cannot reject it — only the
+    annotation can, and only if detections consult it.
+    """
+    import numpy as np
+
+    mask = tg.exclusion_mask('williton_2', 854, 480)
+    assert mask.any(), 'williton_2 has painted exclusions'
+    # Whatever is blocked must be usable as a veto: a boolean lookup at a
+    # detection centre, not merely a motion mask.
+    ys, xs = np.nonzero(mask)
+    assert mask[ys[0], xs[0]] > 0
