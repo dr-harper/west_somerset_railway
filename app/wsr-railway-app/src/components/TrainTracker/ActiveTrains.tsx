@@ -56,7 +56,7 @@ export const ActiveTrains: React.FC = () => {
   if (activeTrains.length === 0) {
     return (
       <div className={styles.noTrains}>
-        No trains currently running. Services operate from 10:00 to 18:00.
+        No trains due to be running just now.
       </div>
     );
   }

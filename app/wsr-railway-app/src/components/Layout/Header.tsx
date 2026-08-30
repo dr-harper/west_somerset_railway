@@ -27,7 +27,7 @@ export const Header: React.FC = () => {
                 to="/live-trains"
                 className={`${styles.navLink} ${location.pathname === '/live-trains' ? styles.active : ''}`}
               >
-                Live Trains
+                Trains Today
               </Link>
               <Link
                 to="/journey-planner"

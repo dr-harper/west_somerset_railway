@@ -34,6 +34,16 @@ export const LiveTrains: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Taken from today's actual timetable rather than asserted. The page
+  // claimed "10:00 to 18:00", which is wrong on any gala day — today's
+  // first booked departure is 08:10 and the last 18:25.
+  const bookedTimes = trains
+    .flatMap(t => t.stops.map(s => s.scheduledDeparture ?? s.scheduledArrival))
+    .filter((t): t is string => Boolean(t))
+    .sort();
+  const firstDeparture = bookedTimes[0];
+  const lastDeparture = bookedTimes[bookedTimes.length - 1];
+
   const runningTrains = trains.filter(t => t.status.state === 'Running');
   const upcomingTrains = trains.filter(t => {
     if (t.status.state !== 'Scheduled') return false;
@@ -88,9 +98,10 @@ export const LiveTrains: React.FC = () => {
     <div className={styles.container}>
       <div className={styles.header}>
         <Link to="/" className={styles.backLink}>← Back to Departures</Link>
-        <h1>Live Trains</h1>
+        <h1>Trains today</h1>
         <div className={styles.updateTime}>
-          Last updated: {new Date().toLocaleTimeString('en-GB')}
+          Positions estimated from the timetable ·{' '}
+          {new Date().toLocaleTimeString('en-GB')}
         </div>
       </div>
 
@@ -102,7 +113,7 @@ export const LiveTrains: React.FC = () => {
         {runningTrains.length > 0 && (
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>
-              Currently Running ({runningTrains.length})
+              Due to be running ({runningTrains.length})
             </h2>
             <div className={styles.trainGrid}>
               {runningTrains.map(train => (
@@ -171,8 +182,12 @@ export const LiveTrains: React.FC = () => {
         {runningTrains.length === 0 && upcomingTrains.length === 0 && (
           <div className={styles.noTrains}>
             <TrainFront className={styles.noTrainsIcon} size={32} aria-hidden />
-            <p>No trains currently running or scheduled to depart soon.</p>
-            <p>Services typically operate from 10:00 to 18:00.</p>
+            <p>No trains due to be running just now.</p>
+            {firstDeparture && lastDeparture ? (
+              <p>Today's service runs from {firstDeparture} to {lastDeparture}.</p>
+            ) : (
+              <p>No services are booked today.</p>
+            )}
           </div>
         )}
       </div>

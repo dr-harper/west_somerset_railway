@@ -128,8 +128,11 @@ export const DepartureBoard: React.FC<DepartureBoardProps> = ({
     );
   }
 
-  const hour = currentTime.getHours();
-  const showingNextDay = hour >= 20 || hour < 10;
+  // Whether the day is done is a question about the timetable, not about
+  // the hour: this said "today's services have ended" every morning before
+  // ten, on a railway whose first train is 08:10.
+  const finishedForToday =
+    Boolean(departureBoard) && departureBoard!.departures.length === 0;
 
   return (
     <div className={styles.departureBoard}>
@@ -144,9 +147,9 @@ export const DepartureBoard: React.FC<DepartureBoardProps> = ({
         </div>
       </div>
 
-      {showingNextDay && (
+      {finishedForToday && (
         <div className={styles.notice}>
-          Showing tomorrow's services (today's services have ended)
+          No more departures from this station today
         </div>
       )}
 
@@ -203,7 +206,7 @@ export const DepartureBoard: React.FC<DepartureBoardProps> = ({
         </table>
       ) : (
         <div className={styles.noDepartures}>
-          No departures scheduled from this station
+          No further departures today
         </div>
       )}
     </div>

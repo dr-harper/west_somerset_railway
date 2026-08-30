@@ -154,7 +154,7 @@ export const LiveJourneyTracker: React.FC = () => {
       <div className={styles.tracker}>
         <div className={styles.noTrains}>
           <TrainFront className={styles.icon} size={28} aria-hidden />
-          No trains currently running. Services operate from 10:00 to 18:00.
+          No trains due to be running just now.
         </div>
       </div>
     );
@@ -163,7 +163,7 @@ export const LiveJourneyTracker: React.FC = () => {
   return (
     <div className={styles.tracker}>
       <div className={styles.trackerHeader}>
-        <h2 className={styles.trackerTitle}>Live Train Status</h2>
+        <h2 className={styles.trackerTitle}>Where trains should be now</h2>
         <Link to="/live-trains" className={styles.viewAllLink}>
           View Full Map →
         </Link>

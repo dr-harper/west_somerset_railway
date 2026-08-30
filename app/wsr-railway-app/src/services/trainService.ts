@@ -114,16 +114,12 @@ export class TrainService {
   }
 
   async getDepartureBoard(stationCode: StationCode, limit = 10): Promise<DepartureBoard> {
-    // For development: show next day's first services if after 8pm
+    // The real clock, not a convenient one. This used to pretend it was
+    // 09:00 whenever the hour was before 10 or after 20, which meant that
+    // every operating morning — the first train is 08:10 — the board was
+    // answering a question nobody asked.
     const now = new Date();
-    let currentTime = now.toTimeString().slice(0, 5); // "HH:mm"
-    const hour = parseInt(currentTime.split(':')[0]);
-
-    // If after 8pm or before 10am, show morning services starting from 10:00
-    const showNextDay = hour >= 20 || hour < 10;
-    if (showNextDay) {
-      currentTime = "09:00"; // Show services from 10:00 onwards
-    }
+    const currentTime = now.toTimeString().slice(0, 5); // "HH:mm"
 
     const departures: Departure[] = [];
     const arrivals: Arrival[] = [];
@@ -288,12 +284,12 @@ export class TrainService {
           this.calculateCurrentLocation(train);
         }
 
-        // Simulate random delays (5% chance)
-        if (Math.random() < 0.05 && train.status.state === 'Running') {
-          const delayMinutes = Math.floor(Math.random() * 10) + 1;
-          train.status.delayMinutes = delayMinutes;
-          train.status.message = `Running ${delayMinutes} minutes late`;
-        }
+        // No invented delays. This used to give a running train a 5% chance
+        // per poll of being declared 1-10 minutes late — a specific claim
+        // about a specific service, shown to the public, with nothing
+        // behind it. Real delays come from the detection pipeline, which
+        // measures them against sightings; until a service has been seen,
+        // the honest answer is that we do not know.
       }
 
       // Notify listeners

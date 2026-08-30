@@ -35,7 +35,7 @@ export const RouteMap: React.FC<RouteMapProps> = ({ trains, stations }) => {
   return (
     <div className={styles.routeMap}>
       <div className={styles.mapHeader}>
-        <h3>Live Route Map</h3>
+        <h3>Expected positions</h3>
         <div className={styles.legend}>
           <div className={styles.legendItem}>
             <div className={`${styles.trainIcon} ${styles.northbound}`}>▶</div>
