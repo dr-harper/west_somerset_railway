@@ -191,10 +191,40 @@ def main() -> None:
         gaps = [abs(a - b) for _, a, b in pairs]
         print(f'  median disagreement {sorted(gaps)[len(gaps) // 2]:.1f} mph')
 
-    # --- 4. headcode ------------------------------------------------------
-    print('\nHEADCODE')
-    print('  not yet extracted — needs a vision call, prototyped separately')
-    print('  candidate: D7017 carried 1M65 in large characters on 30/8')
+    # --- 4. headcode and formation ---------------------------------------
+    # Both need a vision call, so they are documented rather than re-run:
+    # see the FORMATION_PROMPT below and the findings in the module
+    # docstring.
+    print('\nHEADCODE AND FORMATION')
+    print('  vision calls, not re-run here — see FORMATION_PROMPT and the')
+    print('  findings at the top of this file')
+
+
+# Asking for the formation works for the common cases and fails for the one
+# it was wanted for. Over 20 stills spread across all ten cameras: 11 'loco
+# and coaches', 3 'multiple unit', 4 'unsure', 2 'light engine' — and both
+# light engine calls were wrong. At Watchet a Class 33 had a coach coupled
+# in front of it, and the answer even said 'light engine, 2 vehicles'. The
+# frame usually cuts the rest of the train off, so a locomotive at the edge
+# looks solitary whether or not it is.
+#
+# The unexpected value is the other way round: all four 'unsure' answers
+# were right, including a Blue Anchor still where YOLO had fired at 51% on
+# people crossing the line and there was no train at all. As a second-stage
+# filter on weak detections this is worth more than the tag it was built for.
+FORMATION_PROMPT = (
+    "A still from a lineside camera on a British heritage railway. What is "
+    "the formation of the train?\n"
+    "'light engine' — a locomotive travelling alone, no coaches or wagons "
+    "attached to it.\n"
+    "'loco and coaches' — a separate locomotive hauling coaches or wagons.\n"
+    "'multiple unit' — a self-propelled passenger set, no separate loco.\n"
+    "'coaches only' — vehicles are visible but no locomotive is in the "
+    "frame, so the formation cannot be judged.\n"
+    "'unsure' — no train visible at all.\n"
+    "vehicles: how many vehicles you can actually count, 0 if you cannot. "
+    "Do not guess."
+)
 
 
 if __name__ == '__main__':
