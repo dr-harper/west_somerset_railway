@@ -182,8 +182,20 @@ class CameraWorker(threading.Thread):
         self.log_queue = log_queue
         self.dry_run = dry_run
         self.mask = self._build_mask()
-        # Painted exclusions, kept for rejecting detections as well as motion
+        # The block-out has two jobs and they need different rules. For the
+        # motion gate it applies wholesale: a level crossing is painted out
+        # precisely because people walk over it, and none of that should
+        # open a gate.
+        #
+        # For rejecting detections it cannot apply wholesale, because a
+        # train crossing that same spot is still a train. Geometry will not
+        # separate them either — the roof that produced 95 of Williton 2's
+        # detections sits 0.83 gauges from the traced loop, closer than
+        # some of the track itself. What separates them is that the roof
+        # never moves. So inside painted areas a detection counts only if
+        # something actually changed there.
         self.blocked_mask = exclusion_mask(self.camera, PROC_W, PROC_H)
+        self.last_changed = None
         self.background = None
         self.cap = None
         self.url_time = 0.0
@@ -260,6 +272,7 @@ class CameraWorker(threading.Thread):
         global_frac = float(changed.mean())
         zone_frac = float(changed[self.mask > 0].mean()) if self.mask.any() else 0.0
         self.last_motion_cells = self._motion_cells(changed)
+        self.last_changed = changed
         # adapt the background only while idle so a dwelling train
         # is not absorbed mid-episode
         if self.state == 'IDLE':
@@ -605,6 +618,24 @@ class CameraWorker(threading.Thread):
                 time.sleep(CHALLENGE_BACKOFF_S if challenged else backoff)
                 backoff = min(backoff * 2, 120)
 
+    def _moved_within(self, box) -> bool:
+        """Whether anything changed inside a detection box.
+
+        The test that tells a train crossing a painted level crossing from
+        the static structure the paint was aimed at. Without the motion
+        record — the very first frames, or a background still building —
+        the benefit of the doubt goes to the train.
+        """
+        changed = self.last_changed
+        if changed is None:
+            return True
+        x1, y1, x2, y2 = (int(v * SCALE) for v in box)
+        x1 = max(0, min(changed.shape[1] - 1, x1))
+        x2 = max(x1 + 1, min(changed.shape[1], x2))
+        y1 = max(0, min(changed.shape[0] - 1, y1))
+        y2 = max(y1 + 1, min(changed.shape[0], y2))
+        return bool(changed[y1:y2, x1:x2].mean() > MOTION_FRACTION)
+
     def _detect(self, frame, conf: float = 0.5):
         detections = []
         zones = ZONES.get(self.camera)
@@ -621,7 +652,7 @@ class CameraWorker(threading.Thread):
             if blocked is not None:
                 cx = min(blocked.shape[1] - 1, max(0, int(centre[0] * SCALE)))
                 cy = min(blocked.shape[0] - 1, max(0, int(centre[1] * SCALE)))
-                if blocked[cy, cx] > 0:
+                if blocked[cy, cx] > 0 and not self._moved_within(box):
                     continue
             if zones:
                 zone = classify(self.camera, centre)
