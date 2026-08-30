@@ -13,7 +13,7 @@ definition, what the gate should stop looking at — crowds, road traffic,
 vegetation. This turns a day's false gates into a proposed mask, drawn
 over the camera's reference frame for a human to accept or reject.
 
-    python3 propose_exclusions.py [--camera blue_anchor] [--min-ratio 0.9]
+    python3 propose_exclusions.py [--camera blue_anchor] [--min-events 5]
 """
 
 import argparse
@@ -58,16 +58,47 @@ def cell_box(cell: int) -> tuple[int, int, int, int]:
     return col * w, row * h, w, h
 
 
-def propose(camera: str, all_gates, false_gates, min_ratio: float,
-            min_events: int) -> list[int]:
-    """Cells that fire often and almost never produce a train."""
+def track_cells(camera: str) -> set[int]:
+    """Grid cells the traced rails pass through.
+
+    A hard floor on what may be excluded. Ratio alone cannot protect
+    these: when 95% of a camera's gates are false — Blue Anchor on 30/8 —
+    almost every cell clears a 95% threshold, including the running line,
+    and the proposal blinds the camera it was meant to sharpen.
+    """
+    import numpy as np
+
+    from track_geometry import corridor_mask
+
+    mask = corridor_mask(camera, FRAME_W, FRAME_H)
+    if not mask.any():
+        return set()
+    cells = set()
+    for cell in range(MOTION_GRID_W * MOTION_GRID_H):
+        x, y, w, h = cell_box(cell)
+        if np.any(mask[y:y + h, x:x + w] > 0):
+            cells.add(cell)
+    return cells
+
+
+def propose(camera: str, all_gates, false_gates,
+            min_events: int = 5) -> list[int]:
+    """Cells that fire often and have never once produced a train.
+
+    'Never once' rather than 'rarely': a cell that has yielded even one
+    train is somewhere a train can be, and blinding it costs far more than
+    the wasted gates it saves. There is no ratio threshold any more — a
+    cell with no true gates is 100% wasted by definition, so the knob did
+    nothing once the rule tightened.
+    """
+    protected = track_cells(camera)
     proposed = []
     for cell, total in all_gates.get(camera, {}).items():
-        if total < min_events:
-            continue                      # too rare to judge
-        wasted = false_gates.get(camera, {}).get(cell, 0)
-        if wasted / total >= min_ratio:
-            proposed.append(cell)
+        if total < min_events or cell in protected:
+            continue
+        if total - false_gates.get(camera, {}).get(cell, 0) > 0:
+            continue                      # this cell has seen a train
+        proposed.append(cell)
     return sorted(proposed)
 
 
@@ -115,8 +146,6 @@ def as_regions(cells: list[int]) -> list[dict]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('--camera')
-    parser.add_argument('--min-ratio', type=float, default=0.95,
-                        help='share of a cell\'s gates that must be false')
     parser.add_argument('--min-events', type=int, default=5,
                         help='ignore cells seen fewer times than this')
     parser.add_argument('--write', action='store_true',
@@ -131,8 +160,7 @@ def main() -> None:
 
     cameras = [args.camera] if args.camera else sorted(all_gates)
     for camera in cameras:
-        cells = propose(camera, all_gates, false_gates,
-                        args.min_ratio, args.min_events)
+        cells = propose(camera, all_gates, false_gates, args.min_events)
         total_cells = len(all_gates.get(camera, {}))
         print(f'{camera}: {len(cells)} of {total_cells} active cells proposed '
               f'for exclusion')
