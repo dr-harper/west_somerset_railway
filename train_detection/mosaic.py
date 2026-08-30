@@ -97,15 +97,89 @@ def build(frames: list, box, shifts: list[float]) -> np.ndarray | None:
     return canvas
 
 
+def moving_px_per_frame(path: Path) -> tuple[int, float] | None:
+    """Frames, and how far the train shifted between them."""
+    cap = cv2.VideoCapture(str(path))
+    frames = []
+    while True:
+        ok, frame = cap.read()
+        if not ok:
+            break
+        frames.append(frame)
+    cap.release()
+    if len(frames) < 20:
+        return None
+    runs = static_runs(frames)
+    if not runs:
+        return len(frames), 0.0
+    start, end = max(runs, key=lambda r: r[1] - r[0])
+    segment = frames[start:end + 1]
+    from gala_watcher import SharedDetector
+    global _DETECTOR
+    try:
+        detector = _DETECTOR
+    except NameError:
+        detector = None
+    if detector is None:
+        detector = _DETECTOR = SharedDetector(str(HERE / 'yolo11s.pt'))
+    found = detector.trains(segment[0], conf=0.4)
+    if not found:
+        return len(frames), 0.0
+    _c, box, _p = max(found, key=lambda t: (t[1][2] - t[1][0]) * (t[1][3] - t[1][1]))
+    shifts = train_shifts(segment, box)
+    return len(segment), float(np.median(shifts))
+
+
+_DETECTOR = None
+
+
+def scan() -> None:
+    """Which dense clips actually hold a train going somewhere.
+
+    Most do not: a camera at a station spends the day looking at stock
+    that is standing still, and a mosaic needs a passage.
+    """
+    clips = sorted((HERE / 'captures').glob('*_dense.mp4'))
+    if not clips:
+        print('no dense clips yet')
+        return
+    print(f"{'clip':<46} {'frames':>7} {'px/frame':>9}")
+    for clip in clips:
+        result = moving_px_per_frame(clip)
+        if not result:
+            continue
+        frames, shift = result
+        flag = '  <-- moving' if abs(shift) >= 0.5 else ''
+        print(f'{clip.name:<46} {frames:>7} {shift:>+9.2f}{flag}')
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument('burst')
+    parser.add_argument('burst', nargs='?')
     parser.add_argument('--out', default='working_images/mosaic.jpg')
+    parser.add_argument('--scan', action='store_true',
+                        help='report which dense clips hold a moving train')
     args = parser.parse_args()
 
-    with open(args.burst, 'rb') as handle:
-        data = pickle.load(handle)
-    frames = data['frames']
+    if args.scan:
+        scan()
+        return
+
+    source = Path(args.burst)
+    if source.suffix == '.mp4':
+        cap = cv2.VideoCapture(str(source))
+        frames = []
+        while True:
+            ok, frame = cap.read()
+            if not ok:
+                break
+            frames.append(frame)
+        cap.release()
+        data = {'camera': source.stem}
+    else:
+        with source.open('rb') as handle:
+            data = pickle.load(handle)
+        frames = data['frames']
     runs = static_runs(frames)
     print(f"{data.get('camera')}: {len(frames)} frames, "
           f"{len(runs)} static run(s) {runs}")
