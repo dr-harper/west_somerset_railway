@@ -62,3 +62,9 @@ variable "github_repository" {
   type        = string
   default     = "dr-harper/west_somerset_railway"
 }
+
+variable "watcher_running" {
+  description = "Whether the capture VM runs. False while capture happens elsewhere: YouTube refuses media segments to datacentre addresses, so the machine can resolve every stream and read none of them."
+  type        = bool
+  default     = false
+}

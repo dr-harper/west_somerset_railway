@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>uk.co.wsr.pipeline</string>
+
+  <!-- Python directly, not a shell wrapper. The watcher's agent records
+       why: a wrapper failed to spawn with exit 127 and silently lost the
+       08:00 start on 30/8. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/anaconda3/bin/python3</string>
+    <string>-u</string>
+    <string>run_pipeline.py</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/michael/Documents/GitHub/west_somerset_railway/train_detection</string>
+
+  <!-- gcloud is what mints the credential each run, and launchd's own PATH
+       (/usr/bin:/bin:/usr/sbin:/sbin) does not have it. -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/opt/anaconda3/bin:/Users/michael/google-cloud-sdk/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+
+  <!-- Every fifteen minutes. The control room was routinely hours behind
+       the cameras because both halves of this were run by hand, and a
+       detection nobody can see until the evening is not a monitor.
+       Affordable only because the upload writes what changed rather than
+       rewriting the day: at 549 documents a run this would otherwise be
+       52,000 writes a day against a 20,000 free tier. -->
+  <key>StartInterval</key>
+  <integer>900</integer>
+
+  <key>RunAtLoad</key>
+  <false/>
+
+  <!-- Outside the project directory. Pointing a job's log inside
+       train_detection failed to spawn at all with EX_CONFIG (78) and lost
+       the 31/8 start. ~/Library/Logs has never refused. -->
+  <key>StandardOutPath</key>
+  <string>/Users/michael/Library/Logs/wsr-pipeline.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/michael/Library/Logs/wsr-pipeline.log</string>
+</dict>
+</plist>

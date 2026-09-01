@@ -21,6 +21,7 @@ listing and nothing else.
 """
 
 import argparse
+import hashlib
 import json
 import os
 from datetime import datetime
@@ -36,6 +37,56 @@ COLLECTION = 'episodes'
 STATUS = 'status'
 MOVEMENTS = 'movements'
 CAMERAS_COLLECTION = 'cameras'
+
+# What was last written, so a run that changes nothing costs nothing.
+#
+# Every run rewrote the day in full — 549 documents whether or not a single
+# one had changed. Run every quarter of an hour, as it now is, that is about
+# 52,000 writes a day against a free tier of 20,000: the automation that was
+# meant to keep the control room current would have started billing for
+# writing the same bytes back over themselves.
+#
+# Local rather than remote on purpose. Asking Firestore what it already has
+# costs a read per document, which is the same problem wearing a different
+# hat.
+MANIFEST = HERE / '.uploaded.json'
+
+
+# Stamped fresh on every run, so it makes an untouched episode look changed.
+# Hashing it defeated the whole point: the first attempt at skipping
+# unchanged documents still rewrote all 549, because every one of them
+# carried a new uploaded_at.
+VOLATILE = frozenset({'uploaded_at'})
+
+
+def fingerprint(payload: dict) -> str:
+    """A stable hash of what would be written, ignoring the clock.
+
+    Leaving uploaded_at out has a second, better effect: it stops meaning
+    "when the pipeline last ran" — which the heartbeat already records — and
+    starts meaning "when this episode last actually changed", which is the
+    more useful of the two and was not recorded anywhere.
+    """
+    stable = {k: v for k, v in payload.items() if k not in VOLATILE}
+    return hashlib.sha256(
+        json.dumps(stable, sort_keys=True, default=str).encode()).hexdigest()
+
+
+def load_manifest() -> dict:
+    try:
+        return json.loads(MANIFEST.read_text())
+    except (OSError, json.JSONDecodeError):
+        # No manifest, or a corrupt one, means write everything once. That
+        # is the safe direction to fail in.
+        return {}
+
+
+def save_manifest(manifest: dict) -> None:
+    # Written via a temporary file so an interrupted run cannot leave a
+    # half-written manifest that would be read as "already uploaded".
+    scratch = MANIFEST.with_suffix('.tmp')
+    scratch.write_text(json.dumps(manifest, sort_keys=True))
+    scratch.replace(MANIFEST)
 
 
 def movement_document(movement: dict, record: dict, date_key: str) -> dict:
@@ -206,6 +257,28 @@ def episode_document(episode: dict, movement: dict | None,
 INITIAL_VERIFICATION = {'status': 'unverified', 'verification': None}
 
 
+def deduplicate(episodes: list) -> list:
+    """One record per episode, keeping the most complete.
+
+    episodes.jsonl is append-only, so an episode that was still open when it
+    was first written and later grew appears twice: same start, same camera,
+    a longer t_exit the second time. Both map to the same document id, so
+    each upload wrote one then the other and the control room showed
+    whichever landed last — 8 episodes on 31/8 alternated between a 80
+    second passage and a 5 minute one on every run.
+
+    The later ending is the better record: it saw the train for longer and,
+    in every colliding pair here, with more confidence.
+    """
+    best: dict = {}
+    for episode in episodes:
+        key = episode_id(episode)
+        held = best.get(key)
+        if held is None or (episode.get('t_exit') or '') > (held.get('t_exit') or ''):
+            best[key] = episode
+    return list(best.values())
+
+
 def episode_id(episode: dict) -> str:
     """Stable id so re-running the uploader updates rather than duplicates."""
     return f"{episode['t_enter'].replace(':', '').replace('-', '')}_{episode['camera']}"
@@ -264,6 +337,11 @@ def main() -> None:
     episodes = load_episodes()
     if args.date:
         episodes = [e for e in episodes if e['t_enter'].startswith(args.date)]
+    before = len(episodes)
+    episodes = sorted(deduplicate(episodes), key=lambda e: e['t_enter'])
+    if before != len(episodes):
+        print(f'{before - len(episodes)} duplicate records collapsed '
+              f'into the episode they belong to')
     if not episodes:
         print('no episodes to upload')
         return
@@ -341,21 +419,31 @@ def main() -> None:
     collection = client.collection(COLLECTION)
     existing = {snapshot.id for snapshot in collection.select([]).stream()}
 
+    manifest = load_manifest()
     batch = client.batch()
-    written = new = 0
+    written = new = unchanged = 0
     for doc_id, doc in documents:
         payload = dict(doc)
         if doc_id not in existing:
             payload.update(INITIAL_VERIFICATION)   # only ever set on create
             new += 1
+        mark = fingerprint(payload)
+        # An episode that has not changed since it was last written is
+        # skipped. A verifier's own edits are unaffected: this compares what
+        # the pipeline would write, and the pipeline never writes the
+        # verification fields after create.
+        if manifest.get(f'{COLLECTION}/{doc_id}') == mark and doc_id in existing:
+            unchanged += 1
+            continue
         batch.set(collection.document(doc_id), payload, merge=True)
+        manifest[f'{COLLECTION}/{doc_id}'] = mark
         written += 1
         if written % 400 == 0:
             batch.commit()
             batch = client.batch()
     batch.commit()
     print(f'wrote {written} documents to {COLLECTION} '
-          f'({new} new, {written - new} refreshed without touching verification)')
+          f'({new} new, {written - new} changed, {unchanged} unchanged and skipped)')
 
     latest = max((e['t_enter'] for e in episodes), default=None)
     client.collection(STATUS).document('pipeline').set({
@@ -372,13 +460,26 @@ def main() -> None:
                        (CAMERAS_COLLECTION, camera_docs)):
         target = client.collection(name)
         batch = client.batch()
-        for index, (doc_id, doc) in enumerate(docs, 1):
+        sent = skipped = 0
+        for doc_id, doc in docs:
+            mark = fingerprint(doc)
+            if manifest.get(f'{name}/{doc_id}') == mark:
+                skipped += 1
+                continue
             batch.set(target.document(doc_id), doc)
-            if index % 400 == 0:
+            manifest[f'{name}/{doc_id}'] = mark
+            sent += 1
+            if sent % 400 == 0:
                 batch.commit()
                 batch = client.batch()
         batch.commit()
-        print(f'wrote {len(docs)} documents to {name}')
+        print(f'wrote {sent} documents to {name} ({skipped} unchanged)')
+
+    # Only after every commit has gone through, so a failure part way leaves
+    # the manifest behind reality rather than ahead of it. Behind means a
+    # harmless rewrite next run; ahead means a document silently never
+    # written at all.
+    save_manifest(manifest)
 
 
 if __name__ == '__main__':

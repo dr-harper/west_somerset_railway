@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>uk.co.wsr.watcher</string>
+
+  <!-- Python is invoked directly rather than through run_watcher.sh.
+       launchd could read every file in the project and import the modules
+       fine, but executing the shell script failed with "can't open input
+       file" and exit 127, which silently lost the 08:00 start on 30/8. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/anaconda3/bin/python3</string>
+    <string>-u</string>
+    <string>gala_watcher.py</string>
+    <string>--hours</string>
+    <string>11</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/michael/Documents/GitHub/west_somerset_railway/train_detection</string>
+
+  <!-- launchd's own PATH is /usr/bin:/bin:/usr/sbin:/sbin, which does not
+       include /opt/homebrew/bin. yt-dlp needs node to solve YouTube's
+       player challenge; without it every camera returned "This live
+       stream recording is not available". wsr_live_capture now passes
+       node's absolute path, and this is the belt to that braces. -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/opt/anaconda3/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>8</integer>
+    <key>Minute</key><integer>0</integer>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <false/>
+
+  <!-- Outside the project directory on purpose. Pointing these at
+       train_detection/watcher.log made the job fail to spawn at all —
+       exit 78, EX_CONFIG, nothing written, which is how the 31/8 start
+       was lost. ~/Library/Logs is where a LaunchAgent's output belongs
+       and it has never refused. -->
+  <key>StandardOutPath</key>
+  <string>/Users/michael/Library/Logs/wsr-watcher.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/michael/Library/Logs/wsr-watcher.log</string>
+</dict>
+</plist>

@@ -164,6 +164,22 @@ resource "google_compute_instance" "watcher" {
   machine_type = var.machine_type
   zone         = var.zone
 
+  # Stopped, deliberately, and kept rather than destroyed.
+  #
+  # YouTube serves the HLS manifest to this machine and then refuses the
+  # media: the first segment 302s to a second host which answers 403. The
+  # same code against the same camera minutes apart got 490 KB on a home
+  # connection and Forbidden here, on three cameras out of three. It is the
+  # source address, not the code — a datacentre gets the index and not the
+  # video.
+  #
+  # So capture runs where the address is residential and this project keeps
+  # everything that does work from here: the bucket, Firestore, the secret,
+  # the site. The disk is left in place because the provisioning on it is
+  # sound and will be wanted the day the streams come from Railcam directly
+  # rather than through YouTube.
+  desired_status = var.watcher_running ? "RUNNING" : "TERMINATED"
+
   # It reads eleven video streams all day; losing it mid-morning to a
   # preemption would cost exactly the thing it exists to capture.
   scheduling {

@@ -60,3 +60,4 @@ deploy/terraform/.terraform.lock.hcl
 
 # Local service logs
 *.log
+train_detection/.uploaded.json
