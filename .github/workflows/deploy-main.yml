@@ -56,9 +56,10 @@ jobs:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
 
+      # The firebase CLI rather than FirebaseExtended/action-hosting-deploy,
+      # which takes only a service account key and cannot use federated
+      # credentials. The CLI reads GOOGLE_APPLICATION_CREDENTIALS, which the
+      # auth step above writes as a short-lived file — so the keyless path
+      # holds rather than being abandoned for a JSON key in a secret.
       - name: Deploy to Firebase Hosting
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          projectId: west-somerset-railway-project
-          channelId: live
+        run: npx --yes firebase-tools@14 deploy --only hosting --project west-somerset-railway-project --non-interactive
