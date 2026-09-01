@@ -63,3 +63,9 @@ jobs:
       # holds rather than being abandoned for a JSON key in a secret.
       - name: Deploy to Firebase Hosting
         run: npx --yes firebase-tools@14 deploy --only hosting --project west-somerset-railway-project --non-interactive
+        env:
+          # Named explicitly rather than relying on the auth step exporting
+          # it. Without this the CLI found no credentials and asked whether
+          # anyone had run `firebase login`, which reads as a missing login
+          # and is actually an environment variable not arriving.
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}

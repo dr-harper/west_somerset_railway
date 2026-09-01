@@ -5,57 +5,66 @@ on:
     branches: [ "main" ]
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
+  id-token: write
 
 jobs:
-  build-and-deploy:
+  preview:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 18
-        cache: 'npm'
-        cache-dependency-path: app/wsr-railway-app/package-lock.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: app/wsr-railway-app/package-lock.json
 
-    - name: Install dependencies
-      run: npm ci
-      working-directory: app/wsr-railway-app
+      - name: Install dependencies
+        run: npm ci
+        working-directory: app/wsr-railway-app
 
-    - name: Build project
-      run: npm run build
-      working-directory: app/wsr-railway-app
-      env:
-        BASE_PATH: /west_somerset_railway/pr/${{ github.event.number }}/
+      - name: Build
+        run: npm run build
+        working-directory: app/wsr-railway-app
+        env:
+          # A preview channel serves from its own subdomain, at the root, so
+          # there is no path prefix to build in — unlike the gh-pages preview
+          # this replaces, which needed the PR number baked into every asset
+          # URL and so never quite matched what main would look like.
+          BASE_PATH: /
+          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}
 
-    - name: Deploy preview
-      id: deploy
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_branch: gh-pages
-        publish_dir: app/wsr-railway-app/dist
-        destination_dir: pr/${{ github.event.number }}
-        keep_files: true
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
 
-    - name: Comment preview URL
-      uses: actions/github-script@v7
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          const pr = context.payload.pull_request.number;
-          const owner = context.repo.owner;
-          const repo = context.repo.repo;
-          const url = `https://${owner}.github.io/${repo}/pr/${pr}/`;
-          
-          github.rest.issues.createComment({
-            owner: owner,
-            repo: repo,
-            issue_number: pr,
-            body: `🚂 **Preview URL:** ${url}`,
-          });
+      # Channels expire on their own, which is why the cleanup workflow that
+      # used to delete gh-pages directories on close is gone rather than
+      # rewritten.
+      - name: Deploy preview channel
+        id: preview
+        run: |
+          npx --yes firebase-tools@14 hosting:channel:deploy "pr-${{ github.event.number }}" \
+            --project west-somerset-railway-project --expires 7d --json > channel.json
+          echo "url=$(python3 -c "import json;d=json.load(open('channel.json'));print(list(d['result'].values())[0]['url'])")" >> "$GITHUB_OUTPUT"
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
+
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: `🚂 **Preview:** ${{ steps.preview.outputs.url }}\n\nExpires in 7 days.`,
+            });
