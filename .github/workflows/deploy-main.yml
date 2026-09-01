@@ -7,9 +7,6 @@ on:
 
 permissions:
   contents: read
-  # Lets the job ask GitHub for a signed token proving which repository it is.
-  # That token is what Google trusts, which is why no key is stored here.
-  id-token: write
 
 jobs:
   build-and-deploy:
@@ -50,22 +47,21 @@ jobs:
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
           VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}
 
-      - id: auth
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
-
-      # The firebase CLI rather than FirebaseExtended/action-hosting-deploy,
-      # which takes only a service account key and cannot use federated
-      # credentials. The CLI reads GOOGLE_APPLICATION_CREDENTIALS, which the
-      # auth step above writes as a short-lived file — so the keyless path
-      # holds rather than being abandoned for a JSON key in a secret.
+      # A key, reluctantly. Workload Identity Federation is provisioned and is
+      # the right primitive for GCP generally, but the Firebase CLI reads
+      # GOOGLE_APPLICATION_CREDENTIALS only for service account keys and
+      # cannot use the external-account file federation produces. Three
+      # attempts failed with "have you run firebase login", which reads as a
+      # missing login and is actually an unsupported credential type.
+      #
+      # So the blast radius is kept small instead of the key being avoided:
+      # this account may write Hosting and nothing else. It cannot read
+      # detections, reach the captures, see the Gemini secret, or touch the
+      # machine.
       - name: Deploy to Firebase Hosting
-        run: npx --yes firebase-tools@14 deploy --only hosting --project west-somerset-railway-project --non-interactive
-        env:
-          # Named explicitly rather than relying on the auth step exporting
-          # it. Without this the CLI found no credentials and asked whether
-          # anyone had run `firebase login`, which reads as a missing login
-          # and is actually an environment variable not arriving.
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: west-somerset-railway-project
+          channelId: live

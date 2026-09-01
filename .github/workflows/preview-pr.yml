@@ -7,7 +7,6 @@ on:
 permissions:
   contents: read
   pull-requests: write
-  id-token: write
 
 jobs:
   preview:
@@ -41,30 +40,14 @@ jobs:
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
           VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}
 
-      - id: auth
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
-
-      # Channels expire on their own, which is why the cleanup workflow that
-      # used to delete gh-pages directories on close is gone rather than
-      # rewritten.
       - name: Deploy preview channel
-        id: preview
-        run: |
-          npx --yes firebase-tools@14 hosting:channel:deploy "pr-${{ github.event.number }}" \
-            --project west-somerset-railway-project --expires 7d --json > channel.json
-          echo "url=$(python3 -c "import json;d=json.load(open('channel.json'));print(list(d['result'].values())[0]['url'])")" >> "$GITHUB_OUTPUT"
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
-
-      - uses: actions/github-script@v7
+        uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          script: |
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              body: `🚂 **Preview:** ${{ steps.preview.outputs.url }}\n\nExpires in 7 days.`,
-            });
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: west-somerset-railway-project
+          # Channels expire on their own, which is why the cleanup workflow
+          # that deleted gh-pages directories on close is gone rather than
+          # rewritten. The action comments the URL on the PR itself.
+          channelId: pr-${{ github.event.number }}
+          expires: 7d
