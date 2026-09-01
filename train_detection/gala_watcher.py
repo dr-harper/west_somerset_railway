@@ -329,8 +329,13 @@ class CameraWorker(threading.Thread):
     def _start_reader(self):
         self.reader = StreamReader(
             self.camera, self.ring, self._open_capture,
-            on_error=lambda error: self.log.put(json.dumps({
-                'camera': self.camera, 'event': 'reader_error',
+            # log_queue, and a (kind, payload) tuple like every other call
+            # here. Naming it wrong meant the error handler itself raised, so
+            # a camera whose stream had simply gone away took its reader
+            # thread down with an AttributeError instead of reconnecting —
+            # and the only symptom was a traceback about the wrong thing.
+            on_error=lambda error: self.log_queue.put(('reader_error', {
+                'camera': self.camera,
                 'error': str(error)[:200]})))
         self.reader.start()
 
@@ -924,7 +929,11 @@ def main() -> None:
                   f"{payload['t_exit']} {payload.get('direction')} "
                   f"zones={payload['zones']} peak={payload['peak_conf']}",
                   flush=True)
-        elif kind in ('gate', 'false_gate', 'error', 'info'):
+        # reader_error is its own kind rather than folded into 'error':
+        # a stream going away is a fact about the camera, not about
+        # detection, and a camera that is quietly offline all day looks
+        # exactly like a camera watching an empty railway.
+        elif kind in ('gate', 'false_gate', 'error', 'info', 'reader_error'):
             with GATE_LOG_PATH.open('a') as fh:
                 fh.write(json.dumps({'kind': kind, **payload}) + '\n')
         if time.time() - last_report > 600:
