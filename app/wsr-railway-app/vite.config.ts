@@ -2,6 +2,7 @@ import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { cameraTracks } from './vite-plugin-camera-tracks'
 import { localMedia } from './vite-plugin-local-media'
+import { spaFallback } from './vite-plugin-spa-fallback'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -11,7 +12,7 @@ export default defineConfig(({ mode }) => {
     // alone. Serving that endpoint from the dev server keeps it one app on
     // one port rather than a second server to start and to miss when it
     // stops.
-    plugins: [react(), cameraTracks(), localMedia()],
+    plugins: [react(), cameraTracks(), localMedia(), spaFallback()],
     base: env.BASE_PATH || '/',
     build: {
       rollupOptions: {
