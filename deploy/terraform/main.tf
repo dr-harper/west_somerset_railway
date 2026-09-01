@@ -80,6 +80,10 @@ resource "google_project_service" "needed" {
     "firebase.googleapis.com",
     "identitytoolkit.googleapis.com",
     "firebasehosting.googleapis.com",
+    # Serves the stills and clips to the browser under storage.rules,
+    # so the operator tools stop showing broken images while the
+    # bucket itself stays private.
+    "firebasestorage.googleapis.com",
   ])
   service            = each.value
   disable_on_destroy = false

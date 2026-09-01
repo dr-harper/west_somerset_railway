@@ -15,6 +15,7 @@ import {
   type Auth,
 } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore, type Firestore } from 'firebase/firestore';
+import { connectStorageEmulator, getStorage, type FirebaseStorage } from 'firebase/storage';
 
 const config = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -55,6 +56,7 @@ export const isFirebaseConfigured = Boolean(config.projectId);
 let app: FirebaseApp | null = null;
 let firestore: Firestore | null = null;
 let firebaseAuth: Auth | null = null;
+let firebaseStorage: FirebaseStorage | null = null;
 
 if (isFirebaseConfigured) {
   // A failure here must not take the whole site down — the timetable does
@@ -69,6 +71,21 @@ if (isFirebaseConfigured) {
   } catch (error) {
     console.error('Firestore unavailable; verification disabled', error);
     firestore = null;
+  }
+
+  // The stills and clips. Kept behind the same sign-in as everything else
+  // because they are Railcam's frames, not ours to rehost — see
+  // storage.rules. A failure here costs the pictures and not the page.
+  try {
+    firebaseStorage = getStorage(app!);
+    const storageEmulator = import.meta.env.VITE_STORAGE_EMULATOR as string | undefined;
+    if (storageEmulator) {
+      const [host, port] = emulatorHost(storageEmulator);
+      connectStorageEmulator(firebaseStorage, host, port);
+    }
+  } catch (error) {
+    console.error('Storage unavailable; stills will not load', error);
+    firebaseStorage = null;
   }
 
   try {
@@ -86,4 +103,5 @@ if (isFirebaseConfigured) {
 
 export const db = firestore;
 export const auth = firebaseAuth;
+export const storage = firebaseStorage;
 export const googleProvider = new GoogleAuthProvider();

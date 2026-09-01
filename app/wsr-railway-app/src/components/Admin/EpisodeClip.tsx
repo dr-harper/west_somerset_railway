@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Film, Gauge } from 'lucide-react';
-import { captureUrl } from '../../services/captures';
+import { captureNote, useCapture } from '../../services/captures';
 import styles from './EpisodeClip.module.css';
 
 /**
@@ -30,6 +30,10 @@ export const EpisodeClip: React.FC<Props> = ({ clip, denseClip, denseFrames }) =
   const [chosen, setChosen] = useState(available[0]?.key);
   const showing = available.find(option => option.key === chosen) ?? available[0];
 
+  // Resolved before the early return below, because a hook may not sit
+  // behind a branch. An absent name simply resolves to nothing.
+  const { url: source, state } = useCapture(showing?.name);
+
   if (!showing) {
     return (
       <p className={styles.none}>
@@ -39,7 +43,14 @@ export const EpisodeClip: React.FC<Props> = ({ clip, denseClip, denseFrames }) =
     );
   }
 
-  const source = captureUrl(showing.name);
+  if (state === 'forbidden' || state === 'missing') {
+    return (
+      <p className={styles.none}>
+        <Film size={14} aria-hidden />
+        {captureNote(state)}
+      </p>
+    );
+  }
 
   return (
     <div className={styles.wrap}>

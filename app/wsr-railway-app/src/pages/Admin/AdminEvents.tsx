@@ -4,7 +4,7 @@ import { DetectionRibbon } from '../../components/Admin/DetectionRibbon';
 import { EpisodeDrawer } from '../../components/Admin/EpisodeDrawer';
 import { CopyId } from '../../components/Admin/CopyId';
 import { isFirebaseConfigured } from '../../firebase';
-import { captureUrl } from '../../services/captures';
+import { CaptureImage } from '../../components/CaptureImage/CaptureImage';
 import { claimText } from '../../services/episodeText';
 import { CAMERAS, cameraName, unknownCameras } from '../../services/cameras';
 import {
@@ -183,7 +183,6 @@ export const AdminEvents: React.FC = () => {
       {view === 'stills' && shown.length > 0 && (
         <div className={styles.stillGrid}>
           {shown.map(episode => {
-            const src = captureUrl(episode.keyframe);
             return (
               <button
                 key={episode.id}
@@ -191,11 +190,11 @@ export const AdminEvents: React.FC = () => {
                 onClick={() => open(episode)}
                 title={episode.id}
               >
-                {src ? (
-                  <img src={src} alt="" loading="lazy" className={styles.stillImage} />
-                ) : (
-                  <span className={styles.stillMissing}>no still</span>
-                )}
+                <CaptureImage
+                  filename={episode.keyframe}
+                  alt=""
+                  className={styles.stillImage}
+                />
                 <span className={styles.stillMeta}>
                   <strong>{episode.t_enter.slice(11, 16)}</strong>
                   <span>{cameraName(episode.camera)}</span>

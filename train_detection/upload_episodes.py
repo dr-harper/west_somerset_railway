@@ -14,8 +14,10 @@ Against a real project:
     python3 upload_episodes.py --project <project-id>
 
 Episode media stays on disk by default: clips are training data, not
-review material. --with-images uploads the keyframe and hi-res still to
-Cloud Storage and stores their paths.
+review material. --media uploads the stills and clips the episodes name
+to Cloud Storage, where the deployed control room can read them under
+storage.rules. It is idempotent, so running it after every pass costs one
+listing and nothing else.
 """
 
 import argparse
@@ -214,6 +216,10 @@ def main() -> None:
     parser.add_argument('--project', required=True)
     parser.add_argument('--date', default=None, help='only upload this date_key')
     parser.add_argument('--dry-run', action='store_true')
+    parser.add_argument('--media', action='store_true',
+                        help='also upload the stills and clips to Cloud Storage')
+    parser.add_argument('--bucket', default=None,
+                        help='defaults to <project>-captures')
     args = parser.parse_args()
 
     from episode_analysis import load_episodes
@@ -261,6 +267,20 @@ def main() -> None:
     from camera_registry import registry
     camera_docs = [(entry['id'], entry) for entry in registry()]
     print(f'{len(camera_docs)} cameras')
+
+    if args.media:
+        import media_upload
+        names = media_upload.referenced(documents)
+        if args.dry_run:
+            print(f'{len(names)} files named by these episodes')
+        else:
+            from google.cloud import storage
+            bucket_name = args.bucket or f'{args.project}-captures'
+            bucket = storage.Client(project=args.project).bucket(bucket_name)
+            summary = media_upload.upload(bucket, names)
+            print(f'{bucket_name}: {media_upload.describe(summary)}')
+            for name in summary['missing_locally'][:5]:
+                print(f'  named but not on disk: {name}')
 
     if args.dry_run:
         for doc_id, doc in documents[:3]:

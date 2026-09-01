@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Frame, Square, SquareDashed } from 'lucide-react';
 import type { EpisodeBoxes } from '../../utils/firestore/episodes';
+import { captureNote, useCapture } from '../../services/captures';
 import styles from './AnnotatedStill.module.css';
 
 /**
@@ -16,9 +17,9 @@ import styles from './AnnotatedStill.module.css';
  */
 
 interface Props {
-  /** Preferred first. The hi-res still is missing for some episodes, so
-   *  the component falls through to the next rather than showing a
-   *  broken image. */
+  /** File names, preferred first. The hi-res still is missing for some
+   *  episodes, so the component falls through to the next rather than
+   *  showing a broken image. */
   sources: (string | null | undefined)[];
   alt: string;
   boxes?: EpisodeBoxes | null;
@@ -31,14 +32,29 @@ export const AnnotatedStill: React.FC<Props> = ({ sources, alt, boxes }) => {
 
   useEffect(() => setIndex(0), [candidates.join('|')]);
 
-  const src = candidates[index];
-  if (!src) {
+  const showing = candidates[index];
+  const { url: src, state } = useCapture(showing);
+
+  // Falling through to the next candidate is right when a file is absent
+  // and wrong when access was refused: the second file lives in the same
+  // bucket under the same rule, so retrying it only fails again more
+  // slowly. Refusal is reported instead.
+  useEffect(() => {
+    if (state === 'missing') setIndex(current => current + 1);
+  }, [state, showing]);
+
+  if (!showing || state === 'missing') {
     return <p className={styles.noBoxes}>No still was saved for this detection.</p>;
+  }
+  if (state === 'forbidden') {
+    return <p className={styles.noBoxes}>{captureNote(state)}.</p>;
+  }
+  if (!src) {
+    return <p className={styles.noBoxes} aria-busy="true" />;
   }
 
   // Boxes were measured against one particular image. If we have fallen
   // back to a different one, the coordinates no longer describe it.
-  const showing = src.split('/').pop();
   const applies = Boolean(boxes && (!boxes.image || boxes.image === showing));
   const detections = applies ? (boxes?.detections ?? []) : [];
   const canToggle = detections.length > 0;

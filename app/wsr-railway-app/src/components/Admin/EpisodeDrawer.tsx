@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { captureUrl } from '../../services/captures';
 import { AnnotatedStill } from './AnnotatedStill';
 import { EpisodeClip } from './EpisodeClip';
 import { CopyId } from './CopyId';
@@ -31,7 +30,7 @@ export const EpisodeDrawer: React.FC<Props> = ({ episode, onClose, footer }) => 
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const stills = [captureUrl(episode.hires), captureUrl(episode.keyframe)];
+  const stills = [episode.hires, episode.keyframe];
   const duration =
     episode.t_exit
       ? Math.round(

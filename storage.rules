@@ -1,0 +1,35 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // The stills and clips are frames lifted from Railcam's public YouTube
+    // streams. The *observations* drawn from them — that a train passed
+    // Williton at 14:47 — are facts about the railway and are published
+    // freely; the footage itself is somebody else's work and is not ours to
+    // rehost to the world. So the episodes stay publicly readable in
+    // Firestore and the media behind them does not.
+    //
+    // The gate is the operator grant rather than merely being signed in.
+    // Anyone with a Google account can sign in; that is enough to look at
+    // the detection record, and not enough to be handed the footage.
+    function isVerifier() {
+      return request.auth != null
+        && (firestore.exists(/databases/(default)/documents/verifiers/$(request.auth.uid))
+            || (request.auth.token.email != null
+                && firestore.exists(/databases/(default)/documents/verifiers/$(request.auth.token.email))));
+    }
+
+    // Uploads come from the watcher's service account, which uses the admin
+    // credentials and never passes through these rules. No client writes,
+    // so a compromised browser session cannot alter the evidence it is
+    // being asked to check.
+    match /captures/{allPaths=**} {
+      allow read: if isVerifier();
+      allow write: if false;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

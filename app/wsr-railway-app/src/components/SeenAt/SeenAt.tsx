@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Camera, Clock, Eye, EyeOff } from 'lucide-react';
-import { captureUrl } from '../../services/captures';
+import { CaptureImage } from '../CaptureImage/CaptureImage';
 import { cameraName } from '../../services/cameras';
 import type { Sighting } from '../../services/sightings';
 import styles from './SeenAt.module.css';
@@ -53,9 +53,9 @@ export const SeenAt: React.FC<Props> = ({ sighting, booked, stationName }) => {
           ? `${delta} min after booked`
           : `${-delta} min before booked`;
 
-  const still =
-    captureUrl(sighting.episodes[0]?.hires) ??
-    captureUrl(sighting.episodes[0]?.keyframe);
+  // Prefer the high-resolution frame and fall back to the keyframe, picking
+  // the file before asking for it rather than requesting both.
+  const still = sighting.episodes[0]?.hires ?? sighting.episodes[0]?.keyframe;
   const dwell = dwellText(sighting.dwellSeconds);
 
   return (
@@ -99,11 +99,10 @@ export const SeenAt: React.FC<Props> = ({ sighting, booked, stationName }) => {
       </p>
 
       {showStill && still && (
-        <img
+        <CaptureImage
           className={styles.still}
-          src={still}
+          filename={still}
           alt={`The train seen at ${sighting.station} at ${clock(sighting.firstSeen)}`}
-          loading="lazy"
         />
       )}
     </div>

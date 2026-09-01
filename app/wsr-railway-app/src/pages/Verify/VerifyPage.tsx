@@ -8,7 +8,7 @@ import {
   type VerificationStatus,
 } from '../../utils/firestore/episodes';
 import { cameraName } from '../../services/cameras';
-import { captureUrl } from '../../services/captures';
+import { CaptureImage } from '../../components/CaptureImage/CaptureImage';
 import { EpisodeClip } from '../../components/Admin/EpisodeClip';
 import styles from './VerifyPage.module.css';
 import { observations, timetableNote } from '../../services/evidence';
@@ -157,9 +157,9 @@ export const VerifyPage: React.FC = () => {
 
             <div className={styles.imageFrame}>
               {current.keyframe ? (
-                <img
+                <CaptureImage
                   className={styles.image}
-                  src={captureUrl(current.keyframe) ?? ''}
+                  filename={current.keyframe}
                   alt={`Detection at ${cameraName(current.camera)}`}
                 />
               ) : (
