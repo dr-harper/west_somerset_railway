@@ -49,6 +49,13 @@ output "firebase_web_config" {
     app_id      = google_firebase_web_app.site.app_id
     api_key     = data.google_firebase_web_app_config.site.api_key
     auth_domain = data.google_firebase_web_app_config.site.auth_domain
+    # Emitted rather than assumed. Firebase's conventional default is
+    # <project>.firebasestorage.app, and that bucket does not exist here —
+    # the captures bucket predates the Firebase registration and keeps its
+    # own name. VITE_FIREBASE_STORAGE_BUCKET was set to the convention and
+    # pointed at a 404, which would have failed every still in production
+    # while local dev, which never touches the bucket, looked perfect.
+    storage_bucket = google_storage_bucket.captures.name
   }
   sensitive = false
 }
