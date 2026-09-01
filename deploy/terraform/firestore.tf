@@ -15,7 +15,7 @@ resource "google_firestore_database" "main" {
   # a mistyped delete is not recoverable from anywhere else.
   delete_protection_state = "DELETE_PROTECTION_ENABLED"
 
-  depends_on = [google_project_service.needed]
+  depends_on = [time_sleep.apis_settle]
 }
 
 resource "google_firebaserules_ruleset" "firestore" {

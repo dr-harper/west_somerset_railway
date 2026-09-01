@@ -56,3 +56,9 @@ variable "ssh_source_ranges" {
   type        = list(string)
   default     = []
 }
+
+variable "github_repository" {
+  description = "owner/repo allowed to deploy. Narrow on purpose: without it, a token from any repository on GitHub would be accepted."
+  type        = string
+  default     = "dr-harper/west_somerset_railway"
+}

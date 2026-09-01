@@ -24,19 +24,32 @@ terraform {
       source  = "hashicorp/google-beta"
       version = "~> 6.0"
     }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.12"
+    }
   }
 }
 
+# user_project_override tells Google to bill and count quota against this
+# project rather than against whatever the credentials belong to. The Firebase
+# Rules API refuses to work without it: a raw access token carries no quota
+# project, and the call fails with SERVICE_DISABLED even though the service is
+# plainly enabled — which reads as an API problem and is a credentials one.
 provider "google" {
-  project = var.project_id
-  region  = var.region
-  zone    = var.zone
+  project               = var.project_id
+  region                = var.region
+  zone                  = var.zone
+  user_project_override = true
+  billing_project       = var.project_id
 }
 
 provider "google-beta" {
-  project = var.project_id
-  region  = var.region
-  zone    = var.zone
+  project               = var.project_id
+  region                = var.region
+  zone                  = var.zone
+  user_project_override = true
+  billing_project       = var.project_id
 }
 
 locals {
@@ -54,12 +67,30 @@ resource "google_project_service" "needed" {
     "logging.googleapis.com",
     "secretmanager.googleapis.com",
     "firebaserules.googleapis.com",
+    # Needed once user_project_override is on: calls are then routed through
+    # this project, so this project has to be able to answer them. Without
+    # these the provider reports SERVICE_DISABLED against services that are
+    # visibly enabled, which sends you looking in the wrong place entirely.
+    "iam.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
+    "serviceusage.googleapis.com",
+    # Firebase sits on top of the GCP project and is a separate enablement.
+    # Firestore works without it, which is exactly why its absence goes
+    # unnoticed until sign-in fails.
+    "firebase.googleapis.com",
+    "identitytoolkit.googleapis.com",
+    "firebasehosting.googleapis.com",
   ])
   service            = each.value
   disable_on_destroy = false
 }
 
 # --- who the machine is ----------------------------------------------------
+
+resource "time_sleep" "apis_settle" {
+  depends_on      = [google_project_service.needed]
+  create_duration = "60s"
+}
 
 resource "google_service_account" "watcher" {
   account_id   = "${local.name}-vm"
@@ -172,7 +203,7 @@ resource "google_compute_instance" "watcher" {
     system = "wsr-monitor"
   }
 
-  depends_on = [google_project_service.needed]
+  depends_on = [time_sleep.apis_settle]
 }
 
 # --- getting out, and getting in ------------------------------------------

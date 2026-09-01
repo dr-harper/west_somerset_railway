@@ -6,52 +6,59 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pages: write
+  contents: read
+  # Lets the job ask GitHub for a signed token proving which repository it is.
+  # That token is what Google trusts, which is why no key is stored here.
   id-token: write
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
         with:
-          # 18 stopped being enough on 29 August: the toolchain now wants
-          # ^20.19 || ^22.13 || >=24, and every deploy since has failed on
-          # EBADENGINE. Nobody noticed because a failed deploy leaves the
-          # last good site in place and says nothing.
+          # 18 stopped being enough on 29 August: the toolchain wants
+          # ^20.19 || ^22.13 || >=24, and every deploy failed on EBADENGINE.
+          # Nobody noticed, because a failed deploy leaves the last good site
+          # in place and says nothing.
           node-version: 22
           cache: 'npm'
           cache-dependency-path: app/wsr-railway-app/package-lock.json
-          
+
       - name: Install dependencies
         run: npm ci
         working-directory: app/wsr-railway-app
-        
+
       - name: Build
         run: npm run build
         working-directory: app/wsr-railway-app
         env:
-          BASE_PATH: /west_somerset_railway/
-          # A repository variable, not a secret: the project id is compiled
-          # into the client bundle and visible to anyone who opens the site.
-          # Firebase identifies a project by it; it does not authorise
-          # anything, which the security rules do.
-          #
-          # Left unset until Firestore exists in the project. An app pointed
-          # at a database that is not there renders "not configured" and
-          # shows nothing, which is worse than the current state, so this is
-          # the last switch to throw rather than the first.
+          # Served from the root of its own domain, so no path prefix. The
+          # /west_somerset_railway/ prefix Pages needed has caused at least
+          # one bug on its own.
+          BASE_PATH: /
+          # Repository variables, not secrets: every one of these compiles
+          # into the client bundle and is visible to anyone who opens the
+          # site. They identify the project; they authorise nothing, which
+          # the Firestore rules do.
           VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
-          
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}
+
+      - id: auth
+        uses: google-github-actions/auth@v2
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: gh-pages
-          publish_dir: app/wsr-railway-app/dist
-          keep_files: false
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          projectId: west-somerset-railway-project
+          channelId: live
