@@ -211,6 +211,42 @@ def episode_id(episode: dict) -> str:
     return f"{episode['t_enter'].replace(':', '').replace('-', '')}_{episode['camera']}"
 
 
+def firestore_client(project: str):
+    """A Firestore client, however this machine happens to be authenticated.
+
+    On the VM the service account is the ambient identity and nothing needs
+    saying. On a laptop that shares a login with other work, the default
+    credentials belong to whichever account was last active — which here is
+    a different Google account entirely, so uploads failed with a permission
+    error naming the wrong user and no obvious way to point them elsewhere
+    short of switching the whole machine over.
+
+    WSR_ACCESS_TOKEN takes an OAuth token for the right account instead, so
+    the upload can be aimed at this project without disturbing anything the
+    other account is in the middle of:
+
+        WSR_ACCESS_TOKEN=$(gcloud auth print-access-token --account=<you>)
+    """
+    if os.environ.get('FIRESTORE_EMULATOR_HOST'):
+        print(f"using emulator at {os.environ['FIRESTORE_EMULATOR_HOST']}")
+        import firebase_admin
+        from firebase_admin import firestore
+        firebase_admin.initialize_app(options={'projectId': project})
+        return firestore.client()
+
+    token = os.environ.get('WSR_ACCESS_TOKEN')
+    if token:
+        from google.cloud import firestore as gcf
+        from google.oauth2.credentials import Credentials
+        print(f'using an explicit access token for {project}')
+        return gcf.Client(project=project, credentials=Credentials(token=token))
+
+    import firebase_admin
+    from firebase_admin import firestore
+    firebase_admin.initialize_app(options={'projectId': project})
+    return firestore.client()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('--project', required=True)
@@ -276,7 +312,17 @@ def main() -> None:
         else:
             from google.cloud import storage
             bucket_name = args.bucket or f'{args.project}-captures'
-            bucket = storage.Client(project=args.project).bucket(bucket_name)
+            # Same authentication problem as Firestore, and the same answer:
+            # the ambient credentials on this laptop belong to another
+            # account entirely.
+            token = os.environ.get('WSR_ACCESS_TOKEN')
+            if token:
+                from google.oauth2.credentials import Credentials
+                client = storage.Client(project=args.project,
+                                        credentials=Credentials(token=token))
+            else:
+                client = storage.Client(project=args.project)
+            bucket = client.bucket(bucket_name)
             summary = media_upload.upload(bucket, names)
             print(f'{bucket_name}: {media_upload.describe(summary)}')
             for name in summary['missing_locally'][:5]:
@@ -291,16 +337,7 @@ def main() -> None:
         print('dry run — nothing written')
         return
 
-    import firebase_admin
-    from firebase_admin import firestore
-
-    if os.environ.get('FIRESTORE_EMULATOR_HOST'):
-        print(f"using emulator at {os.environ['FIRESTORE_EMULATOR_HOST']}")
-        firebase_admin.initialize_app(options={'projectId': args.project})
-    else:
-        firebase_admin.initialize_app(options={'projectId': args.project})
-
-    client = firestore.client()
+    client = firestore_client(args.project)
     collection = client.collection(COLLECTION)
     existing = {snapshot.id for snapshot in collection.select([]).stream()}
 
