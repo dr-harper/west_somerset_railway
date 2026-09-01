@@ -20,7 +20,11 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          # 18 stopped being enough on 29 August: the toolchain now wants
+          # ^20.19 || ^22.13 || >=24, and every deploy since has failed on
+          # EBADENGINE. Nobody noticed because a failed deploy leaves the
+          # last good site in place and says nothing.
+          node-version: 22
           cache: 'npm'
           cache-dependency-path: app/wsr-railway-app/package-lock.json
           
@@ -33,6 +37,16 @@ jobs:
         working-directory: app/wsr-railway-app
         env:
           BASE_PATH: /west_somerset_railway/
+          # A repository variable, not a secret: the project id is compiled
+          # into the client bundle and visible to anyone who opens the site.
+          # Firebase identifies a project by it; it does not authorise
+          # anything, which the security rules do.
+          #
+          # Left unset until Firestore exists in the project. An app pointed
+          # at a database that is not there renders "not configured" and
+          # shows nothing, which is worse than the current state, so this is
+          # the last switch to throw rather than the first.
+          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
           
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3

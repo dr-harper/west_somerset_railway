@@ -104,6 +104,63 @@ class _Results:
         return len(self.conf)
 
 
+def _overlap(a: tuple, b: tuple) -> float:
+    x1, y1 = max(a[0], b[0]), max(a[1], b[1])
+    x2, y2 = min(a[2], b[2]), min(a[3], b[3])
+    both = max(0, x2 - x1) * max(0, y2 - y1)
+    if not both:
+        return 0.0
+    area_a = (a[2] - a[0]) * (a[3] - a[1])
+    area_b = (b[2] - b[0]) * (b[3] - b[1])
+    return both / (area_a + area_b - both)
+
+
+# Two boxes overlapping by more than this on the same train are treated as
+# one. Chosen above YOLO's own suppression, which lets a pair through at
+# 0.59 and so cannot be relied on here.
+DUPLICATE_OVERLAP = 0.5
+
+# A box this far inside a bigger one is the same object seen twice. This
+# needs its own test because overlap alone cannot see it: a single coach
+# sitting wholly within a box drawn round three of them shares only a
+# third of their union, so it scores about 0.33 and survives — which is
+# how one wagon came to be counted twice.
+CONTAINED = 0.7
+
+
+def _inside(inner: tuple, outer: tuple) -> float:
+    """How much of `inner` lies within `outer`."""
+    x1, y1 = max(inner[0], outer[0]), max(inner[1], outer[1])
+    x2, y2 = min(inner[2], outer[2]), min(inner[3], outer[3])
+    both = max(0, x2 - x1) * max(0, y2 - y1)
+    area = (inner[2] - inner[0]) * (inner[3] - inner[1])
+    return both / area if area else 0.0
+
+
+def dedupe(detections: list[Detection]) -> list[Detection]:
+    """Drop a box that sits mostly inside a stronger one.
+
+    A departing train at Williton was detected twice at once — the whole
+    rake, and its rear coach — overlapping by 0.59, which is under the
+    detector's suppression threshold so both survived. ByteTrack had no
+    reason to think they were the same thing and opened a second track,
+    so one train left the frame as two, id #1 for thirteen seconds and
+    then id #6 for seven. Merging first held it as #1 throughout.
+
+    Largest first, because the rake is the train and the coach is the
+    duplicate; keeping the smaller would shrink the train to one vehicle.
+    """
+    kept: list[Detection] = []
+    for detection in sorted(
+            detections,
+            key=lambda d: -(d.box[2] - d.box[0]) * (d.box[3] - d.box[1])):
+        if all(_overlap(detection.box, k.box) < DUPLICATE_OVERLAP
+               and _inside(detection.box, k.box) < CONTAINED
+               for k in kept):
+            kept.append(detection)
+    return kept
+
+
 class TrainTracker:
     """Per-camera association of detections into trains."""
 
@@ -121,6 +178,7 @@ class TrainTracker:
         on every update, and skipping the quiet frames would keep a
         departed train alive indefinitely.
         """
+        detections = dedupe(detections)
         rows = self._tracker.update(_Results.of(detections))
         seen = []
         for row in rows:

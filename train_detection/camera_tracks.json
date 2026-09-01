@@ -2320,7 +2320,34 @@
     77,
     76,
     240,
-    241
+    241,
+    268,
+    269,
+    270,
+    238,
+    239,
+    271,
+    272,
+    273,
+    235,
+    236,
+    237,
+    274,
+    309,
+    344,
+    413,
+    333,
+    301,
+    366,
+    399,
+    432,
+    497,
+    140,
+    139,
+    173,
+    172,
+    206,
+    207
    ]
   },
   "minehead_end": "end"
@@ -4385,7 +4412,10 @@
     67,
     66,
     65,
-    557
+    557,
+    196,
+    195,
+    194
    ]
   }
  },
@@ -5535,5 +5565,5 @@
    ]
   }
  },
- "_note": "Track centrelines in 854x480 image space, ordered from the Bishops Lydeard end towards Minehead. Traced with track_annotator.html."
+ "_note": "Track centrelines in 854x480 image space, ordered from the Bishops Lydeard end towards Minehead. Traced in the control room."
 }

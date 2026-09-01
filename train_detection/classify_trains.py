@@ -20,6 +20,26 @@ from pydantic import BaseModel
 HERE = Path(__file__).parent
 load_dotenv(HERE / '.env')
 
+
+def gemini_key() -> str:
+    """The API key, from wherever this machine keeps it.
+
+    On a laptop that is .env, gitignored and mode 600. On the server it is
+    Secret Manager, fetched at start into a file only the service can read —
+    so the key is never baked into an image, never in the unit file, and
+    never in a process listing. An earlier key reached git history and had to
+    be burned; the fewer places it can be copied from, the better.
+    """
+    direct = os.environ.get('GEMINI_API_KEY')
+    if direct:
+        return direct
+    path = os.environ.get('GEMINI_API_KEY_FILE')
+    if path and Path(path).exists():
+        return Path(path).read_text().strip()
+    raise SystemExit(
+        'No Gemini key. Set GEMINI_API_KEY in train_detection/.env, or point '
+        'GEMINI_API_KEY_FILE at a file holding it.')
+
 MODEL = 'gemini-2.5-flash'
 
 # Traction is the field that matters most and the one the timetable gets
@@ -119,7 +139,7 @@ def classify_image(image_path: Path, box: list[int] | None = None,
     from google import genai
     from google.genai import types
 
-    client = genai.Client(api_key=os.environ['GEMINI_API_KEY'])
+    client = genai.Client(api_key=gemini_key())
     response = client.models.generate_content(
         model=MODEL,
         contents=[

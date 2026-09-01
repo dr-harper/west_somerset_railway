@@ -1,0 +1,241 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Label review</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --keep: #2fbf5f; --drop: #ff5a52; --edge: #8a8f98;
+    --bg: #fbfaf8; --fg: #16181d; --panel: #ffffff; --line: #e3e1dc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #14161a; --fg: #eceef2; --panel: #1c1f25; --line: #2c3038; }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 15px/1.45 system-ui, -apple-system, sans-serif;
+         padding-bottom: env(safe-area-inset-bottom); }
+  header { position: sticky; top: 0; z-index: 5; background: var(--panel);
+           border-bottom: 1px solid var(--line); padding: .5rem .75rem; }
+  .row { display: flex; align-items: center; gap: .6rem; }
+  .who { font-weight: 600; }
+  .flag { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em;
+          padding: .15rem .45rem; border-radius: 999px; border: 1px solid var(--line); }
+  .flag.negative { color: #b25b00; border-color: #b25b00; }
+  .flag.rejected { color: var(--drop); border-color: var(--drop); }
+  .flag.excluded { color: #7a5cc4; border-color: #7a5cc4; }
+  .flag.none { color: var(--drop); border-color: var(--drop); }
+  .flag.single { color: #b25b00; border-color: #b25b00; }
+  .flag.several { color: #2f7fbf; border-color: #2f7fbf; }
+  .flag.nowagons { color: #b25b00; border-color: #b25b00; }
+  .flag.one { color: #2f7fbf; border-color: #2f7fbf; }
+  .count { margin-left: auto; opacity: .6; font-variant-numeric: tabular-nums; }
+  .note { font-size: .82rem; opacity: .75; margin-top: .2rem; min-height: 1.2em; }
+  .stage { position: relative; width: 100%; touch-action: none; user-select: none; }
+  .stage img { width: 100%; display: block; }
+  .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .hint { padding: .5rem .75rem; font-size: .8rem; opacity: .6; }
+  footer { position: sticky; bottom: 0; background: var(--panel);
+           border-top: 1px solid var(--line); padding: .55rem .75rem;
+           padding-bottom: calc(.55rem + env(safe-area-inset-bottom)); }
+  .bar { display: flex; gap: .45rem; }
+  button { flex: 1; font: inherit; padding: .7rem .4rem; border-radius: 9px;
+           border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
+  button:active { transform: scale(.98); }
+  button.wide { flex: 1.6; }
+  button.go { background: var(--keep); border-color: var(--keep); color: #04210f;
+              font-weight: 600; }
+  button[disabled] { opacity: .4; }
+  .saved { font-size: .8rem; text-align: center; min-height: 1.2em;
+           opacity: .7; margin-top: .35rem; }
+</style>
+
+<header>
+  <div class="row">
+    <span class="who" id="camera">…</span>
+    <span class="flag" id="flag"></span>
+    <span class="count" id="count"></span>
+  </div>
+  <div class="note" id="note"></div>
+</header>
+
+<div class="stage" id="stage">
+  <img id="shot" alt="">
+  <canvas id="paint"></canvas>
+</div>
+<p class="hint">Tap a box to remove it. Drag to draw one. The faint dashed
+boxes show what has already been marked — draw what this pass is for.</p>
+
+<footer>
+  <div class="bar">
+    <button id="prev">‹ Back</button>
+    <button id="undo">Undo</button>
+    <button id="empty" class="wide">No train here</button>
+    <button id="next" class="go wide">Next ›</button>
+  </div>
+  <div class="saved" id="saved"></div>
+</footer>
+
+<script>
+const shot = document.getElementById('shot');
+const paint = document.getElementById('paint');
+const ctx = paint.getContext('2d');
+let queue = [], labels = {}, at = 0, history = [];
+
+// Which job this is: the trains themselves, or how many vehicles each
+// train is made of. Two sets, one page, so the drawing and the saving
+// never had to be written twice.
+const SETS = {
+  trains:   { dir: 'dataset',          title: 'Label review' },
+  vehicles: { dir: 'dataset_vehicles', title: 'Wagons in each train' },
+  locos:    { dir: 'dataset_locos',    title: 'Locomotives' },
+};
+const which = new URLSearchParams(location.search).get('set') || 'trains';
+const SET = SETS[which] || SETS.trains;
+
+const fmt = n => n.toLocaleString();
+
+async function boot() {
+  document.title = SET.title;
+  queue = await (await fetch(`${SET.dir}/review_queue.json`)).json();
+  labels = await (await fetch(`${SET.dir}/labels.json`)).json();
+  // Excluded frames are not in labels.json — they were deliberately left
+  // out. Seed them empty so drawing on one puts it back in the set.
+  for (const item of queue) {
+    if (!labels[item.key]) {
+      labels[item.key] = { camera: item.camera, split: item.split, boxes: [] };
+    }
+    if (which !== 'trains') labels[item.key].image = item.image;
+  }
+  const saved = Number(localStorage.getItem(`review-at-${which}`) || 0);
+  at = Number.isFinite(saved) && saved < queue.length ? saved : 0;
+  show();
+}
+
+function current() { return queue[at]; }
+function boxes() { return labels[current().key].boxes; }
+
+function show() {
+  const item = current();
+  document.getElementById('camera').textContent = item.camera;
+  const flag = document.getElementById('flag');
+  flag.textContent = item.flag;
+  flag.className = 'flag ' + item.flag;
+  document.getElementById('count').textContent = `${at + 1} / ${fmt(queue.length)}`;
+  document.getElementById('note').textContent = item.note || '';
+  document.getElementById('prev').disabled = at === 0;
+  history = [];
+  shot.onload = draw;
+  shot.src = item.image;
+  if (shot.complete) draw();
+  localStorage.setItem(`review-at-${which}`, String(at));
+}
+
+function draw() {
+  const rect = shot.getBoundingClientRect();
+  paint.width = rect.width; paint.height = rect.height;
+  ctx.clearRect(0, 0, paint.width, paint.height);
+  // What was dropped is drawn faintly, so a wrong rejection is visible
+  // rather than being an absence you would have to notice.
+  for (const b of current().dropped || []) outline(b, '#ff5a52', 1, [5, 4]);
+  for (const b of boxes()) outline(b, '#2fbf5f', 2.5, []);
+}
+
+function outline([cx, cy, w, h], colour, width, dash) {
+  const x = (cx - w / 2) * paint.width, y = (cy - h / 2) * paint.height;
+  ctx.setLineDash(dash); ctx.lineWidth = width; ctx.strokeStyle = colour;
+  ctx.strokeRect(x, y, w * paint.width, h * paint.height);
+  ctx.setLineDash([]);
+}
+
+function at_point(px, py) {
+  // Smallest box containing the tap, so a coach inside a rake is reachable.
+  let best = -1, area = Infinity;
+  boxes().forEach(([cx, cy, w, h], i) => {
+    if (Math.abs(px - cx) <= w / 2 && Math.abs(py - cy) <= h / 2 && w * h < area) {
+      area = w * h; best = i;
+    }
+  });
+  return best;
+}
+
+let start = null, moved = false;
+const local = e => {
+  const r = paint.getBoundingClientRect();
+  const t = e.touches ? e.touches[0] : e;
+  return [(t.clientX - r.left) / r.width, (t.clientY - r.top) / r.height];
+};
+
+function down(e) { start = local(e); moved = false; e.preventDefault(); }
+function move(e) {
+  if (!start) return;
+  const [x, y] = local(e);
+  if (Math.hypot(x - start[0], y - start[1]) > 0.02) moved = true;
+  if (!moved) return;
+  draw();
+  ctx.setLineDash([6, 4]); ctx.lineWidth = 2; ctx.strokeStyle = '#2fbf5f';
+  ctx.strokeRect(Math.min(start[0], x) * paint.width,
+                 Math.min(start[1], y) * paint.height,
+                 Math.abs(x - start[0]) * paint.width,
+                 Math.abs(y - start[1]) * paint.height);
+  ctx.setLineDash([]);
+  e.preventDefault();
+}
+function up(e) {
+  if (!start) return;
+  const [x, y] = local(e);
+  if (moved) {
+    const w = Math.abs(x - start[0]), h = Math.abs(y - start[1]);
+    if (w > 0.015 && h > 0.015) {
+      history.push([...boxes()]);
+      boxes().push([(x + start[0]) / 2, (y + start[1]) / 2, w, h]);
+    }
+  } else {
+    const hit = at_point(x, y);
+    if (hit >= 0) { history.push([...boxes()]); boxes().splice(hit, 1); }
+  }
+  start = null; draw();
+}
+
+const stage = document.getElementById('stage');
+stage.addEventListener('pointerdown', down);
+stage.addEventListener('pointermove', move);
+stage.addEventListener('pointerup', up);
+stage.addEventListener('pointercancel', () => { start = null; draw(); });
+
+document.getElementById('undo').onclick = () => {
+  const back = history.pop();
+  if (back) { labels[current().key].boxes = back; draw(); }
+};
+document.getElementById('empty').onclick = () => {
+  history.push([...boxes()]); labels[current().key].boxes = []; draw(); save();
+};
+document.getElementById('prev').onclick = () => { if (at > 0) { at--; show(); } };
+document.getElementById('next').onclick = async () => {
+  await save();
+  if (at < queue.length - 1) { at++; show(); }
+  else document.getElementById('saved').textContent = 'That is all of them.';
+};
+
+let saving = false;
+async function save() {
+  if (saving) return;
+  saving = true;
+  const note = document.getElementById('saved');
+  try {
+    const r = await fetch(`/save-labels?set=${which}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(labels),
+    });
+    const counted = Object.values(labels).reduce((n, v) => n + v.boxes.length, 0);
+    const empties = Object.values(labels).filter(v => !v.boxes.length).length;
+    note.textContent = r.ok
+      ? `saved — ${fmt(counted)} boxes, ${empties} empty frames`
+      : `save failed (${r.status})`;
+  } catch (err) {
+    note.textContent = 'save failed — is the server still running?';
+  } finally { saving = false; }
+}
+
+boot();
+</script>

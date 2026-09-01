@@ -21,6 +21,7 @@ Usage:
 import argparse
 import json
 import math
+import os
 import queue
 import threading
 import time
@@ -31,6 +32,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+from frame_ring import FrameRing, StreamReader
 from detection_zones import ZONES, classify
 from tracking import Detection as TrackDetection, TrainTracker
 from track_geometry import (corridor_mask, direction_of_motion, exclusion_mask,
@@ -110,8 +112,30 @@ DENSE_MAX_FRAMES = 500          # 20s, enough for any single passage
 # 150MB a camera and there are eleven of them, where encoded it is nearer
 # 6MB. Ten a second is well short of the stream's 25 but is five times what
 # the gate samples at, and enough to catch a locomotive entering frame.
-PREROLL_FPS = 10
+PREROLL_FPS = 10               # legacy path only; the ring keeps every frame
 PREROLL_SECONDS = 25
+
+# Frames are gathered by a thread of their own and kept with their real
+# times, rather than sampled from inside the loop that also runs motion
+# detection and YOLO. That loop was going round once every five seconds on
+# 31/8, so the run-up written into a clip was twelve frames instead of the
+# intended two hundred and fifty, at a tenth of the stream's rate.
+#
+# Set WSR_LEGACY_CAPTURE=1 to fall back to the old path for a run.
+USE_RING = os.environ.get('WSR_LEGACY_CAPTURE') != '1'
+# Fifteen seconds of run-up: 65MB a camera, about 700MB across the line,
+# which is 1% of this machine. Sized to be comfortably more than needed
+# rather than tight, because the cost of too little is a train that enters
+# the clip already moving and the cost of too much is a rounding error.
+#
+# It should come down as detection improves. The buffer only has to cover
+# the gap between a train appearing and the watcher noticing it; five
+# seconds would do once that gap is measured rather than guessed at.
+RING_SECONDS = 15.0
+# Dense capture is bounded in time as well as frames: 500 frames is 28s at
+# the median rate this line delivers and 132s at the slowest, so the cap
+# moved with the weather.
+DENSE_MAX_SECONDS = 25.0
 SNAPSHOT_EVERY_S = 60          # recent still per camera, for the control room
 
 # Image-space unit vector meaning "travelling northbound (towards Minehead)".
@@ -176,6 +200,25 @@ class SharedDetector:
         return out
 
 
+def encode_frame(frame, quality: int = 70):
+    """A frame as JPEG bytes, or None if it will not encode.
+
+    Everything the watcher holds on to is kept encoded. A frame is 1.23MB
+    raw and about 120KB as JPEG, and nothing that is merely being kept for
+    later needs it uncompressed.
+    """
+    if frame is None or getattr(frame, 'size', 0) == 0:
+        return None
+    try:
+        ok, encoded = cv2.imencode('.jpg', frame,
+                                   [cv2.IMWRITE_JPEG_QUALITY, quality])
+    except cv2.error:
+        # A malformed frame must not take the camera thread down with it.
+        # Losing one frame is a gap; losing the thread is losing the camera.
+        return None
+    return encoded.tobytes() if ok else None
+
+
 class CameraWorker(threading.Thread):
     def __init__(self, camera: str, detector, log_queue, dry_run: bool):
         super().__init__(daemon=True, name=camera)
@@ -206,10 +249,21 @@ class CameraWorker(threading.Thread):
         self.state_since = time.time()
         self.last_train_time = 0.0
         self.episode = None
-        self.frame_buffer = []         # (t, frame) rolling ~30s at 2 Hz
+        # Legacy path only. It held twelve seconds of *raw* frames — 440MB a
+        # camera at stream rate — under a comment claiming 2Hz that stopped
+        # being true when the loop began decoding every frame. The ring
+        # replaces it at an eighth the size and with a bound that means what
+        # it says.
+        self.frame_buffer = []
         # (t, jpeg) at PREROLL_FPS, so an episode can begin before it was noticed
         self.preroll: deque = deque(maxlen=PREROLL_FPS * PREROLL_SECONDS)
         self.last_preroll = 0.0
+        # Every frame the stream gives us, with its time, filled by a thread
+        # that does nothing else.
+        self.ring = FrameRing(seconds=RING_SECONDS) if USE_RING else None
+        self.reader = None
+        self.dense_times: list = []
+        self.dense_started = 0.0
         self.heartbeat = time.time()
         self.last_motion_cells: list[int] = []
         self.last_snapshot = 0.0
@@ -262,6 +316,23 @@ class CameraWorker(threading.Thread):
         self.url_time = time.time()
         self.background = None
         self.consecutive_motion = 0
+
+    def _open_capture(self):
+        """A fresh capture for the reader thread, which owns it from then on."""
+        url = resolve_hls_url(self.camera)
+        capture = cv2.VideoCapture(url)
+        self.url_time = time.time()
+        self.background = None
+        self.consecutive_motion = 0
+        return capture if capture.isOpened() else None
+
+    def _start_reader(self):
+        self.reader = StreamReader(
+            self.camera, self.ring, self._open_capture,
+            on_error=lambda error: self.log.put(json.dumps({
+                'camera': self.camera, 'event': 'reader_error',
+                'error': str(error)[:200]})))
+        self.reader.start()
 
     # --- tier 1: motion gate --------------------------------------------
 
@@ -356,37 +427,68 @@ class CameraWorker(threading.Thread):
             'peak_conf': 0.0,
             'keyframes': [],
             'most_in_frame': 0,
-            'clip_frames': [f for (ft, f) in self.frame_buffer if t - ft <= 6],
+            # Kept encoded. Three hundred raw frames is 370MB; the same
+            # frames as JPEG are under 40MB, and they are only ever decoded
+            # again at the end to write the clip.
+            'clip_frames': ([j for _w, j in self.ring.tail(6.0, until=t)]
+                            if USE_RING else
+                            [encode_frame(f) for (ft, f) in self.frame_buffer
+                             if t - ft <= 6]),
             'entry_backfilled_s': entry_offset,
         }
         # Stream-rate frames go straight to disk rather than into memory:
         # 500 raw frames is 600MB per camera, and several cameras can be
         # in an episode at once.
         dense_path = CAPTURE_DIR / f'{stamp()}_{self.camera}_dense.mp4'
+        # Written at the rate the stream is actually managing, not at an
+        # assumed 25. The streams delivered between 4 and 41 frames a second
+        # on 31/8 and every clip claimed 25, so each one played at the wrong
+        # speed and any figure taken in seconds or mph from one was wrong.
+        rate = self.ring.rate() if USE_RING else 0.0
+        if not 1.0 <= rate <= 60.0:
+            rate = DENSE_FPS
         self.dense_writer = cv2.VideoWriter(
             str(dense_path), cv2.VideoWriter_fourcc(*'avc1'),
-            DENSE_FPS, (STREAM_W, STREAM_H))
+            rate, (STREAM_W, STREAM_H))
         self.dense_path = dense_path
         self.dense_count = 0
+        self.dense_rate = rate
+        self.dense_times = []
+        self.dense_started = t
         # Everything from just before the train was noticed, so the clip
         # opens on the locomotive arriving rather than on its coaches.
         # Each pre-roll frame is held for its real duration: it was
         # sampled at PREROLL_FPS and the file is written at DENSE_FPS, so
         # writing them one-for-one would play those seconds two and a half
         # times too fast and make any timing taken from the clip wrong.
-        hold = DENSE_FPS / PREROLL_FPS
-        owed = 0.0
-        for when, encoded in list(self.preroll):
-            if t - when > PREROLL_SECONDS:
-                continue
-            earlier = cv2.imdecode(encoded, cv2.IMREAD_COLOR)
-            if earlier is None:
-                continue
-            owed += hold
-            while owed >= 1:
+        if USE_RING:
+            # Straight out of the ring, one frame for one frame. These were
+            # captured at the same rate as everything that follows them, so
+            # there is nothing to hold and no seam where the clip changes
+            # speed — which is what made the first second of every recording
+            # jump.
+            for when, encoded in self.ring.tail(PREROLL_SECONDS, until=t):
+                earlier = cv2.imdecode(
+                    np.frombuffer(encoded, np.uint8), cv2.IMREAD_COLOR)
+                if earlier is None:
+                    continue
                 self.dense_writer.write(earlier)
                 self.dense_count += 1
-                owed -= 1
+                self.dense_times.append(when)
+        else:
+            hold = DENSE_FPS / PREROLL_FPS
+            owed = 0.0
+            for when, encoded in list(self.preroll):
+                if t - when > PREROLL_SECONDS:
+                    continue
+                earlier = cv2.imdecode(encoded, cv2.IMREAD_COLOR)
+                if earlier is None:
+                    continue
+                owed += hold
+                while owed >= 1:
+                    self.dense_writer.write(earlier)
+                    self.dense_count += 1
+                    owed -= 1
         self.episode_preroll_frames = self.dense_count
 
         if entry:
@@ -453,7 +555,9 @@ class CameraWorker(threading.Thread):
             }
         ep['peak_conf'] = max(ep['peak_conf'], best['conf'])
         if len(ep['clip_frames']) < 300:   # cap clip memory on long dwells
-            ep['clip_frames'].append(frame)
+            encoded = encode_frame(frame)
+            if encoded is not None:
+                ep['clip_frames'].append(encoded)
 
     def _close_episode(self):
         ep = self.episode
@@ -519,8 +623,11 @@ class CameraWorker(threading.Thread):
             writer = cv2.VideoWriter(str(path),
                                      cv2.VideoWriter_fourcc(*'avc1'),
                                      CLIP_FPS, (STREAM_W, STREAM_H))
-            for f in clip_frames:
-                writer.write(f)
+            for encoded in clip_frames:
+                frame = cv2.imdecode(np.frombuffer(encoded, np.uint8),
+                                     cv2.IMREAD_COLOR)
+                if frame is not None:
+                    writer.write(frame)
             writer.release()
             ep['clip'] = path.name
 
@@ -534,6 +641,20 @@ class CameraWorker(threading.Thread):
                 ep['dense_frames_kept'] = self.dense_count
                 ep['dense_preroll_frames'] = getattr(
                     self, 'episode_preroll_frames', 0)
+                ep['dense_fps'] = round(getattr(self, 'dense_rate', DENSE_FPS), 2)
+                times = getattr(self, 'dense_times', [])
+                if times:
+                    ep['dense_span_s'] = round(times[-1] - times[0], 2)
+                    # The real time of every frame, beside the clip. A
+                    # container carries one rate for the whole file and the
+                    # streams do not hold one, so anything measured in
+                    # seconds has to come from here rather than from a frame
+                    # number divided by an assumed fps.
+                    self.dense_path.with_suffix('.times.json').write_text(
+                        json.dumps({'camera': self.camera,
+                                    'fps_written': ep['dense_fps'],
+                                    'preroll_frames': ep['dense_preroll_frames'],
+                                    'times': [round(x, 3) for x in times]}))
             elif self.dense_path.exists():
                 self.dense_path.unlink()      # too short to be worth keeping
         # What the tracker made of it: one entry per train rather than one
@@ -573,55 +694,85 @@ class CameraWorker(threading.Thread):
         backoff = 2
         last_motion_check = 0.0
         last_yolo = 0.0
+        last_seen = 0.0
         gate_cells: list[int] = []
+        if USE_RING:
+            self._start_reader()
         while True:
             try:
-                if self.cap is None or time.time() - self.url_time > URL_REFRESH_S:
-                    self._connect()
-                    backoff = 2
-                grabbed = self.cap.grab()
-                if not grabbed:
-                    raise RuntimeError('stream read failed')
-                self.heartbeat = time.time()
-                t = time.time()
-                # Decode every frame while an episode is running, and only
-                # every MOTION_SAMPLE_S otherwise. The frames are already
-                # being grabbed either way; this only decides whether they
-                # are decoded and kept.
-                dense = (self.state == 'ACTIVE' and self.episode is not None
-                         and self.dense_writer is not None
-                         and self.dense_count < DENSE_MAX_FRAMES)
-                due = t - last_motion_check >= MOTION_SAMPLE_S
-                preroll_due = t - self.last_preroll >= 1.0 / PREROLL_FPS
-                if not due and not dense and not preroll_due:
-                    continue
-                ok, frame = self.cap.retrieve()
-                if not ok:
-                    raise RuntimeError('retrieve failed')
-                if dense:
-                    self.dense_writer.write(frame)
-                    self.dense_count += 1
-                elif preroll_due:
-                    # Only while no episode is running: once one is, the
-                    # frames are going to the clip anyway.
-                    self.last_preroll = t
-                    ok, encoded = cv2.imencode(
-                        '.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
-                    if ok:
-                        self.preroll.append((t, encoded))
-                if not due:
-                    continue
-                last_motion_check = t
+                if USE_RING:
+                    # Frames arrive on their own thread, so waiting here for
+                    # the next one costs this camera's detection latency and
+                    # nothing else. Under the old arrangement everything —
+                    # the run-up included — went only as fast as inference.
+                    latest = self.ring.latest()
+                    if latest is None or latest[0] <= last_seen:
+                        time.sleep(0.02)
+                        continue
+                    t, frame = latest
+                    last_seen = t
+                    self.heartbeat = time.time()
+                    # Bounded by time as well as by frames: 500 frames was
+                    # 28s from a fast camera and over two minutes from a slow
+                    # one, so the recording stopped somewhere different on
+                    # every camera.
+                    dense = (self.state == 'ACTIVE' and self.episode is not None
+                             and self.dense_writer is not None
+                             and self.dense_count < DENSE_MAX_FRAMES
+                             and t - self.dense_started < DENSE_MAX_SECONDS)
+                    if dense:
+                        self.dense_writer.write(frame)
+                        self.dense_count += 1
+                        self.dense_times.append(t)
+                    due = t - last_motion_check >= MOTION_SAMPLE_S
+                    if not due:
+                        continue
+                    last_motion_check = t
+                else:
+                    # The path as it ran until 31/8, kept behind
+                    # WSR_LEGACY_CAPTURE=1 so a bad night is one revert.
+                    if self.cap is None or time.time() - self.url_time > URL_REFRESH_S:
+                        self._connect()
+                        backoff = 2
+                    grabbed = self.cap.grab()
+                    if not grabbed:
+                        raise RuntimeError('stream read failed')
+                    self.heartbeat = time.time()
+                    t = time.time()
+                    dense = (self.state == 'ACTIVE' and self.episode is not None
+                             and self.dense_writer is not None
+                             and self.dense_count < DENSE_MAX_FRAMES)
+                    due = t - last_motion_check >= MOTION_SAMPLE_S
+                    preroll_due = t - self.last_preroll >= 1.0 / PREROLL_FPS
+                    if not due and not dense and not preroll_due:
+                        continue
+                    ok, frame = self.cap.retrieve()
+                    if not ok:
+                        raise RuntimeError('retrieve failed')
+                    if dense:
+                        self.dense_writer.write(frame)
+                        self.dense_count += 1
+                    elif preroll_due:
+                        self.last_preroll = t
+                        ok, encoded = cv2.imencode(
+                            '.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+                        if ok:
+                            self.preroll.append((t, encoded))
+                    if not due:
+                        continue
+                    last_motion_check = t
 
-                self.frame_buffer.append((t, frame))
+                if not USE_RING:
+                    self.frame_buffer.append((t, frame))
                 # A recent still per camera for the control room. The frame
                 # is already decoded, so this costs a JPEG encode a minute
                 # and saves opening the stream again from elsewhere.
                 if t - self.last_snapshot > SNAPSHOT_EVERY_S:
                     self.last_snapshot = t
                     write_snapshot(self.camera, frame)
-                self.frame_buffer = [(ft, f) for ft, f in self.frame_buffer
-                                     if t - ft <= 12]
+                if not USE_RING:
+                    self.frame_buffer = [(ft, f) for ft, f in self.frame_buffer
+                                         if t - ft <= 12][-120:]
 
                 zone_frac, global_frac = self._motion_fraction(frame)
                 if global_frac > GLOBAL_JUMP_FRACTION:

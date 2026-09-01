@@ -24,13 +24,18 @@ let cache: AdminSettings | null = null;
 
 export function getSettings(): AdminSettings {
   if (cache) return cache;
+  // Settled locally first: `cache` is module-level and other functions can
+  // reassign it, so the compiler will not treat it as non-null after the
+  // try/catch however obvious that is to read.
+  let settings: AdminSettings;
   try {
     const raw = window.localStorage.getItem(KEY);
-    cache = raw ? { ...DEFAULTS, ...JSON.parse(raw) } : { ...DEFAULTS };
+    settings = raw ? { ...DEFAULTS, ...JSON.parse(raw) } : { ...DEFAULTS };
   } catch {
-    cache = { ...DEFAULTS };
+    settings = { ...DEFAULTS };
   }
-  return cache;
+  cache = settings;
+  return settings;
 }
 
 export function getSetting<K extends keyof AdminSettings>(

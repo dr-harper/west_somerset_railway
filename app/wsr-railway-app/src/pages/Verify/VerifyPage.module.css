@@ -201,3 +201,128 @@
   font-size: 0.9rem;
   padding: 0;
 }
+
+/* --- the evidence, before any conclusion ------------------------------
+   The page used to open on "we think this is an unscheduled working" and
+   three buttons, which asked for a ruling on something the picture cannot
+   settle. These rows are what was actually seen. */
+
+.evidence {
+  margin: 0 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--rule);
+  align-items: baseline;
+}
+
+.rowLabel {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.rowValue { margin: 0; font-size: 0.95rem; }
+
+/* What was seen, what was worked out, and what could not be established
+   read differently, because they are worth different amounts. */
+.observed { font-weight: 600; }
+.derived  { font-weight: 600; }
+.unknown  { font-weight: 600; opacity: 0.7; font-style: italic; }
+
+.basis {
+  display: block;
+  font-size: 0.8rem;
+  font-style: normal;
+  opacity: 0.65;
+  line-height: 1.4;
+  margin-top: 0.1rem;
+}
+
+.derived {
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--brass);
+  border-radius: 6px;
+  padding: 0.7rem 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.derivedLabel {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 0.15rem;
+}
+
+.derivedValue { font-size: 0.95rem; }
+
+.question {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  margin: 0 0 0.6rem;
+}
+
+/* --- what the clip can settle -----------------------------------------
+   Direction is unclear on 97% of records and whether a train stopped is
+   not recorded at all. Both are obvious to someone watching the video, so
+   they are asked here rather than inferred badly. */
+
+.watched {
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 0.7rem 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.watchedLabel {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 0.5rem;
+}
+
+.watchedRow { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+.pick {
+  font-size: 0.82rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.pick:hover { border-color: var(--chocolate); color: var(--chocolate); }
+
+.pickOn {
+  background: var(--chocolate);
+  border-color: var(--chocolate);
+  color: var(--paper);
+}
+
+.stopCheck {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+}

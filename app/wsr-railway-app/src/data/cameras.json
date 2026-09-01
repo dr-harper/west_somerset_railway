@@ -79,7 +79,7 @@
    "roads": 2,
    "platforms": 1,
    "occluders": 0,
-   "blockedShare": 0.679,
+   "blockedShare": 0.684,
    "orientationKnown": false,
    "ready": true
   }
@@ -130,7 +130,7 @@
    "roads": 3,
    "platforms": 2,
    "occluders": 0,
-   "blockedShare": 0.747,
+   "blockedShare": 0.794,
    "orientationKnown": true,
    "ready": true
   }

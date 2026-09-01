@@ -3,6 +3,11 @@
   padding: var(--spacing-md) 0;
   border-bottom: 3px solid var(--brass);
   box-shadow: var(--shadow-md);
+  /* The timetable pages are long and the nav is how you leave them, so it
+     stays put rather than needing a scroll back to the top to reach. */
+  position: sticky;
+  top: 0;
+  z-index: 30;
 }
 
 .headerContent {
@@ -15,6 +20,8 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
+  text-decoration: none;
+  min-width: 0;
 }
 
 .logoImage {
@@ -32,7 +39,15 @@
   color: var(--paper);
   letter-spacing: 0.12em;
   margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.15em;
 }
+
+/* Broken at the one place it reads as a break — between the railway's name
+   and what the site is. Left to wrap on its own it split mid-name. */
+.titleLead { white-space: nowrap; }
+.titleTail { white-space: nowrap; }
 
 .subtitle {
   font-family: var(--font-body);
@@ -47,62 +62,77 @@
 .nav {
   display: flex;
   gap: var(--spacing-lg);
+  align-items: center;
 }
 
+/* The links are set like the enamel running-in boards on the platforms:
+   letters spread wide on a dark ground, with the brass beneath them lighting
+   up as you reach one. Two things move rather than one — the rule and the
+   spacing — because a colour change alone read as nothing happening. */
 .navLink {
-  color: rgba(243, 235, 218, 0.75);
+  color: rgba(243, 235, 218, 0.72);
   text-decoration: none;
   font-family: var(--font-display);
   font-weight: 400;
   font-size: 0.95rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  transition: color var(--transition-fast);
   position: relative;
-  padding: var(--spacing-xs) 0;
+  padding: var(--spacing-xs) 0 calc(var(--spacing-xs) + 2px);
+  /* Lifted rather than re-spaced. Widening the letters on hover moved the
+     link's neighbours a pixel or two each time the mouse crossed the row;
+     a transform changes nothing about the layout. */
+  transition:
+    color 180ms ease-out,
+    transform 200ms cubic-bezier(0.2, 0.7, 0.3, 1),
+    text-shadow 180ms ease-out;
 }
 
+/* The rule under a link is two strands with daylight between them, which is
+   what a pair of rails looks like from the end of a platform. Drawn with a
+   gradient rather than two elements so it stays one thing to animate. */
 .navLink::after {
   content: '';
   position: absolute;
   bottom: 0;
   left: 0;
-  width: 0;
-  height: 2px;
-  background: var(--brass-bright);
-  transition: width var(--transition-fast);
+  right: 0;
+  height: 3px;
+  background: linear-gradient(
+    to bottom,
+    var(--brass-bright) 0 1px,
+    transparent 1px 2px,
+    var(--brass-bright) 2px 3px
+  );
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 220ms cubic-bezier(0.2, 0.7, 0.3, 1), opacity 180ms ease-out;
+  opacity: 0.85;
 }
 
 .navLink:hover {
   color: var(--paper);
+  transform: translateY(-1px);
+  /* The faintest warmth off the brass, not a glow. */
+  text-shadow: 0 0 14px rgba(212, 165, 92, 0.45);
 }
 
-.navLink:hover::after {
-  width: 100%;
-}
+.navLink:hover::after { transform: scaleX(1); }
+
+/* Leaving runs the rule out the way it came rather than snapping it off. */
+.navLink:not(:hover)::after { transform-origin: right center; }
 
 .navLink.active {
   color: var(--brass-bright);
 }
 
 .navLink.active::after {
-  width: 100%;
+  transform: scaleX(1);
+  transform-origin: left center;
+  opacity: 1;
 }
 
-@media (max-width: 768px) {
-  .headerContent {
-    flex-direction: column;
-    gap: var(--spacing-md);
-  }
 
-  .title {
-    font-size: 1.2rem;
-  }
-
-  .nav {
-    gap: var(--spacing-md);
-  }
-}
 
 /* The control room is for the operator, not the travelling public, so it
    sits apart from the timetable links rather than among them. */
@@ -114,3 +144,62 @@
 }
 
 .adminLink:hover { color: var(--brass-bright); }
+
+/* Media queries last, so a breakpoint is never undone by a base rule
+   declared below it. The control-room divider survived here for exactly
+   that reason: `.adminLink` was defined after this block and put its
+   border-left back on a phone. */
+
+@media (max-width: 768px) {
+  .headerContent {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm);
+  }
+
+  .logo { gap: var(--spacing-sm); }
+  .logoImage { width: 34px; height: 34px; }
+
+  .title { font-size: 1rem; letter-spacing: 0.08em; }
+  .titleTail { opacity: 0.65; }
+
+  /* Scrolls sideways instead of wrapping. Four uppercase labels became five
+     ragged lines here, roughly a third of a phone screen spent before any
+     departure was visible. */
+  .nav {
+    gap: var(--spacing-md);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 calc(-1 * var(--spacing-md));
+    padding: 0 var(--spacing-md);
+  }
+
+  .nav::-webkit-scrollbar { display: none; }
+
+  .navLink {
+    white-space: nowrap;
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+  }
+
+  /* A vertical rule only separates things sitting on one line, and pushing
+     the item right with margin-left:auto inside a scrolling row put it
+     permanently half off the screen rather than merely further along it.
+     Colour and a little space set the control room apart here instead. */
+  .adminLink {
+    margin-left: 0;
+    padding-left: var(--spacing-xs);
+    border-left: none;
+  }
+}
+
+/* Movement is the flourish, not the information: the rule and the colour
+   still say which link is which without any of it. */
+@media (prefers-reduced-motion: reduce) {
+  .navLink,
+  .navLink::after {
+    transition: none;
+  }
+  .navLink:hover { transform: none; }
+}

@@ -1,17 +1,25 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
+import { LogOut } from 'lucide-react';
 import { isFirebaseConfigured } from '../../firebase';
+import { useOperator } from '../../services/operator';
+import { AdminBar, AdminRail } from './AdminNav';
 import styles from './Admin.module.css';
+import nav from './AdminNav.module.css';
 
-const SECTIONS = [
-  { to: '/admin', end: true, label: 'Overview' },
-  { to: '/admin/events', label: 'Events' },
-  { to: '/admin/trains', label: 'Trains' },
-  { to: '/admin/cameras', label: 'Cameras' },
-  { to: '/admin/verify', label: 'Verify' },
-  { to: '/admin/settings', label: 'Settings' },
-];
+/**
+ * The control room shell.
+ *
+ * The sections used to sit in a row of tabs, which fitted neither size:
+ * desktop had width going spare beside a single narrow column, and on a
+ * phone the row scrolled sideways so Verify and Settings were off the edge
+ * and effectively hidden. A rail on the left and a bar under the thumb suit
+ * the two cases the tool is actually used in.
+ */
 
-export const AdminLayout: React.FC = () => (
+export const AdminLayout: React.FC = () => {
+  const operator = useOperator();
+
+  return (
   <div className="container">
     <div className="contentWrapper">
       <div className={styles.masthead}>
@@ -19,26 +27,50 @@ export const AdminLayout: React.FC = () => (
           <p className={styles.eyebrow}>Detection system</p>
           <h1 className={styles.title}>Control Room</h1>
         </div>
-        <span className={isFirebaseConfigured ? styles.connected : styles.offline}>
-          {isFirebaseConfigured ? 'Firestore connected' : 'Firestore not configured'}
-        </span>
+        <div className={styles.mastheadRight}>
+          <span className={isFirebaseConfigured ? styles.connected : styles.offline}>
+            {isFirebaseConfigured ? 'Firestore connected' : 'Firestore not configured'}
+          </span>
+          {operator.state === 'signed-in' && (
+            <button className={styles.signOut} onClick={operator.signOutNow}>
+              <LogOut size={13} aria-hidden />
+              {operator.user?.email ?? 'Sign out'}
+            </button>
+          )}
+        </div>
       </div>
 
-      <nav className={styles.tabs}>
-        {SECTIONS.map(section => (
-          <NavLink
-            key={section.to}
-            to={section.to}
-            end={section.end}
-            className={({ isActive }) =>
-              `${styles.tab} ${isActive ? styles.tabActive : ''}`}
-          >
-            {section.label}
-          </NavLink>
-        ))}
-      </nav>
-
-      <Outlet />
+      {/* The detections themselves are public — the timetable's "seen at"
+          panel is built on them. The operator's tools are not, so the shell
+          asks who you are before it draws them. Signing in is not the same
+          as being allowed to change anything: writing a verification needs a
+          grant under /verifiers that nobody can give themselves. */}
+      {operator.state === 'signed-in' || operator.state === 'unavailable' ? (
+        <>
+          <div className={nav.shell}>
+            <AdminRail />
+            <main className={nav.main}>
+              <Outlet />
+            </main>
+          </div>
+          <AdminBar />
+        </>
+      ) : (
+        <div className={styles.panel}>
+          <h2>{operator.state === 'loading' ? 'Checking…' : 'Control room'}</h2>
+          {operator.state === 'signed-out' && (
+            <>
+              <p className={styles.muted}>
+                Sign in to see the detections, cameras and tracing tools.
+              </p>
+              <button className={styles.action} onClick={operator.signIn}>
+                Sign in
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   </div>
-);
+  );
+};

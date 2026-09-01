@@ -1,0 +1,119 @@
+.layout { display: flex; flex-direction: column; gap: var(--spacing-md); }
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.grow { flex: 1 1 auto; }
+
+.select {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.chip {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.chip:hover { border-color: var(--chocolate); color: var(--chocolate); }
+
+.chipOn {
+  background: var(--chocolate);
+  border-color: var(--chocolate);
+  color: var(--paper);
+}
+
+.save {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.45rem 0.9rem;
+  border-radius: 6px;
+  border: 1px solid var(--brass);
+  background: var(--brass);
+  color: #241a10;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.save:disabled { opacity: 0.45; cursor: default; }
+
+/* The picture is the tool. It keeps the frame's proportions so a point
+   clicked lands where it looked, whatever the window is doing. */
+.stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 854 / 480;
+  background: #14100c;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+
+.paint { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; }
+
+.missing {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(243, 235, 218, 0.7);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 1rem;
+}
+
+.hint {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.status { font-size: 0.85rem; color: var(--ink-soft); }
+.dirty { color: var(--brass); font-weight: 600; }
+.error { color: var(--signal-red, #b5342a); }
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+
+.key { display: inline-flex; align-items: center; gap: 0.35rem; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+@media (max-width: 640px) {
+  .bar { gap: 0.4rem; }
+  .chip { padding: 0.35rem 0.55rem; font-size: 0.66rem; }
+}

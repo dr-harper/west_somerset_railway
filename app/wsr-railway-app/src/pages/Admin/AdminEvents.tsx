@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { DetectionRibbon } from '../../components/Admin/DetectionRibbon';
 import { EpisodeDrawer } from '../../components/Admin/EpisodeDrawer';
 import { CopyId } from '../../components/Admin/CopyId';
@@ -29,6 +30,36 @@ export const AdminEvents: React.FC = () => {
   const [day, setDay] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Episode | null>(null);
+  const [params, setParams] = useSearchParams();
+
+  /**
+   * The open detection, kept in the address bar.
+   *
+   * It used to live only in component state, so every link pointed at the
+   * list and a particular detection could only be described — "the 12:43
+   * Blue Anchor one" — rather than handed over. The id is already what
+   * the pipeline, the capture filenames and Firestore agree on, so it is
+   * the right thing to put in the URL.
+   */
+  const open = (episode: Episode | null) => {
+    setSelected(episode);
+    const next = new URLSearchParams(params);
+    if (episode) next.set('episode', episode.id);
+    else next.delete('episode');
+    // Replaced rather than pushed: opening and closing a drawer should
+    // not fill the back button with steps through the same page.
+    setParams(next, { replace: true });
+  };
+
+  // A link arriving with ?episode= should open it, including on a reload,
+  // which means waiting for the episodes rather than reading the param once.
+  useEffect(() => {
+    const wanted = params.get('episode');
+    if (!wanted || !episodes.length) return;
+    if (selected?.id === wanted) return;
+    const found = episodes.find(e => e.id === wanted);
+    if (found) setSelected(found);
+  }, [episodes, params, selected]);
 
   useEffect(() => {
     if (!isFirebaseConfigured) {
@@ -80,7 +111,7 @@ export const AdminEvents: React.FC = () => {
     <>
       <DetectionRibbon
         episodes={shown}
-        onSelect={setSelected}
+        onSelect={open}
         selectedId={selected?.id ?? null}
       />
 
@@ -157,7 +188,7 @@ export const AdminEvents: React.FC = () => {
               <button
                 key={episode.id}
                 className={styles.still}
-                onClick={() => setSelected(episode)}
+                onClick={() => open(episode)}
                 title={episode.id}
               >
                 {src ? (
@@ -202,7 +233,7 @@ export const AdminEvents: React.FC = () => {
               <tr
                 key={episode.id}
                 className={styles.rowClickable}
-                onClick={() => setSelected(episode)}
+                onClick={() => open(episode)}
               >
                 <td className={styles.mono}>{episode.t_enter.slice(11, 16)}</td>
                 <td>{cameraName(episode.camera)}</td>
@@ -226,7 +257,7 @@ export const AdminEvents: React.FC = () => {
       )}
 
       {selected && (
-        <EpisodeDrawer episode={selected} onClose={() => setSelected(null)} />
+        <EpisodeDrawer episode={selected} onClose={() => open(null)} />
       )}
     </>
   );

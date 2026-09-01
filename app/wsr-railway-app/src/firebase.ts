@@ -28,6 +28,28 @@ const config = {
 const emulator = import.meta.env.VITE_FIRESTORE_EMULATOR as string | undefined;
 const authEmulator = import.meta.env.VITE_AUTH_EMULATOR as string | undefined;
 
+/**
+ * Where the emulator is, preferring wherever this page came from.
+ *
+ * The host was pinned in .env.local as an IP address, which is right for
+ * exactly one network. Moving to a different Wi-Fi changed the machine's
+ * address and the control room then pointed at a computer that no longer
+ * existed: no episodes, no clips, no error on screen — the page rendered
+ * perfectly and showed nothing.
+ *
+ * The emulator runs on the same machine as the dev server, so the host
+ * the page was fetched from is the answer, and it is right on localhost
+ * and from a phone alike. A host is only honoured when written down
+ * explicitly, which leaves a way to point somewhere else deliberately.
+ */
+export function emulatorHost(setting: string): [string, number] {
+  const [left, right] = setting.split(':');
+  const port = Number(right ?? left);
+  const named = right !== undefined && left !== '';
+  const here = typeof window === 'undefined' ? 'localhost' : window.location.hostname;
+  return [named ? left : here, port];
+}
+
 export const isFirebaseConfigured = Boolean(config.projectId);
 
 let app: FirebaseApp | null = null;
@@ -41,8 +63,8 @@ if (isFirebaseConfigured) {
     app = initializeApp(config);
     firestore = getFirestore(app);
     if (emulator) {
-      const [host, port] = emulator.split(':');
-      connectFirestoreEmulator(firestore, host, Number(port));
+      const [host, port] = emulatorHost(emulator);
+      connectFirestoreEmulator(firestore, host, port);
     }
   } catch (error) {
     console.error('Firestore unavailable; verification disabled', error);
@@ -52,7 +74,9 @@ if (isFirebaseConfigured) {
   try {
     firebaseAuth = getAuth(app!);
     if (authEmulator) {
-      connectAuthEmulator(firebaseAuth, `http://${authEmulator}`, { disableWarnings: true });
+      const [authHost, authPort] = emulatorHost(authEmulator);
+      connectAuthEmulator(firebaseAuth, `http://${authHost}:${authPort}`,
+                          { disableWarnings: true });
     }
   } catch (error) {
     console.error('Auth unavailable; verification is read-only', error);

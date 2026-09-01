@@ -1,0 +1,96 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin-bottom: 0.1rem;
+}
+
+.title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.checked {
+  font-size: 0.8rem;
+  opacity: 0.6;
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+/* An alert is a row with a severity stripe, so what needs attention reads
+   before any of the words do. */
+.alert {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--line, #e3e1dc);
+  border-left-width: 4px;
+  border-radius: 7px;
+  background: var(--panel, #fff);
+  text-decoration: none;
+  color: inherit;
+}
+
+.critical { border-left-color: #c0392b; }
+.warning  { border-left-color: #b5701f; }
+.info     { border-left-color: #7b8a96; }
+
+.icon { display: flex; padding-top: 0.1rem; }
+.critical .icon { color: #c0392b; }
+.warning .icon  { color: #b5701f; }
+.info .icon     { color: #7b8a96; }
+
+.body { min-width: 0; }
+
+.alertTitle {
+  font-weight: 600;
+  font-size: 0.92rem;
+  margin: 0 0 0.15rem;
+}
+
+.detail {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.go {
+  display: flex;
+  align-items: center;
+  opacity: 0.4;
+  padding-top: 0.15rem;
+}
+
+a.alert:hover { border-color: var(--accent, #2f7fbf); }
+a.alert:hover .go { opacity: 0.9; }
+a.alert:focus-visible {
+  outline: 2px solid var(--accent, #2f7fbf);
+  outline-offset: 2px;
+}
+
+/* Nothing wrong is itself worth stating — an empty panel reads as a page
+   that failed to load. */
+.clear {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--line, #e3e1dc);
+  border-left: 4px solid #2f8f57;
+  border-radius: 7px;
+  background: var(--panel, #fff);
+  font-size: 0.9rem;
+}
+
+.clear svg { color: #2f8f57; flex: none; }

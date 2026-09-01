@@ -31,3 +31,32 @@ firebase-debug.log
 firestore-debug.log
 ui-debug.log
 bursts/
+
+# Training material and model output. The datasets are assembled from the
+# captures by dataset.py and weigh hundreds of megabytes; the runs are what
+# training wrote. Both are reproducible from the captures and the scripts,
+# and neither belongs in a repo — film and frames live in cloud storage.
+train_detection/dataset/
+train_detection/dataset_vehicles/
+train_detection/dataset_locos/
+train_detection/dataset_formation/
+train_detection/runs/
+train_detection/verdicts.json
+
+# Backups the annotator writes before each save.
+train_detection/.track_backups/
+
+# Scratch from the H.264 segment spike.
+train_detection/segment_spike/
+train_detection/seg_mem/
+train_detection/segment_diag/
+
+# Terraform: provider binaries and state. State names live resources and can
+# carry values that should not be in version control.
+deploy/terraform/.terraform/
+deploy/terraform/*.tfstate
+deploy/terraform/*.tfstate.*
+deploy/terraform/.terraform.lock.hcl
+
+# Local service logs
+*.log

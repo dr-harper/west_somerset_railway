@@ -2,11 +2,19 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // A verifier is anyone with a document under /verifiers keyed by uid.
-    // Membership is granted out of band (admin SDK), never self-served.
+    // A verifier is anyone with a document under /verifiers, keyed either by
+    // uid or by the email they sign in with. Membership is granted out of
+    // band (admin SDK), never self-served.
+    //
+    // The email key exists because uid does not: a Firebase uid is minted on
+    // first sign-in, so granting access by uid alone means nobody can be made
+    // an operator until after they have signed in and been refused. Keying by
+    // email lets access be granted before the account exists.
     function isVerifier() {
       return request.auth != null
-        && exists(/databases/$(database)/documents/verifiers/$(request.auth.uid));
+        && (exists(/databases/$(database)/documents/verifiers/$(request.auth.uid))
+            || (request.auth.token.email != null
+                && exists(/databases/$(database)/documents/verifiers/$(request.auth.token.email))));
     }
 
     // Episodes are written only by the detection pipeline, which uses the
@@ -37,6 +45,16 @@ service cloud.firestore {
     // by the admin SDK.
     match /verifiers/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // When the pipeline last pushed data here. The control room needs this
+    // to tell "nothing is being detected" from "nothing has reached me" —
+    // without it a late upload is indistinguishable from a stopped watcher,
+    // and the health panel accused capture of failing while it was running.
+    // Written only by the admin SDK, like every other detection fact.
+    match /status/{doc} {
+      allow read: if true;
       allow write: if false;
     }
 

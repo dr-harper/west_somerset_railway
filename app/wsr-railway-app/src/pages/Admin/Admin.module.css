@@ -518,3 +518,48 @@
 }
 
 .settingRow .muted { display: block; }
+
+/* From a camera to the tracing tool. The cameras page could say a camera
+   was not set up and offered nothing to do about it. */
+.traceLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--brass);
+  border-radius: 999px;
+  color: var(--brass);
+  text-decoration: none;
+}
+
+.traceLink:hover { background: var(--brass); color: #241a10; }
+
+/* Masthead right-hand side: connection state, and who is signed in. */
+.mastheadRight {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.signOut {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.signOut:hover { border-color: var(--chocolate); color: var(--chocolate); }

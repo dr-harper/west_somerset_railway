@@ -4,7 +4,7 @@ import {
   getSettings,
   setSetting,
   subscribe,
-  type AdminSettings,
+  type AdminSettings as Settings,
 } from '../../services/settings';
 import styles from './Admin.module.css';
 
@@ -17,7 +17,7 @@ import styles from './Admin.module.css';
  */
 
 interface Toggle {
-  key: keyof AdminSettings;
+  key: keyof Settings;
   label: string;
   description: string;
 }

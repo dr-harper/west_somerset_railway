@@ -9,23 +9,9 @@ import {
 } from '../../utils/firestore/episodes';
 import { cameraName } from '../../services/cameras';
 import { captureUrl } from '../../services/captures';
+import { EpisodeClip } from '../../components/Admin/EpisodeClip';
 import styles from './VerifyPage.module.css';
-
-function describeClaim(episode: Episode): string {
-  const { claim } = episode;
-  if (claim.kind === 'unscheduled') {
-    return 'Not in the timetable — an unscheduled working';
-  }
-  const parts = [`the ${claim.booked_departure}`];
-  if (claim.loco) parts.push(claim.loco);
-  else if (claim.serviceType) parts.push(claim.serviceType.toLowerCase());
-  const delay = claim.delay_min;
-  if (delay !== null && delay !== undefined) {
-    parts.push(Math.abs(delay) < 1 ? 'on time'
-      : delay > 0 ? `${Math.round(delay)} min late` : `${Math.round(-delay)} min early`);
-  }
-  return parts.join(', ');
-}
+import { observations, timetableNote } from '../../services/evidence';
 
 export const VerifyPage: React.FC = () => {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
@@ -33,6 +19,8 @@ export const VerifyPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notes, setNotes] = useState('');
+  const [seen, setSeen] = useState<string | null>(null);
+  const [stopped, setStopped] = useState(false);
   const [reviewed, setReviewed] = useState(0);
   const [user, setUser] = useState<User | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -82,9 +70,18 @@ export const VerifyPage: React.FC = () => {
   const record = async (status: Exclude<VerificationStatus, 'unverified'>) => {
     if (!current) return;
     try {
-      await verifyEpisode(current.id, status, notes ? { notes } : {});
+      // What a person saw in the clip is worth more than the note field:
+      // direction is the field the pipeline gets wrong on 97% of records,
+      // and whether a train stopped is not in the data at all.
+      await verifyEpisode(current.id, status, {
+        ...(notes ? { notes } : {}),
+        ...(seen ? { observedDirection: seen } : {}),
+        ...(stopped ? { observedStopped: true } : {}),
+      });
       setReviewed(count => count + 1);
       setNotes('');
+      setSeen(null);
+      setStopped(false);
       setIndex(i => i + 1);
     } catch (cause) {
       console.error('Failed to save verification', cause);
@@ -170,28 +167,67 @@ export const VerifyPage: React.FC = () => {
               )}
             </div>
 
-            <div className={styles.facts}>
-              <div className={styles.where}>
-                {cameraName(current.camera)}
-              </div>
-              <div className={styles.when}>
-                {current.t_enter.slice(11, 16)}
-                {current.t_exit ? `–${current.t_exit.slice(11, 16)}` : ''}
-                {current.direction && current.direction !== 'unclear'
-                  ? ` · ${current.direction}` : ''}
-                {current.peak_conf ? ` · ${Math.round(current.peak_conf * 100)}% confident` : ''}
-              </div>
-            </div>
+            {/* A still cannot show whether a train stopped or which way it
+                went, which are the two things a person can settle at a
+                glance from the video and the pipeline most often cannot. */}
+            <EpisodeClip
+              clip={current.clip}
+              denseClip={current.dense_clip}
+              denseFrames={current.dense_frames}
+            />
 
-            <div className={styles.claim}>
-              <span className={styles.claimLabel}>We think this is</span>
-              <strong className={styles.claimText}>{describeClaim(current)}</strong>
-              {current.claim.corroborating_sightings &&
-                current.claim.corroborating_sightings > 1 && (
-                <span className={styles.corroboration}>
-                  seen by {current.claim.corroborating_sightings} cameras
-                </span>
-              )}
+            {/* The evidence, before any conclusion drawn from it. Asking
+                someone to rule on "we think this is an unscheduled working"
+                gave them nothing to rule with. */}
+            <dl className={styles.evidence}>
+              {observations(current).map(item => (
+                <div key={item.label} className={styles.row}>
+                  <dt className={styles.rowLabel}>{item.label}</dt>
+                  <dd className={styles.rowValue}>
+                    <span className={styles[item.confidence]}>{item.value}</span>
+                    {item.basis && <em className={styles.basis}>{item.basis}</em>}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+
+            {(() => {
+              const note = timetableNote(current);
+              return (
+                <div className={styles.derived}>
+                  <span className={styles.derivedLabel}>{note.label}</span>
+                  <strong className={styles.derivedValue}>{note.value}</strong>
+                  {note.basis && <em className={styles.basis}>{note.basis}</em>}
+                </div>
+              );
+            })()}
+
+            {/* Recorded because the pipeline could not work it out on 97%
+                of detections, and someone watching the clip can. Each answer
+                is ground truth the tracker has never had. */}
+            <div className={styles.watched}>
+              <span className={styles.watchedLabel}>From the clip, which way?</span>
+              <div className={styles.watchedRow}>
+                {['towards Minehead', 'towards Bishops Lydeard', 'stayed put', 'could not tell']
+                  .map(option => (
+                    <button
+                      key={option}
+                      type="button"
+                      className={`${styles.pick} ${seen === option ? styles.pickOn : ''}`}
+                      onClick={() => setSeen(seen === option ? null : option)}
+                    >
+                      {option}
+                    </button>
+                  ))}
+              </div>
+              <label className={styles.stopCheck}>
+                <input
+                  type="checkbox"
+                  checked={stopped}
+                  onChange={event => setStopped(event.target.checked)}
+                />
+                it came to a stand
+              </label>
             </div>
 
             <input
@@ -201,15 +237,19 @@ export const VerifyPage: React.FC = () => {
               onChange={event => setNotes(event.target.value)}
             />
 
+            {/* The question is the one the picture can answer. Whether it
+                was the 13:25 is not something anyone can tell from a still,
+                and asking made every answer worth less. */}
+            <p className={styles.question}>Looking at this, was a train there?</p>
             <div className={styles.actions}>
               <button className={styles.confirm} onClick={() => record('confirmed')}>
-                Correct
-              </button>
-              <button className={styles.correct} onClick={() => record('corrected')}>
-                Wrong train
+                Yes, a train
               </button>
               <button className={styles.reject} onClick={() => record('rejected')}>
-                Not a train
+                No, not a train
+              </button>
+              <button className={styles.correct} onClick={() => record('corrected')}>
+                A train, but this is wrong
               </button>
               <button className={styles.skip} onClick={() => setIndex(i => i + 1)}>
                 Skip

@@ -20,10 +20,30 @@ Usage:
 import os
 import random
 import threading
+from pathlib import Path
 import time
 
 import cv2
 import yt_dlp
+
+
+def _node() -> dict:
+    """Where node actually is, rather than trusting PATH.
+
+    Naming the runtime alone was enough from a terminal and not enough
+    from launchd, which runs with PATH=/usr/bin:/bin:/usr/sbin:/sbin —
+    node lives in /opt/homebrew/bin, so yt-dlp found no runtime, fell
+    back to the deprecated path and returned 'This live stream recording
+    is not available' for every camera. The 08:00 start on 31/8 produced
+    nothing for this reason. An absolute path cannot be lost that way.
+    """
+    import shutil
+    found = shutil.which('node') or next(
+        (p for p in ('/opt/homebrew/bin/node', '/usr/local/bin/node')
+         if Path(p).exists()), None)
+    return {'path': found} if found else {}
+
+
 
 # All eleven WSR cameras Railcam publish, verified live 29th August 2026.
 # Ordered along the line from the Bishops Lydeard end towards Minehead.
@@ -104,7 +124,7 @@ def _format_table(camera: str, force: bool = False) -> dict[str, str]:
     # that extraction is deprecated and that formats may be missing —
     # which, on an eleven-hour unattended run, would mean discovering at
     # dusk that the day produced nothing. Node is already present.
-    options: dict = {'quiet': True, 'js_runtimes': {'node': {}}}
+    options: dict = {'quiet': True, 'js_runtimes': {'node': _node()}}
     if COOKIES_FROM:
         options['cookiesfrombrowser'] = (COOKIES_FROM,)
 

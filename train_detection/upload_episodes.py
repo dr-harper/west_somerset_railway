@@ -19,6 +19,7 @@ Cloud Storage and stores their paths.
 """
 
 import argparse
+import json
 import os
 from datetime import datetime
 from pathlib import Path
@@ -26,6 +27,11 @@ from pathlib import Path
 HERE = Path(__file__).parent
 CAPTURES = HERE / 'captures'
 COLLECTION = 'episodes'
+# A heartbeat, so the control room can tell "nothing is being detected" from
+# "nothing has reached me". Without it a stale upload looked exactly like a
+# stopped watcher, and the health panel accused capture of failing while the
+# watcher was running perfectly and writing to disk.
+STATUS = 'status'
 MOVEMENTS = 'movements'
 CAMERAS_COLLECTION = 'cameras'
 
@@ -67,8 +73,67 @@ def movement_id(record: dict, date_key: str) -> str:
             f"_{record['from']}_{record['to']}")
 
 
+def load_readings() -> dict:
+    """What the classifier read off each train, keyed by (time, camera).
+
+    Two hundred and fifteen of these have been sitting in
+    classifications.json since the first day and never reached the control
+    room, so the one thing a person could actually check against a picture
+    — is that a steam locomotive, is that the number — was the one thing
+    the page did not show.
+    """
+    path = HERE / 'classifications.json'
+    if not path.exists():
+        return {}
+    raw = json.loads(path.read_text())
+    return {(when, entry.get('camera')): entry for when, entry in raw.items()}
+
+
+def reading_document(reading: dict | None) -> dict | None:
+    """The classifier's reading, or nothing rather than a guess dressed up."""
+    if not reading:
+        return None
+    traction = reading.get('traction')
+    if traction in (None, '', 'unsure') and not reading.get('number'):
+        return {'traction': 'unsure', 'train_class': None, 'number': None,
+                'livery': reading.get('livery') or None,
+                'confidence': reading.get('confidence'),
+                'notes': (reading.get('notes') or '')[:240] or None}
+    return {
+        'traction': traction or None,
+        'train_class': reading.get('train_class') or None,
+        'number': reading.get('number') or None,
+        'livery': reading.get('livery') or None,
+        'confidence': reading.get('confidence'),
+        'notes': (reading.get('notes') or '')[:240] or None,
+    }
+
+
+def track_summary(track: dict) -> dict:
+    """One train the tracker held, flattened for Firestore.
+
+    Firestore refuses an array inside an array, and a track carries both a
+    path of coordinate triples and a drift pair. Neither is wanted here
+    anyway: what a person weighing a detection needs is how long the train
+    was held, whether it moved and how far, not where every centroid sat.
+    """
+    drift = track.get('drift_px') or [0, 0]
+    return {
+        'id': track.get('id'),
+        't_enter': track.get('t_enter'),
+        't_exit': track.get('t_exit'),
+        'observations': track.get('observations'),
+        'peak_conf': track.get('peak_conf'),
+        'moved': track.get('moved'),
+        'drift_x': drift[0],
+        'drift_y': drift[1] if len(drift) > 1 else 0,
+        'zones': ', '.join(track.get('zones') or []),
+    }
+
+
 def episode_document(episode: dict, movement: dict | None,
-                     corroboration: dict | None = None) -> dict:
+                     corroboration: dict | None = None,
+                     reading: dict | None = None) -> dict:
     """One Firestore document: what was detected, and what we think it was."""
     scheduled = (movement or {}).get('scheduled')
     return {
@@ -82,6 +147,19 @@ def episode_document(episode: dict, movement: dict | None,
         'peak_conf': episode.get('peak_conf'),
         'observations': episode.get('n_observations'),
         'drift_px': episode.get('drift_px'),
+        # What the tracker made of it, which is the strongest evidence a
+        # person can weigh: how many separate trains it held, how many of
+        # them moved, and whether the path jumped — a jump is why a
+        # direction comes back unclear, and saying so is more use than
+        # hiding the field.
+        'tracks': [track_summary(t) for t in (episode.get('tracks') or [])],
+        'trains_moving': episode.get('trains_moving'),
+        # What was read off the train itself — traction, class, running
+        # number. Derived from a still by a classifier, so it is offered as
+        # something to check rather than as fact.
+        'reading': reading_document(reading),
+        'path_jumps': episode.get('path_jumps'),
+        'most_in_frame': episode.get('most_in_frame'),
         'keyframe': (episode.get('keyframes') or [None])[0],
         'hires': episode.get('hires'),
         # Boxes travel as data beside the clean still, so the overlay can be
@@ -161,10 +239,14 @@ def main() -> None:
 
     from corroboration import corroborate
     verdicts = corroborate(episodes)
+    readings = load_readings()
     documents = [(episode_id(e),
                   episode_document(e, claim_for.get(e['t_enter']),
-                                   verdicts.get(episode_id(e))))
+                                   verdicts.get(episode_id(e)),
+                                   readings.get((e['t_enter'], e['camera']))))
                  for e in episodes]
+    read = sum(1 for _, d in documents if d.get('reading'))
+    print(f'{read} episodes carry a reading off the train')
     scheduled = sum(1 for _, d in documents if d['claim']['kind'] == 'scheduled')
     print(f'{len(documents)} episodes '
           f'({scheduled} scheduled, {len(documents) - scheduled} unscheduled)')
@@ -217,6 +299,15 @@ def main() -> None:
     batch.commit()
     print(f'wrote {written} documents to {COLLECTION} '
           f'({new} new, {written - new} refreshed without touching verification)')
+
+    latest = max((e['t_enter'] for e in episodes), default=None)
+    client.collection(STATUS).document('pipeline').set({
+        'uploaded_at': datetime.now().isoformat(timespec='seconds'),
+        'episodes': written,
+        'latest_episode': latest,
+        'date_key': args.date,
+    })
+    print(f'heartbeat written: latest episode {latest}')
 
     # Movements and cameras are derived, so they are replaced outright
     # rather than merged — nothing a verifier owns lives on them.

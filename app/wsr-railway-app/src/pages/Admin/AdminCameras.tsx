@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { isFirebaseConfigured } from '../../firebase';
 import { CameraLive } from '../../components/Admin/CameraLive';
 import { CAMERAS } from '../../services/cameras';
+import { Link } from 'react-router-dom';
+import { PencilRuler } from 'lucide-react';
 import { CopyId } from '../../components/Admin/CopyId';
 import { fetchEpisodes, type Episode } from '../../utils/firestore/episodes';
 import styles from './Admin.module.css';
@@ -152,6 +154,13 @@ export const AdminCameras: React.FC = () => {
 
               <div className={styles.setupRow}>
                 <CopyId id={camera.id} />
+                {/* Reporting a camera as un-traced without offering any way
+                    to trace it made this page a dead end, and the health
+                    alert that sends people here a dead end with it. */}
+                <Link className={styles.traceLink} to={`/admin/annotate?camera=${camera.id}`}>
+                  <PencilRuler size={12} aria-hidden />
+                  {note.ready ? 'Edit trace' : 'Trace track'}
+                </Link>
                 <span className={note.roads ? styles.setupOn : styles.setupOff}>
                   {note.roads || 'no'} road{note.roads === 1 ? '' : 's'}
                 </span>

@@ -1,0 +1,5 @@
+# State names resources and can carry values worth keeping out of the repo.
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log

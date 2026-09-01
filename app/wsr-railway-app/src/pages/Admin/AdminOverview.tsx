@@ -1,24 +1,39 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DetectionRibbon } from '../../components/Admin/DetectionRibbon';
+import { HealthPanel } from '../../components/Admin/HealthPanel';
+import { AccuracyPanel } from '../../components/Admin/AccuracyPanel';
+import { measureAccuracy } from '../../services/accuracy';
+import { assessHealth } from '../../services/health';
 import { isFirebaseConfigured } from '../../firebase';
 import { CAMERAS } from '../../services/cameras';
 import { fetchEpisodes, type Episode } from '../../utils/firestore/episodes';
 import { fetchMovements, type Movement } from '../../utils/firestore/movements';
+import { fetchPipeline } from '../../utils/firestore/pipeline';
+import type { Pipeline } from '../../services/health';
 import styles from './Admin.module.css';
 
 /**
  * The state of the detection run, in the order an operator needs it.
  *
- * What matters first is whether the day looks right — the ribbon answers
- * that faster than any number. Then what still needs a human: unverified
- * detections, unscheduled movements, cameras not yet set up. Counts that
- * prompt no action are kept out.
+ * Health comes first, before any count. Every failure this system has had
+ * was silent — a scheduled run that never started, a camera blind all day,
+ * a control room pointed at a machine that no longer existed — and on each
+ * of those days a page of counts looked exactly like a quiet one. So the
+ * first question answered is whether anything is wrong.
+ *
+ * Then accuracy, which is the other thing nobody could see: verification
+ * existed and went unused because checking a detection produced no visible
+ * result. It now adds up to a figure.
+ *
+ * Then the day itself — the ribbon answers 'does this look right' faster
+ * than any number. Counts that prompt no action are kept out.
  */
 
 export const AdminOverview: React.FC = () => {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [movements, setMovements] = useState<Movement[]>([]);
+  const [pipeline, setPipeline] = useState<Pipeline | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,10 +42,12 @@ export const AdminOverview: React.FC = () => {
       setLoading(false);
       return;
     }
-    Promise.all([fetchEpisodes('all', 500), fetchMovements(undefined, 300)])
-      .then(([loadedEpisodes, loadedMovements]) => {
+    Promise.all([fetchEpisodes('all', 500), fetchMovements(undefined, 300),
+                 fetchPipeline()])
+      .then(([loadedEpisodes, loadedMovements, loadedPipeline]) => {
         setEpisodes(loadedEpisodes);
         setMovements(loadedMovements);
+        setPipeline(loadedPipeline);
       })
       .catch(cause => {
         console.error('Failed to load detection data', cause);
@@ -63,8 +80,15 @@ export const AdminOverview: React.FC = () => {
     };
   }, [episodes]);
 
-  const notSetUp = CAMERAS.filter(c => !c.annotation.ready);
   const unscheduled = movements.filter(m => m.kind === 'unscheduled');
+
+  // Assessed against the clock, so 'nothing today' is only an alarm during
+  // the hours the watcher is meant to be running.
+  const checkedAt = useMemo(() => new Date(), [episodes]);
+  const alerts = useMemo(
+    () => assessHealth({ episodes, cameras: CAMERAS, now: checkedAt, pipeline }),
+    [episodes, checkedAt, pipeline]);
+  const accuracy = useMemo(() => measureAccuracy(episodes), [episodes]);
 
   if (!isFirebaseConfigured) {
     return (
@@ -95,6 +119,9 @@ export const AdminOverview: React.FC = () => {
 
   return (
     <>
+      <HealthPanel alerts={alerts} checkedAt={checkedAt} />
+      <AccuracyPanel accuracy={accuracy} />
+
       <div className={styles.statRow}>
         <div className={styles.stat}>
           <span className={styles.statValue}>{summary.total}</span>
@@ -123,37 +150,6 @@ export const AdminOverview: React.FC = () => {
         <Link className={styles.action} to="/admin/events">Every detection</Link>
       </div>
       <DetectionRibbon episodes={summary.episodesToday} />
-
-      <div className={styles.panel}>
-        <div className={styles.panelHead}>
-          <h2>Verification</h2>
-          <Link className={styles.action} to="/admin/verify">
-            {summary.unverified ? `Review ${summary.unverified}` : 'All reviewed'}
-          </Link>
-        </div>
-        <div className={styles.bar}>
-          <div
-            className={styles.barFill}
-            style={{ width: `${(summary.reviewed / summary.total) * 100}%` }}
-          />
-        </div>
-        <p className={styles.muted}>
-          {summary.reviewed} of {summary.total} checked by hand
-        </p>
-      </div>
-
-      {notSetUp.length > 0 && (
-        <div className={styles.panel}>
-          <div className={styles.panelHead}>
-            <h2>Waiting on annotation</h2>
-            <Link className={styles.action} to="/admin/cameras">Cameras</Link>
-          </div>
-          <p className={styles.muted}>
-            {notSetUp.map(c => c.name).join(', ')} — no track traced, so
-            detections there cannot be placed on a road.
-          </p>
-        </div>
-      )}
 
       <div className={styles.panel}>
         <h2>Latest activity</h2>

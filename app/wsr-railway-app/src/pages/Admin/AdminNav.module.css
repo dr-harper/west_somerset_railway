@@ -1,0 +1,134 @@
+/* Control room navigation.
+   A row of tabs suited neither size: on desktop it wasted the width the
+   page has, and on mobile it scrolled sideways so the later sections were
+   out of sight. Desktop gets a rail down the side; a phone gets a bar under
+   the thumb, which is where a hand actually is when someone is standing on
+   a platform looking at this. */
+
+.shell {
+  display: grid;
+  gap: var(--spacing-xl, 2rem);
+  align-items: start;
+}
+
+.main { min-width: 0; }   /* lets wide tables scroll rather than push the grid */
+
+/* ---- the rail, on anything with room for it ---- */
+.rail { display: none; }
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 7px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-left: 3px solid transparent;
+}
+
+.link:hover { color: var(--chocolate); background: rgba(0, 0, 0, 0.03); }
+
+.active {
+  color: var(--chocolate);
+  border-left-color: var(--brass, #b8862b);
+  background: rgba(0, 0, 0, 0.04);
+  font-weight: 600;
+}
+
+.icon { display: flex; flex: none; }
+
+/* A count of what needs attention, on the section that holds it. */
+.badge {
+  margin-left: auto;
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  line-height: 1;
+  padding: 0.2rem 0.4rem;
+  border-radius: 999px;
+  background: var(--signal-red, #b5342a);
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- the bar, on a phone ---- */
+.bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: space-around;
+  gap: 0.15rem;
+  padding: 0.4rem 0.3rem calc(0.4rem + env(safe-area-inset-bottom));
+  background: var(--cream, #f4efe2);
+  border-top: 1px solid var(--rule);
+}
+
+.barLink {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  flex: 1;
+  padding: 0.35rem 0.1rem;
+  border-radius: 7px;
+  text-decoration: none;
+  color: var(--ink-soft);
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  position: relative;
+}
+
+.barActive { color: var(--chocolate); background: rgba(0, 0, 0, 0.05); }
+
+.barBadge {
+  position: absolute;
+  top: 0.1rem;
+  right: 50%;
+  transform: translateX(1.05rem);
+  min-width: 1rem;
+  padding: 0.05rem 0.2rem;
+  border-radius: 999px;
+  background: var(--signal-red, #b5342a);
+  color: #fff;
+  font-size: 0.58rem;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Every media query lives below every base rule, so a breakpoint is never
+   undone by a later declaration of equal weight. Placed above them, the
+   desktop `.bar { display: none }` lost to the `.bar { display: flex }`
+   that followed it, and the phone bar sat across the foot of a 1440px
+   window with the rail already down the side. */
+
+@media (min-width: 900px) {
+  .shell { grid-template-columns: 190px minmax(0, 1fr); }
+  .rail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    position: sticky;
+    top: var(--spacing-lg, 1.5rem);
+  }
+  .bar { display: none; }
+}
+
+/* The bar sits over the page, so the page has to end above it. */
+@media (max-width: 899px) {
+  .main { padding-bottom: 4.5rem; }
+}
+
+.link:focus-visible,
+.barLink:focus-visible {
+  outline: 2px solid var(--brass, #b8862b);
+  outline-offset: 2px;
+}

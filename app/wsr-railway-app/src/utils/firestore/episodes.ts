@@ -60,6 +60,27 @@ export interface Episode {
   direction: string | null;
   zones: string[];
   peak_conf: number | null;
+  observations?: number | null;
+  drift_px?: number[] | null;
+  /** One entry per train the tracker held during this record. */
+  tracks?: {
+    id: number; t_enter: string; t_exit: string | null;
+    observations: number; peak_conf: number; moved: boolean;
+    drift_x: number; drift_y: number; zones: string;
+  }[] | null;
+  trains_moving?: number | null;
+  /** A jumped path is why a direction comes back unclear. */
+  path_jumps?: number | null;
+  most_in_frame?: number | null;
+  /** What a classifier read off the train: traction, class, running number. */
+  reading?: {
+    traction: string | null;
+    train_class: string | null;
+    number: string | null;
+    livery: string | null;
+    confidence: number | null;
+    notes: string | null;
+  } | null;
   keyframe: string | null;
   hires: string | null;
   boxes?: EpisodeBoxes | null;
@@ -123,7 +144,15 @@ export function watchEpisodes(
 export async function verifyEpisode(
   id: string,
   status: Exclude<VerificationStatus, 'unverified'>,
-  details: { correctedService?: string; correctedLoco?: string; notes?: string } = {}
+  details: {
+    correctedService?: string;
+    correctedLoco?: string;
+    notes?: string;
+    /** Which way the verifier saw it go, from watching the clip. */
+    observedDirection?: string;
+    /** Whether it came to a stand, which no still can show. */
+    observedStopped?: boolean;
+  } = {}
 ): Promise<void> {
   if (!db) throw new Error('Verification needs Firestore to be configured');
   await updateDoc(doc(db, COLLECTION, id), {
