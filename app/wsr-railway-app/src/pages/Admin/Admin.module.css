@@ -563,3 +563,10 @@
 }
 
 .signOut:hover { border-color: var(--chocolate); color: var(--chocolate); }
+
+/* A refused sign-in has to say so. Silence reads as a broken button. */
+.problem {
+  margin: 0.6rem 0 0;
+  font-size: 0.8rem;
+  color: #a3341f;
+}

@@ -66,6 +66,9 @@ export const AdminLayout: React.FC = () => {
               <button className={styles.action} onClick={operator.signIn}>
                 Sign in
               </button>
+              {operator.problem && (
+                <p className={styles.problem} role="alert">{operator.problem}</p>
+              )}
             </>
           )}
         </div>
