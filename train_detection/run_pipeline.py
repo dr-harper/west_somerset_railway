@@ -78,6 +78,13 @@ def main() -> int:
     parser.add_argument('--date', default=None,
                         help='limit classification to one date_key')
     parser.add_argument('--skip-classify', action='store_true')
+    # Bounded, so a run finishes and the upload behind it is not held up.
+    # The first scheduled run met a backlog of 274 unclassified episodes and
+    # would have spent an hour on Gemini calls while the site waited on the
+    # upload queued behind it. A chunk per run drains the backlog over a few
+    # hours and costs nothing once it is empty, because already-classified
+    # episodes are skipped.
+    parser.add_argument('--classify-limit', type=int, default=25)
     args = parser.parse_args()
 
     token = access_token(args.account)
@@ -96,6 +103,8 @@ def main() -> int:
         classify = ['classify_trains.py']
         if args.date:
             classify += ['--date', args.date]
+        if args.classify_limit:
+            classify += ['--limit', str(args.classify_limit)]
         ok = run('classify', classify, env) and ok
 
     # --media is what puts the stills and clips where the deployed control
