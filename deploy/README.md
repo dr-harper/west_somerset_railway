@@ -1,7 +1,24 @@
 # Deploying the monitor
 
-Notes for moving the railway monitor off a laptop and onto a machine that is
-awake when the line is. Written 31 August 2026.
+Notes on where the monitor runs and why. Written 31 August 2026, revised
+1 September after the VM turned out not to be able to see the streams.
+
+## The finding that shaped this
+
+**YouTube serves the HLS manifest to a datacentre and refuses the media.**
+Measured on 1/9 from a GCP VM in europe-west2 against three cameras: the
+playlist returns 200 and about 7 KB every time, and the first segment
+302s to a second host which answers 403. The same code, same cameras,
+minutes apart on a home connection returned 200 and 490 KB.
+
+It is the source address. Not IPv6 — the VM has no IPv6 route and egress is
+IPv4. Not yt-dlp, not the player challenge, not the code.
+
+`yt-dlp -g` resolving cleanly is *not* evidence the streams work; it only
+proves the index is readable. Fetch a segment before believing it.
+
+So capture runs where the address is residential, and everything that does
+work from the cloud stays in the cloud.
 
 ## Why
 
@@ -10,32 +27,21 @@ The monitor currently runs on a MacBook. That has cost two mornings already
 control room at a machine that no longer existed — and it stops entirely
 whenever the laptop is shut. A gala day missed is not recoverable.
 
-## Before anything is created
+## Accounts, and a trap
 
-**The active gcloud account is the wrong one.** As of writing:
-
-```
-account = michael@heatgeek.com
-project = skoon-zor-dev
-```
-
-That is the work account. This project belongs on the personal one
-(`mikeylharper@gmail.com`, already authenticated but not active). Nothing in
-`terraform/` has been applied, deliberately.
-
-Switching accounts and creating the project are yours to do:
+This laptop's ambient credentials belong to `michael@heatgeek.com`, the work
+account, on project `skoon-zor-dev`. The monitor lives on the personal
+account. Anything reaching this project from here has to say so explicitly
+or it fails with a permission error naming the wrong user:
 
 ```bash
-gcloud config set account mikeylharper@gmail.com
-gcloud projects create wsr-monitor --name="WSR Monitor"
-gcloud billing projects link wsr-monitor --billing-account=<personal billing id>
-gcloud config set project wsr-monitor
+WSR_ACCESS_TOKEN=$(gcloud auth print-access-token --account=mikeylharper@gmail.com)
+terraform plan   # via GOOGLE_OAUTH_ACCESS_TOKEN, same idea
 ```
 
-The project is made by hand rather than in Terraform on purpose. Creating
-projects needs an org or folder and a billing account, and doing it from code
-makes it far too easy to attach the wrong billing account to the right
-project.
+`run_pipeline.py` mints one per run rather than keeping a service account
+key on disk. Switching the machine's active account would work too, and
+would disturb whatever the work account is in the middle of.
 
 ## What it needs, measured
 
@@ -75,13 +81,40 @@ not, and should be checked against the calculator before applying.
 
 ## Shape
 
-One small always-on VM, one bucket, Firestore. No public IP: egress goes
-through Cloud NAT and SSH arrives over IAP, so nothing is exposed.
+Split, for the reason above.
 
-Deliberately dull. This is a monitor that has to be up in the morning, not
-something that needs to scale.
+**Capture runs on the laptop.** Two LaunchAgents, versioned in
+`deploy/local/` because they previously existed on one machine and in no
+repository at all: `uk.co.wsr.watcher` starts at 08:00 and watches for
+eleven hours, `uk.co.wsr.pipeline` classifies and uploads every fifteen
+minutes.
+
+**Everything else is in GCP.** Firestore holds the detections, the bucket
+holds the stills and clips, Secret Manager holds the Gemini key, Firebase
+Hosting serves the site. None of that cares where the frames came from.
+
+**The VM is stopped, not destroyed.** Terraform declares it
+`TERMINATED` via `watcher_running = false`. The provisioning on its disk is
+sound and will be wanted the day the streams come from Railcam directly
+rather than through YouTube — which is the fix that actually lasts.
+
+## Costs, revised
+
+- **Compute** — nothing while the VM is stopped. The boot disk is about
+  £1/month. Starting it is `watcher_running = true` and an apply.
+- **Storage** — 2.34 GB up as of 1/9, a few pence a month. Lifecycle rules
+  cool to Nearline at 14 days, Coldline at 45, delete at 90.
+- **Firestore** — free, and now genuinely so. The upload rewrote all 549
+  documents every run, which at a fifteen minute cadence is about 52,000
+  writes a day against a free tier of 20,000. It now writes only what
+  changed: a run with nothing new costs one heartbeat.
 
 ## Not yet solved
+
+**Ask Railcam for direct access.** The proper fix for the finding above,
+and the one that removes yt-dlp, the player challenge and the IP question
+in a single stroke. Everything else here is a way of working around not
+having it.
 
 **The annotator's save endpoint is dev-server only.** It runs as a Vite plugin
 (`apply: 'serve'`), so a built deployment gets a read-only annotator. Either
@@ -93,25 +126,26 @@ deployed rather than after.
 public timetable happily, but the annotator problem above means the operator
 side probably wants to sit on the VM. One app on one host stays the goal.
 
-**Secrets.** The Gemini key currently lives in `train_detection/.env`,
-gitignored, mode 600. On the VM it should be Secret Manager, not a file baked
-into an image.
+**Node on the VM is 18.20.4**, too old for yt-dlp's JS runtime, so it warns
+on every resolve. Harmless while the manifest still resolves and worth
+fixing before it is not.
 
-**Uploads are manual.** `upload_episodes.py` runs when someone remembers, so
-the control room is routinely hours behind. On the VM it should be a timer,
-and it should write only what changed rather than rewriting the day.
+## Done
 
-**The classifier is manual too**, and last ran on 30 August. Same fix.
+- Frame buffers consolidated onto the ring.
+- Project created, Terraform applied, secrets in Secret Manager.
+- Site deployed and auto-deploying; GitHub Pages retired.
+- Stills and clips served from the private bucket, gated on the operator
+  grant — the observations are public, the footage is Railcam's.
+- Uploads and classification on a timer, writing only what changed.
 
 ## Order of work
 
-1. Consolidate the frame buffers onto the ring — biggest single saving, and it
-   decides the machine size.
-2. Create the project on the personal account, apply the Terraform, get the
-   watcher running on the VM alongside the laptop for a day to compare.
-3. Move uploads and classification onto timers on the VM.
-4. Decide where the control room lives and solve the annotator endpoint.
-5. Retire the laptop run.
+1. Ask Railcam for direct stream access. Everything below is smaller.
+2. Wire `visit.py` — 97% of detections still report direction as unclear.
+3. Move the watcher onto the fine-tuned weights; it is still on stock COCO.
+4. Solve the annotator endpoint, which is dev-server only.
+5. Verify detections by hand. One of 544 so far.
 
 ## Files
 
